@@ -9,6 +9,7 @@ const GameCanvas = () => {
     selectLetter,
     clearSelection,
     setCurrentWord,
+    finalizeWordSelection,
   } = useGame();
   const canvasRef = useRef(null);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -211,7 +212,7 @@ const GameCanvas = () => {
         return;
       }
 
-      setCurrentWord(formedWord);
+      finalizeWordSelection(formedWord);
       showFeedback('success', 'هورا! کلمهٔ درست رو پیدا کردی! 🎉');
     }
   }, [
@@ -220,7 +221,7 @@ const GameCanvas = () => {
     gameState.selectedNodes.length,
     gameState.selectionPreview,
     levelWords,
-    setCurrentWord,
+    finalizeWordSelection,
     showFeedback,
   ]);
 

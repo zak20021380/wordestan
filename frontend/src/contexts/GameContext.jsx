@@ -173,6 +173,15 @@ export const GameProvider = ({ children }) => {
     }));
   };
 
+  const finalizeWordSelection = (word) => {
+    setGameState(prev => ({
+      ...prev,
+      selectedNodes: [],
+      selectionPreview: '',
+      currentWord: word,
+    }));
+  };
+
   const submitWord = async () => {
     if (!gameState.currentWord || !currentLevel) return;
     
@@ -216,6 +225,7 @@ export const GameProvider = ({ children }) => {
     deselectLetter,
     clearSelection,
     setCurrentWord,
+    finalizeWordSelection,
     submitWord,
     getHint,
     autoSolve,
