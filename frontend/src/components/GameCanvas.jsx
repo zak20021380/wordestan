@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { toast } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGame } from '../contexts/GameContext';
 
@@ -16,6 +15,29 @@ const GameCanvas = () => {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [letterPositions, setLetterPositions] = useState([]);
   const [canvasSize, setCanvasSize] = useState({ width: 400, height: 400 });
+  const [feedback, setFeedback] = useState(null);
+  const feedbackTimeoutRef = useRef(null);
+
+  const showFeedback = useCallback((type, message) => {
+    if (feedbackTimeoutRef.current) {
+      clearTimeout(feedbackTimeoutRef.current);
+    }
+
+    setFeedback({ type, message });
+
+    const timeout = setTimeout(() => {
+      setFeedback(null);
+      feedbackTimeoutRef.current = null;
+    }, type === 'success' ? 1800 : 2200);
+
+    feedbackTimeoutRef.current = timeout;
+  }, []);
+
+  useEffect(() => () => {
+    if (feedbackTimeoutRef.current) {
+      clearTimeout(feedbackTimeoutRef.current);
+    }
+  }, []);
 
   // Calculate letter positions in a circle
   useEffect(() => {
@@ -167,7 +189,7 @@ const GameCanvas = () => {
       const formedWord = gameState.selectionPreview;
 
       if (formedWord.length < 3) {
-        toast.error('کلمه باید حداقل سه حرف داشته باشد.');
+        showFeedback('error', 'هوووم... کلمه باید حداقل سه حرف داشته باشه! 😅');
         clearSelection();
         return;
       }
@@ -178,18 +200,19 @@ const GameCanvas = () => {
       );
 
       if (alreadyCompleted) {
-        toast.error('این کلمه را قبلاً ثبت کرده‌ای.');
+        showFeedback('error', 'این یکی رو قبلاً شکار کردی! یک سراغ جدید پیدا کن ✨');
         clearSelection();
         return;
       }
 
       if (!levelWords.includes(normalized)) {
-        toast.error('این کلمه در فهرست مرحله نیست.');
+        showFeedback('error', 'نه بابا! این کلمه تو لیست مرحله نیست، دوباره امتحان کن 🙈');
         clearSelection();
         return;
       }
 
       setCurrentWord(formedWord);
+      showFeedback('success', 'هورا! کلمهٔ درست رو پیدا کردی! 🎉');
     }
   }, [
     clearSelection,
@@ -198,6 +221,7 @@ const GameCanvas = () => {
     gameState.selectionPreview,
     levelWords,
     setCurrentWord,
+    showFeedback,
   ]);
 
   const handleCancel = useCallback((event) => {
@@ -256,6 +280,30 @@ const GameCanvas = () => {
 
   return (
     <div className="relative w-full max-w-lg mx-auto">
+      <AnimatePresence>
+        {feedback && (
+          <motion.div
+            key="feedback-popup"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center"
+          >
+            <div
+              className={`max-w-xs text-center rounded-2xl px-6 py-4 shadow-[0_20px_45px_rgba(17,12,28,0.55)] border ${
+                feedback.type === 'success'
+                  ? 'bg-emerald-500/20 border-emerald-400/40 text-emerald-50'
+                  : 'bg-rose-500/20 border-rose-400/40 text-rose-50'
+              }`}
+            >
+              <p className="text-lg font-semibold leading-relaxed drop-shadow-sm">
+                {feedback.message}
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Game Canvas */}
       <div className="relative rounded-3xl border border-purple-500/30 bg-[radial-gradient(circle_at_top,#2e1065_0%,#1a1033_55%,#130a23_100%)] shadow-[0_30px_60px_rgba(17,12,28,0.45)] p-5">
         <svg
