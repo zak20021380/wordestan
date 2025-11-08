@@ -16,15 +16,16 @@ import {
 import GameCanvas from '../components/GameCanvas';
 
 const Game = () => {
-  const { 
-    currentLevel, 
-    gameState, 
-    submitWord, 
-    getHint, 
+  const {
+    currentLevel,
+    gameState,
+    submitWord,
+    getHint,
     autoSolve,
     isCompletingWord,
     isGettingHint,
-    isAutoSolving
+    isAutoSolving,
+    levelLoading
   } = useGame();
   const { user } = useAuth();
   const [showSuccess, setShowSuccess] = useState(false);
@@ -41,7 +42,7 @@ const Game = () => {
     try {
       const result = await submitWord();
       showSuccessMessage(result.message);
-      
+
       // Update user coins if provided
       if (result.data) {
         user.coins = result.data.totalCoins;
@@ -90,13 +91,38 @@ const Game = () => {
     }
   };
 
-  if (!currentLevel) {
+  // Loading state
+  if (levelLoading) {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
           <p className="text-white/60">Loading game...</p>
         </div>
+      </div>
+    );
+  }
+
+  // No more levels available
+  if (!currentLevel) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center bg-glass backdrop-blur-lg rounded-2xl border border-glass-border p-12"
+        >
+          <Trophy className="w-20 h-20 text-primary-400 mx-auto mb-4" />
+          <h2 className="text-3xl font-bold text-white mb-4">Congratulations!</h2>
+          <p className="text-white/60 text-lg mb-6">
+            You've completed all available levels!
+          </p>
+          <div className="flex items-center justify-center space-x-2 text-primary-400">
+            <Sparkles className="w-6 h-6" />
+            <span className="text-xl font-semibold">Amazing work!</span>
+            <Sparkles className="w-6 h-6" />
+          </div>
+        </motion.div>
       </div>
     );
   }
