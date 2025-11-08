@@ -64,10 +64,10 @@ const Store = () => {
   };
 
   const getPackIcon = (pack) => {
-    if (pack.featured) return <Crown className="w-6 h-6 text-yellow-400" />;
-    if (pack.popular) return <Zap className="w-6 h-6 text-orange-400" />;
-    if (pack.amount >= 500) return <Gem className="w-6 h-6 text-purple-400" />;
-    return <Coins className="w-6 h-6 text-yellow-400" />;
+    if (pack.featured) return <Crown className="w-6 h-6 text-primary-400" />;
+    if (pack.popular) return <Zap className="w-6 h-6 text-secondary-400" />;
+    if (pack.amount >= 500) return <Gem className="w-6 h-6 text-primary-500" />;
+    return <Coins className="w-6 h-6 text-accent-400" />;
   };
 
   if (packsLoading) {
@@ -108,7 +108,7 @@ const Store = () => {
             <p className="text-white/60">Current coin balance</p>
           </div>
           <div className="text-right">
-            <div className="flex items-center space-x-2 text-3xl font-bold text-yellow-400 mb-1">
+            <div className="flex items-center space-x-2 text-3xl font-bold text-accent-400 mb-1">
               <Coins className="w-8 h-8" />
               <span>{user?.coins?.toLocaleString() || 0}</span>
             </div>
@@ -125,9 +125,11 @@ const Store = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 + index * 0.1 }}
-            className={`bg-glass backdrop-blur-lg rounded-2xl border border-glass-border p-6 ${
-              pack.featured ? 'ring-2 ring-yellow-400/50' : ''
-            } hover:bg-glass-hover transition-all transform hover:scale-105`}
+            className={`bg-gradient-to-br from-glass via-glass to-glass/50 backdrop-blur-lg rounded-2xl border ${
+              pack.featured ? 'border-primary-500/50 ring-2 ring-primary-400/50 shadow-lg shadow-primary-500/20' :
+              pack.popular ? 'border-secondary-500/50 shadow-lg shadow-secondary-500/20' :
+              'border-glass-border shadow-lg shadow-accent-500/10'
+            } p-6 hover:bg-glass-hover transition-all transform hover:scale-105`}
           >
             {/* Pack Header */}
             <div className="flex items-center justify-between mb-4">
@@ -137,13 +139,13 @@ const Store = () => {
               </div>
               
               {pack.featured && (
-                <span className="bg-yellow-400/20 text-yellow-400 text-xs font-medium px-2 py-1 rounded-full">
+                <span className="bg-gradient-to-r from-primary-500/20 to-secondary-500/20 text-primary-400 text-xs font-medium px-2 py-1 rounded-full border border-primary-400/30">
                   Featured
                 </span>
               )}
-              
+
               {pack.popular && (
-                <span className="bg-orange-400/20 text-orange-400 text-xs font-medium px-2 py-1 rounded-full">
+                <span className="bg-gradient-to-r from-secondary-500/20 to-accent-500/20 text-secondary-400 text-xs font-medium px-2 py-1 rounded-full border border-secondary-400/30">
                   Popular
                 </span>
               )}
@@ -157,8 +159,8 @@ const Store = () => {
             {/* Coin Amount */}
             <div className="text-center mb-6">
               <div className="flex items-center justify-center space-x-2 mb-2">
-                <Coins className="w-8 h-8 text-yellow-400" />
-                <span className="text-3xl font-bold text-white">
+                <Coins className="w-8 h-8 text-accent-400" />
+                <span className="text-3xl font-bold bg-gradient-to-r from-primary-400 to-secondary-400 bg-clip-text text-transparent">
                   {pack.amount.toLocaleString()}
                 </span>
               </div>
@@ -189,7 +191,7 @@ const Store = () => {
             <button
               onClick={() => handlePurchase(pack)}
               disabled={purchaseMutation.isLoading && selectedPack === pack._id}
-              className="w-full bg-primary-500 hover:bg-primary-600 disabled:bg-glass-hover disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-lg transition-colors flex items-center justify-center space-x-2"
+              className="w-full bg-gradient-to-r from-primary-500 via-secondary-500 to-primary-500 hover:from-primary-600 hover:via-secondary-600 hover:to-primary-600 disabled:bg-glass-hover disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-lg transition-all flex items-center justify-center space-x-2 shadow-lg shadow-primary-500/50 hover:shadow-xl hover:shadow-secondary-500/50"
             >
               {purchaseMutation.isLoading && selectedPack === pack._id ? (
                 <>
@@ -296,7 +298,7 @@ const PurchaseHistory = () => {
                 </div>
               </div>
               <div className="text-right">
-                <div className="flex items-center space-x-1 text-yellow-400 font-medium">
+                <div className="flex items-center space-x-1 text-accent-400 font-medium">
                   <Coins className="w-4 h-4" />
                   <span>+{purchase.amount}</span>
                 </div>

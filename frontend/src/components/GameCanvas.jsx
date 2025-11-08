@@ -168,20 +168,33 @@ const GameCanvas = () => {
                 points={generatePath()}
                 fill="none"
                 stroke="url(#connectionGradient)"
-                strokeWidth="4"
+                strokeWidth="5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="drop-shadow-lg"
+                filter="url(#neonGlow)"
+                className="drop-shadow-[0_0_15px_rgba(168,85,247,0.8)]"
               />
             )}
           </AnimatePresence>
 
-          {/* Gradient definition */}
+          {/* Gradient definitions */}
           <defs>
-            <linearGradient id="connectionGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#fb923c" />
-              <stop offset="100%" stopColor="#f97316" />
+            <linearGradient id="connectionGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#a855f7" />
+              <stop offset="50%" stopColor="#d946ef" />
+              <stop offset="100%" stopColor="#06b6d4" />
             </linearGradient>
+            <linearGradient id="selectionGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#d946ef" />
+              <stop offset="100%" stopColor="#06b6d4" />
+            </linearGradient>
+            <filter id="neonGlow">
+              <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+              <feMerge>
+                <feMergeNode in="coloredBlur"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
           </defs>
 
           {/* Letters */}
@@ -201,12 +214,19 @@ const GameCanvas = () => {
                   r="24"
                   className={`cursor-pointer transition-all ${
                     isSelected
-                      ? 'fill-primary-500 stroke-primary-400'
+                      ? 'fill-purple-500 stroke-pink-400'
                       : isHint
-                      ? 'fill-secondary-500 stroke-secondary-400 animate-pulse-glow'
+                      ? 'fill-pink-500 stroke-pink-400 animate-pulse-glow'
                       : 'fill-glass-hover stroke-glass-border hover:fill-glass'
                   }`}
                   strokeWidth="2"
+                  style={
+                    isSelected || isHint
+                      ? {
+                          filter: 'drop-shadow(0 0 15px rgba(168, 85, 247, 0.8))',
+                        }
+                      : {}
+                  }
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}
                 />
@@ -231,9 +251,9 @@ const GameCanvas = () => {
                     cy={position.y}
                     r="32"
                     fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    className="text-primary-400"
+                    stroke="url(#selectionGradient)"
+                    strokeWidth="3"
+                    className="drop-shadow-[0_0_10px_rgba(168,85,247,0.6)]"
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 1.2 }}
@@ -251,9 +271,9 @@ const GameCanvas = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-glass backdrop-blur-sm rounded-lg px-4 py-2 border border-glass-border"
+              className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-purple-500/20 to-pink-500/20 backdrop-blur-sm rounded-lg px-4 py-2 border border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.3)]"
             >
-              <span className="text-white font-mono text-lg tracking-wider">
+              <span className="font-mono text-lg tracking-wider bg-gradient-to-r from-purple-300 via-pink-300 to-cyan-300 bg-clip-text text-transparent font-bold">
                 {gameState.currentWord}
               </span>
             </motion.div>
@@ -273,7 +293,7 @@ const GameCanvas = () => {
         <button
           onClick={clearSelection}
           disabled={gameState.selectedLetters.length === 0}
-          className="px-4 py-2 bg-glass-hover hover:bg-glass text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-4 py-2 bg-gradient-to-r from-pink-500/20 to-purple-500/20 hover:from-pink-500/30 hover:to-purple-500/30 border border-pink-500/30 text-white rounded-lg transition-all shadow-[0_0_10px_rgba(217,70,239,0.2)] hover:shadow-[0_0_20px_rgba(217,70,239,0.4)] disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Clear
         </button>

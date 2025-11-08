@@ -54,10 +54,10 @@ const Login = () => {
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center space-x-3 space-x-reverse mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-primary-400 to-primary-600 rounded-xl flex items-center justify-center">
+            <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-xl flex items-center justify-center shadow-lg shadow-primary-500/50">
               <Gamepad2 className="w-8 h-8 text-white" />
             </div>
-            <span className="text-3xl font-bold text-white">کلمات متصل</span>
+            <span className="text-3xl font-bold bg-gradient-to-r from-primary-400 to-secondary-400 bg-clip-text text-transparent">کلمات متصل</span>
           </div>
           <p className="text-white/60">برای ادامه ماجراجویی خود وارد شوید</p>
         </div>
@@ -75,7 +75,7 @@ const Login = () => {
                 <input
                   type="email"
                   placeholder="ایمیل خود را وارد کنید"
-                  className="w-full pr-12 pl-4 py-3 bg-glass-hover border border-glass-border rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-primary-400 transition-colors"
+                  className="w-full pr-12 pl-4 py-3 bg-glass-hover border-2 border-primary-500/30 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-primary-400 focus:shadow-lg focus:shadow-primary-500/50 transition-all"
                   {...register('email', {
                     required: 'ایمیل الزامی است',
                     pattern: {
@@ -100,7 +100,7 @@ const Login = () => {
                 <input
                   type={showPassword ? 'text' : 'password'}
                   placeholder="رمز عبور خود را وارد کنید"
-                  className="w-full pr-12 pl-12 py-3 bg-glass-hover border border-glass-border rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-primary-400 transition-colors"
+                  className="w-full pr-12 pl-12 py-3 bg-glass-hover border-2 border-secondary-500/30 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-secondary-400 focus:shadow-lg focus:shadow-secondary-500/50 transition-all"
                   {...register('password', {
                     required: 'رمز عبور الزامی است',
                     minLength: {
@@ -126,7 +126,7 @@ const Login = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-primary-500 hover:bg-primary-600 disabled:bg-glass-hover disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-lg transition-colors flex items-center justify-center space-x-2 space-x-reverse"
+              className="w-full bg-gradient-to-r from-primary-500 via-secondary-500 to-primary-500 hover:from-primary-600 hover:via-secondary-600 hover:to-primary-600 disabled:bg-glass-hover disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-lg transition-all flex items-center justify-center space-x-2 space-x-reverse shadow-lg shadow-primary-500/50 hover:shadow-xl hover:shadow-secondary-500/50"
             >
               {isLoading ? (
                 <>
