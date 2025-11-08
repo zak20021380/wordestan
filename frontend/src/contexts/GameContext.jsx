@@ -33,7 +33,12 @@ export const GameProvider = ({ children }) => {
     {
       enabled: isAuthenticated,
       onSuccess: (data) => {
-        setCurrentLevel(data.level);
+        // Handle null when no more levels are available
+        if (data === null) {
+          setCurrentLevel(null);
+        } else {
+          setCurrentLevel(data.level);
+        }
       },
     }
   );
@@ -174,7 +179,7 @@ export const GameProvider = ({ children }) => {
     isCompletingWord: completeWordMutation.isLoading,
     isGettingHint: getHintMutation.isLoading,
     isAutoSolving: autoSolveMutation.isLoading,
-    
+
     // Actions
     selectLetter,
     deselectLetter,
@@ -182,7 +187,7 @@ export const GameProvider = ({ children }) => {
     submitWord,
     getHint,
     autoSolve,
-    
+
     // Mutations
     completeWordMutation,
     getHintMutation,
