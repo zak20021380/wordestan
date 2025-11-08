@@ -1,0 +1,315 @@
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from 'react-query';
+import { useAuth } from '../contexts/AuthContext';
+import { toast } from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
+import { storeService } from '../services/storeService';
+import { 
+  ShoppingCart, 
+  Coins, 
+  Star, 
+  CheckCircle,
+  Loader2,
+  Crown,
+  Gem,
+  Zap
+} from 'lucide-react';
+
+const Store = () => {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const [selectedPack, setSelectedPack] = useState(null);
+
+  // Fetch coin packs
+  const { data: coinPacks, isLoading: packsLoading } = useQuery(
+    ['coinPacks'],
+    () => storeService.getCoinPacks(),
+    {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    }
+  );
+
+  // Purchase mutation
+  const purchaseMutation = useMutation(
+    ({ packId }) => storeService.mockPurchase(packId),
+    {
+      onSuccess: (data) => {
+        toast.success(`Purchase successful! +${data.data.coinsAwarded} coins`);
+        queryClient.invalidateQueries(['coinPacks']);
+        queryClient.invalidateQueries(['nextLevel', user?.id]);
+        setSelectedPack(null);
+      },
+      onError: (error) => {
+        toast.error(error.message || 'Purchase failed');
+      },
+    }
+  );
+
+  const handlePurchase = async (pack) => {
+    if (user.coins < 0 && pack.price > 0) {
+      toast.error('Not enough coins for this purchase');
+      return;
+    }
+
+    setSelectedPack(pack._id);
+    try {
+      await purchaseMutation.mutateAsync({ packId: pack._id });
+    } finally {
+      setSelectedPack(null);
+    }
+  };
+
+  const getPackIcon = (pack) => {
+    if (pack.featured) return <Crown className="w-6 h-6 text-yellow-400" />;
+    if (pack.popular) return <Zap className="w-6 h-6 text-orange-400" />;
+    if (pack.amount >= 500) return <Gem className="w-6 h-6 text-purple-400" />;
+    return <Coins className="w-6 h-6 text-yellow-400" />;
+  };
+
+  if (packsLoading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-6xl mx-auto">
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-center mb-12"
+      >
+        <div className="flex items-center justify-center space-x-3 mb-4">
+          <ShoppingCart className="w-10 h-10 text-primary-400" />
+          <h1 className="text-4xl font-bold text-white">Coin Store</h1>
+        </div>
+        <p className="text-xl text-white/80 max-w-2xl mx-auto">
+          Get coins to unlock hints, auto-solve features, and enhance your gaming experience
+        </p>
+      </motion.div>
+
+      {/* Current Balance */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="bg-glass backdrop-blur-lg rounded-2xl border border-glass-border p-6 mb-8"
+      >
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-white mb-1">Your Balance</h2>
+            <p className="text-white/60">Current coin balance</p>
+          </div>
+          <div className="text-right">
+            <div className="flex items-center space-x-2 text-3xl font-bold text-yellow-400 mb-1">
+              <Coins className="w-8 h-8" />
+              <span>{user?.coins?.toLocaleString() || 0}</span>
+            </div>
+            <p className="text-white/60 text-sm">Coins</p>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Coin Packs */}
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+        {coinPacks?.data?.map((pack, index) => (
+          <motion.div
+            key={pack._id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 + index * 0.1 }}
+            className={`bg-glass backdrop-blur-lg rounded-2xl border border-glass-border p-6 ${
+              pack.featured ? 'ring-2 ring-yellow-400/50' : ''
+            } hover:bg-glass-hover transition-all transform hover:scale-105`}
+          >
+            {/* Pack Header */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-2">
+                {getPackIcon(pack)}
+                <h3 className="text-xl font-bold text-white">{pack.title}</h3>
+              </div>
+              
+              {pack.featured && (
+                <span className="bg-yellow-400/20 text-yellow-400 text-xs font-medium px-2 py-1 rounded-full">
+                  Featured
+                </span>
+              )}
+              
+              {pack.popular && (
+                <span className="bg-orange-400/20 text-orange-400 text-xs font-medium px-2 py-1 rounded-full">
+                  Popular
+                </span>
+              )}
+            </div>
+
+            {/* Description */}
+            {pack.description && (
+              <p className="text-white/60 text-sm mb-4">{pack.description}</p>
+            )}
+
+            {/* Coin Amount */}
+            <div className="text-center mb-6">
+              <div className="flex items-center justify-center space-x-2 mb-2">
+                <Coins className="w-8 h-8 text-yellow-400" />
+                <span className="text-3xl font-bold text-white">
+                  {pack.amount.toLocaleString()}
+                </span>
+              </div>
+              
+              {pack.bonusCoins > 0 && (
+                <div className="flex items-center justify-center space-x-1 text-green-400 text-sm">
+                  <Plus className="w-4 h-4" />
+                  <span>+{pack.bonusCoins} bonus coins</span>
+                </div>
+              )}
+              
+              <div className="text-white/60 text-sm mt-1">
+                Total: {pack.totalCoins.toLocaleString()} coins
+              </div>
+            </div>
+
+            {/* Price */}
+            <div className="text-center mb-6">
+              <div className="text-2xl font-bold text-white">
+                ${pack.price.toFixed(2)}
+              </div>
+              <div className="text-white/60 text-sm">
+                {pack.currency}
+              </div>
+            </div>
+
+            {/* Purchase Button */}
+            <button
+              onClick={() => handlePurchase(pack)}
+              disabled={purchaseMutation.isLoading && selectedPack === pack._id}
+              className="w-full bg-primary-500 hover:bg-primary-600 disabled:bg-glass-hover disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-lg transition-colors flex items-center justify-center space-x-2"
+            >
+              {purchaseMutation.isLoading && selectedPack === pack._id ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span>Processing...</span>
+                </>
+              ) : (
+                <>
+                  <ShoppingCart className="w-5 h-5" />
+                  <span>Purchase</span>
+                </>
+              )}
+            </button>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Benefits Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.6 }}
+        className="bg-glass backdrop-blur-lg rounded-2xl border border-glass-border p-8"
+      >
+        <h2 className="text-2xl font-bold text-white text-center mb-8">What You Can Do With Coins</h2>
+        
+        <div className="grid md:grid-cols-3 gap-6">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-secondary-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Lightbulb className="w-8 h-8 text-secondary-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-white mb-2">Get Hints</h3>
+            <p className="text-white/60">Reveal the next letter in a word for 10 coins</p>
+          </div>
+          
+          <div className="text-center">
+            <div className="w-16 h-16 bg-primary-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Sparkles className="w-8 h-8 text-primary-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-white mb-2">Auto Solve</h3>
+            <p className="text-white/60">Automatically complete a word for 50 coins</p>
+          </div>
+          
+          <div className="text-center">
+            <div className="w-16 h-16 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Trophy className="w-8 h-8 text-purple-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-white mb-2">Boost Progress</h3>
+            <p className="text-white/60">Complete levels faster and climb the leaderboard</p>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Purchase History */}
+      {isAuthenticated && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8 }}
+          className="mt-12"
+        >
+          <PurchaseHistory />
+        </motion.div>
+      )}
+    </div>
+  );
+};
+
+// Purchase History Component
+const PurchaseHistory = () => {
+  const { data: purchases, isLoading } = useQuery(
+    ['purchaseHistory'],
+    () => storeService.getPurchaseHistory(),
+    {
+      enabled: true,
+    }
+  );
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-32">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-glass backdrop-blur-lg rounded-2xl border border-glass-border p-8">
+      <h2 className="text-2xl font-bold text-white mb-6">Purchase History</h2>
+      
+      {purchases?.data?.purchases?.length > 0 ? (
+        <div className="space-y-3">
+          {purchases.data.purchases.slice(0, 5).map((purchase) => (
+            <div
+              key={purchase._id}
+              className="flex items-center justify-between bg-glass-hover rounded-lg p-4"
+            >
+              <div>
+                <div className="text-white font-medium">
+                  {purchase.packId?.title || 'Coin Pack'}
+                </div>
+                <div className="text-white/60 text-sm">
+                  {new Date(purchase.createdAt).toLocaleDateString()}
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="flex items-center space-x-1 text-yellow-400 font-medium">
+                  <Coins className="w-4 h-4" />
+                  <span>+{purchase.amount}</span>
+                </div>
+                <div className="text-white/60 text-sm">
+                  ${purchase.price}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center text-white/40 py-8">
+          No purchases yet
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default Store;
