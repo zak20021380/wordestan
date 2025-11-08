@@ -32,7 +32,7 @@ const Register = () => {
 
   const onSubmit = async (data) => {
     if (data.password !== data.confirmPassword) {
-      toast.error('رمزهای عبور مطابقت ندارند');
+      toast.error('رمزها یکی نیستن! 🙈');
       return;
     }
 
@@ -45,9 +45,9 @@ const Register = () => {
       });
 
       navigate('/game');
-      toast.success('ثبت‌نام با موفقیت انجام شد! خوش آمدید!');
+      toast.success('یِه‌هو! خوش اومدی! 🎉');
     } catch (error) {
-      toast.error(error.message || 'ثبت‌نام ناموفق بود');
+      toast.error(error.message || 'یه مشکلی پیش اومد، دوباره امتحان کن!');
     } finally {
       setIsLoading(false);
     }
@@ -67,9 +67,9 @@ const Register = () => {
             <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-xl flex items-center justify-center shadow-lg shadow-primary-500/50">
               <Gamepad2 className="w-8 h-8 text-white" />
             </div>
-            <span className="text-3xl font-bold bg-gradient-to-r from-primary-400 to-secondary-400 bg-clip-text text-transparent">کلمات متصل</span>
+            <span className="text-3xl font-bold bg-gradient-to-r from-primary-400 to-secondary-400 bg-clip-text text-transparent">وردستان</span>
           </div>
-          <p className="text-white/60">حساب کاربری خود را بسازید و شروع به بازی کنید</p>
+          <p className="text-white/60">بیا یه اکانت بساز و بریم بازی! 🎮</p>
         </div>
 
         {/* Registration Form */}
@@ -78,27 +78,27 @@ const Register = () => {
             {/* Username */}
             <div>
               <label className="block text-white font-medium mb-2">
-                نام کاربری
+                اسم کاربری تو
               </label>
               <div className="relative">
                 <User className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/40" />
                 <input
                   type="text"
-                  placeholder="نام کاربری خود را انتخاب کنید"
+                  placeholder="یه اسم باحال برای خودت انتخاب کن"
                   className="w-full pr-12 pl-4 py-3 bg-glass-hover border-2 border-accent-500/30 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-accent-400 focus:shadow-lg focus:shadow-accent-500/50 transition-all"
                   {...register('username', {
-                    required: 'نام کاربری الزامی است',
+                    required: 'اسم کاربری رو فراموش نکن!',
                     minLength: {
                       value: 3,
-                      message: 'نام کاربری باید حداقل 3 کاراکتر باشد'
+                      message: 'اسم کاربری باید حداقل ۳ حرف باشه'
                     },
                     maxLength: {
                       value: 20,
-                      message: 'نام کاربری باید کمتر از 20 کاراکتر باشد'
+                      message: 'اسم کاربری نباید از ۲۰ حرف بیشتر باشه'
                     },
                     pattern: {
                       value: /^[a-zA-Z0-9_]+$/,
-                      message: 'نام کاربری فقط می‌تواند شامل حروف، اعداد و خط تیره باشد'
+                      message: 'فقط حروف انگلیسی، اعداد و _ استفاده کن'
                     }
                   })}
                 />
@@ -111,19 +111,19 @@ const Register = () => {
             {/* Email */}
             <div>
               <label className="block text-white font-medium mb-2">
-                آدرس ایمیل
+                ایمیل تو
               </label>
               <div className="relative">
                 <Mail className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/40" />
                 <input
                   type="email"
-                  placeholder="ایمیل خود را وارد کنید"
+                  placeholder="ایمیلت رو بنویس"
                   className="w-full pr-12 pl-4 py-3 bg-glass-hover border-2 border-primary-500/30 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-primary-400 focus:shadow-lg focus:shadow-primary-500/50 transition-all"
                   {...register('email', {
-                    required: 'ایمیل الزامی است',
+                    required: 'ایمیل رو فراموش نکن!',
                     pattern: {
                       value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                      message: 'آدرس ایمیل نامعتبر است'
+                      message: 'این ایمیل درست نیست! 🤔'
                     }
                   })}
                 />
@@ -136,19 +136,19 @@ const Register = () => {
             {/* Password */}
             <div>
               <label className="block text-white font-medium mb-2">
-                رمز عبور
+                رمز عبورت
               </label>
               <div className="relative">
                 <Lock className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/40" />
                 <input
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="رمز عبور ایجاد کنید"
+                  placeholder="یه رمز قوی بساز"
                   className="w-full pr-12 pl-12 py-3 bg-glass-hover border-2 border-secondary-500/30 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-secondary-400 focus:shadow-lg focus:shadow-secondary-500/50 transition-all"
                   {...register('password', {
-                    required: 'رمز عبور الزامی است',
+                    required: 'رمز عبور رو فراموش نکن!',
                     minLength: {
                       value: 6,
-                      message: 'رمز عبور باید حداقل 6 کاراکتر باشد'
+                      message: 'رمز باید حداقل ۶ کاراکتر باشه'
                     }
                   })}
                 />
@@ -168,17 +168,17 @@ const Register = () => {
             {/* Confirm Password */}
             <div>
               <label className="block text-white font-medium mb-2">
-                تکرار رمز عبور
+                رمزت رو دوباره بنویس
               </label>
               <div className="relative">
                 <Lock className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/40" />
                 <input
                   type={showConfirmPassword ? 'text' : 'password'}
-                  placeholder="رمز عبور خود را تکرار کنید"
+                  placeholder="رمزت رو یه بار دیگه بنویس"
                   className="w-full pr-12 pl-12 py-3 bg-glass-hover border-2 border-blue-500/30 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-blue-400 focus:shadow-lg focus:shadow-blue-500/50 transition-all"
                   {...register('confirmPassword', {
-                    required: 'لطفا رمز عبور را تأیید کنید',
-                    validate: value => value === password || 'رمزهای عبور مطابقت ندارند'
+                    required: 'رمزت رو تایید کن!',
+                    validate: value => value === password || 'رمزها یکی نیستن!'
                   })}
                 />
                 <button
@@ -203,10 +203,10 @@ const Register = () => {
               {isLoading ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>در حال ساخت حساب...</span>
+                  <span>داریم اکانتت رو میسازیم...</span>
                 </>
               ) : (
-                <span>ساخت حساب کاربری</span>
+                <span>بزن بریم! 🚀</span>
               )}
             </button>
           </form>
@@ -217,16 +217,16 @@ const Register = () => {
               <div className="w-full border-t border-glass-border"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-glass text-white/60">یا امتحان با حساب نمایشی</span>
+              <span className="px-2 bg-glass text-white/60">یا با اکانت آزمایشی امتحان کن</span>
             </div>
           </div>
 
           {/* Demo Account */}
           <div className="text-center">
-            <p className="text-white/60 mb-4">اطلاعات حساب نمایشی:</p>
+            <p className="text-white/60 mb-4">اطلاعات اکانت آزمایشی:</p>
             <div className="bg-glass-hover rounded-lg p-4 text-sm text-white/80">
               <p><strong>ایمیل:</strong> admin@wordconnect.com</p>
-              <p><strong>رمز عبور:</strong> admin123</p>
+              <p><strong>رمز:</strong> admin123</p>
             </div>
           </div>
         </div>
@@ -234,12 +234,12 @@ const Register = () => {
         {/* Login Link */}
         <div className="text-center mt-6">
           <p className="text-white/60">
-            حساب کاربری دارید؟{' '}
+            قبلاً اکانت ساختی؟{' '}
             <Link
               to="/login"
               className="text-primary-400 hover:text-primary-300 font-medium transition-colors"
             >
-              وارد شوید
+              بیا تو!
             </Link>
           </p>
         </div>
