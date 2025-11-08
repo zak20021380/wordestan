@@ -59,7 +59,6 @@ const levelValidation = [
     .withMessage('Letters can only contain alphabetic characters'),
   body('words')
     .optional()
-    .withMessage('Words can be a string or array')
 ];
 
 const coinPackValidation = [
