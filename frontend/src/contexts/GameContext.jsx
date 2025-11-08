@@ -65,19 +65,29 @@ export const GameProvider = ({ children }) => {
     ({ word, levelId }) => gameService.completeWord(word, levelId),
     {
       onSuccess: (data) => {
+        const completedWord = data?.data?.word?.text;
+
         // Update user coins in auth context
         if (user) {
           user.coins = data.data.totalCoins;
           user.totalScore = data.data.totalScore;
         }
 
-        // Clear current selection
-        setGameState(prev => ({
-          ...prev,
-          selectedNodes: [],
-          selectionPreview: '',
-          currentWord: '',
-        }));
+        // Clear current selection and update completed words locally
+        setGameState(prev => {
+          const normalizedWord = completedWord?.toUpperCase();
+          const updatedCompletedWords = normalizedWord
+            ? Array.from(new Set([...prev.completedWords, normalizedWord]))
+            : prev.completedWords;
+
+          return {
+            ...prev,
+            selectedNodes: [],
+            selectionPreview: '',
+            currentWord: '',
+            completedWords: updatedCompletedWords,
+          };
+        });
 
         // Invalidate queries to refetch and get updated completed words
         queryClient.invalidateQueries(['nextLevel', user?.id]);
@@ -121,13 +131,21 @@ export const GameProvider = ({ children }) => {
           user.totalScore = data.data.totalScore;
         }
 
-        // Clear current selection
-        setGameState(prev => ({
-          ...prev,
-          selectedNodes: [],
-          selectionPreview: '',
-          currentWord: '',
-        }));
+        // Clear current selection and update completed words locally
+        setGameState(prev => {
+          const solvedWord = data?.data?.solvedWord?.text?.toUpperCase();
+          const updatedCompletedWords = solvedWord
+            ? Array.from(new Set([...prev.completedWords, solvedWord]))
+            : prev.completedWords;
+
+          return {
+            ...prev,
+            selectedNodes: [],
+            selectionPreview: '',
+            currentWord: '',
+            completedWords: updatedCompletedWords,
+          };
+        });
 
         // Invalidate queries to refetch and get updated completed words
         queryClient.invalidateQueries(['nextLevel', user?.id]);
