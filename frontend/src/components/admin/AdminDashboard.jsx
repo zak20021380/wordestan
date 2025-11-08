@@ -1,10 +1,10 @@
 import { useQuery } from 'react-query';
 import { motion } from 'framer-motion';
 import { adminService } from '../../services/adminService';
-import { 
-  Users, 
-  Layers, 
-  Words, 
+import {
+  Users,
+  Layers,
+  Type,
   ShoppingCart,
   TrendingUp,
   DollarSign,
@@ -50,7 +50,7 @@ const AdminDashboard = () => {
     {
       title: 'Total Words',
       value: stats?.overview?.totalWords || 0,
-      icon: Words,
+      icon: Type,
       color: 'text-purple-400',
       bgColor: 'bg-purple-500/20'
     },
@@ -212,7 +212,7 @@ const AdminDashboard = () => {
             className="bg-glass backdrop-blur-lg rounded-xl border border-glass-border p-4 hover:bg-glass-hover transition-colors cursor-pointer"
           >
             <div className="text-center">
-              <Words className="w-8 h-8 text-secondary-400 mx-auto mb-2" />
+              <Type className="w-8 h-8 text-secondary-400 mx-auto mb-2" />
               <div className="text-white font-medium">Add Words</div>
               <div className="text-white/60 text-sm">Create new word entries</div>
             </div>
