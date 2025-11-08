@@ -50,34 +50,16 @@ const wordValidation = [
 ];
 
 const levelValidation = [
-  body('name')
-    .isLength({ min: 1, max: 100 })
-    .withMessage('Level name must be between 1 and 100 characters'),
-  body('order')
-    .isInt({ min: 1 })
-    .withMessage('Order must be a positive integer'),
-  body('words')
-    .isArray({ min: 1 })
-    .withMessage('Words array must contain at least one word'),
-  body('words.*')
-    .isMongoId()
-    .withMessage('Each word must be a valid ObjectId'),
   body('letters')
-    .isArray({ min: 5, max: 12 })
-    .withMessage('Letters array must contain between 5 and 12 letters'),
-  body('letters.*')
-    .isLength({ min: 1, max: 1 })
-    .withMessage('Each letter must be a single character'),
-  body('centerLetter')
-    .isLength({ min: 1, max: 1 })
-    .withMessage('Center letter must be a single character'),
-  body('difficulty')
-    .isIn(['easy', 'medium', 'hard'])
-    .withMessage('Difficulty must be easy, medium, or hard'),
-  body('description')
     .optional()
-    .isLength({ max: 500 })
-    .withMessage('Description must be less than 500 characters')
+    .isString()
+    .isLength({ min: 1 })
+    .withMessage('Letters must be a non-empty string')
+    .matches(/^[A-Za-z]+$/)
+    .withMessage('Letters can only contain alphabetic characters'),
+  body('words')
+    .optional()
+    .withMessage('Words can be a string or array')
 ];
 
 const coinPackValidation = [

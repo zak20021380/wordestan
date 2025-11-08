@@ -1,183 +1,243 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Search, Edit, Trash2, Layers, Play, Eye } from 'lucide-react';
+import { Plus, Trash2, Layers, CheckCircle } from 'lucide-react';
+import { adminService } from '../../services/adminService';
 
 const LevelManagement = () => {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [levels, setLevels] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  // Form state
+  const [letters, setLetters] = useState('');
+  const [words, setWords] = useState('');
+
+  useEffect(() => {
+    fetchLevels();
+  }, []);
+
+  const fetchLevels = async () => {
+    try {
+      setLoading(true);
+      const response = await adminService.getLevels({ limit: 100 });
+      setLevels(response.data.levels);
+    } catch (err) {
+      setError(err.message || 'Failed to fetch levels');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateLevel = async (e) => {
+    e.preventDefault();
+
+    if (!letters.trim() || !words.trim()) {
+      setError('لطفاً همه فیلدها رو پر کن!');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError('');
+
+      await adminService.createLevel({
+        letters: letters.trim(),
+        words: words.trim()
+      });
+
+      setSuccess('مرحله جدید با موفقیت ساخته شد! 🎉');
+      setLetters('');
+      setWords('');
+      setShowModal(false);
+
+      // Refresh levels list
+      await fetchLevels();
+
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError(err.message || 'Failed to create level');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteLevel = async (id) => {
+    if (!window.confirm('آیا مطمئن هستی که می‌خوای این مرحله رو پاک کنی؟')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await adminService.deleteLevel(id);
+      setSuccess('مرحله با موفقیت حذف شد!');
+      await fetchLevels();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError(err.message || 'Failed to delete level');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-white mb-2">Level Management</h2>
-          <p className="text-white/60">Create and manage game levels</p>
+          <h2 className="text-2xl font-bold text-white mb-2">مدیریت مراحل</h2>
+          <p className="text-white/60">ساخت و مدیریت مراحل بازی - فقط با حروف و کلمات!</p>
         </div>
-        
+
         <button
           onClick={() => setShowModal(true)}
-          className="bg-primary-500 hover:bg-primary-600 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center space-x-2"
+          className="bg-primary-500 hover:bg-primary-600 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center space-x-2 space-x-reverse"
         >
           <Plus className="w-5 h-5" />
-          <span>Create Level</span>
+          <span>مرحله جدید</span>
         </button>
       </div>
 
-      {/* Search Bar */}
-      <div className="bg-glass backdrop-blur-lg rounded-xl border border-glass-border p-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/40" />
-          <input
-            type="text"
-            placeholder="Search levels..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-glass-hover border border-glass-border rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-primary-400 transition-colors"
-          />
+      {/* Success/Error Messages */}
+      {success && (
+        <div className="bg-green-500/20 border border-green-500 rounded-lg p-4">
+          <p className="text-green-400 text-center font-medium">{success}</p>
         </div>
-      </div>
+      )}
+
+      {error && (
+        <div className="bg-danger/20 border border-danger rounded-lg p-4">
+          <p className="text-danger text-center font-medium">{error}</p>
+        </div>
+      )}
 
       {/* Levels Grid */}
       <div className="bg-glass backdrop-blur-lg rounded-2xl border border-glass-border p-6">
-        <div className="grid gap-4">
-          {[1, 2, 3, 4, 5].map((levelNum) => (
-            <motion.div
-              key={levelNum}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: levelNum * 0.1 }}
-              className="flex items-center justify-between bg-glass-hover rounded-lg p-4 hover:bg-glass transition-colors"
-            >
-              <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 bg-gradient-to-r from-secondary-500 to-secondary-700 rounded-lg flex items-center justify-center">
-                  <Layers className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <div className="text-white font-bold text-lg">Level {levelNum}: Animal Kingdom</div>
-                  <div className="text-white/60 text-sm">
-                    5 words • Easy • Published • 127 completions
+        {loading && levels.length === 0 ? (
+          <div className="text-center text-white/60 py-8">در حال بارگذاری...</div>
+        ) : levels.length === 0 ? (
+          <div className="text-center text-white/60 py-8">هنوز مرحله‌ای نساخته شده!</div>
+        ) : (
+          <div className="grid gap-4">
+            {levels.map((level, index) => (
+              <motion.div
+                key={level._id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+                className="flex items-center justify-between bg-glass-hover rounded-lg p-4 hover:bg-glass transition-colors"
+              >
+                <div className="flex items-center space-x-4 space-x-reverse">
+                  <div className="w-12 h-12 bg-gradient-to-r from-secondary-500 to-secondary-700 rounded-lg flex items-center justify-center">
+                    <Layers className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <div className="text-white font-bold text-lg">
+                      مرحله {level.order}: {level.letters}
+                    </div>
+                    <div className="text-white/60 text-sm">
+                      {level.words.length} کلمه
+                      {level.isPublished && (
+                        <span className="mr-2 text-green-400">• منتشر شده</span>
+                      )}
+                    </div>
+                    <div className="text-white/40 text-xs mt-1">
+                      کلمات: {level.words.map(w => w.text).join(', ')}
+                    </div>
                   </div>
                 </div>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <button className="p-2 text-white/60 hover:text-white hover:bg-glass rounded-lg transition-colors">
-                  <Eye className="w-4 h-4" />
-                </button>
-                <button className="p-2 text-white/60 hover:text-white hover:bg-glass rounded-lg transition-colors">
-                  <Play className="w-4 h-4" />
-                </button>
-                <button className="p-2 text-white/60 hover:text-white hover:bg-glass rounded-lg transition-colors">
-                  <Edit className="w-4 h-4" />
-                </button>
-                <button className="p-2 text-white/60 hover:text-danger hover:bg-glass rounded-lg transition-colors">
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+
+                <div className="flex items-center space-x-2 space-x-reverse">
+                  {level.isPublished && (
+                    <div className="p-2 text-green-400">
+                      <CheckCircle className="w-5 h-5" />
+                    </div>
+                  )}
+                  <button
+                    onClick={() => handleDeleteLevel(level._id)}
+                    className="p-2 text-white/60 hover:text-danger hover:bg-glass rounded-lg transition-colors"
+                    disabled={loading}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Create Level Modal */}
+      {/* Create Level Modal - SUPER SIMPLE! */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-glass backdrop-blur-lg rounded-2xl border border-glass-border p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
+            className="bg-glass backdrop-blur-lg rounded-2xl border border-glass-border p-8 max-w-2xl w-full mx-4"
           >
-            <h3 className="text-xl font-bold text-white mb-6">Create New Level</h3>
-            
-            <div className="space-y-4">
+            <h3 className="text-xl font-bold text-white mb-6">مرحله جدید</h3>
+
+            <form onSubmit={handleCreateLevel} className="space-y-4">
+              {/* Letters Input */}
               <div>
-                <label className="block text-white font-medium mb-2">Level Name</label>
+                <label className="block text-white font-medium mb-2">
+                  حروف (مثلاً: AWET)
+                </label>
                 <input
                   type="text"
-                  placeholder="Enter level name"
-                  className="w-full px-4 py-3 bg-glass-hover border border-glass-border rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-primary-400"
+                  placeholder="حروف رو بنویس..."
+                  value={letters}
+                  onChange={(e) => setLetters(e.target.value.toUpperCase())}
+                  className="w-full px-4 py-3 bg-glass-hover border border-glass-border rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-primary-400 text-2xl font-bold text-center tracking-widest"
+                  disabled={loading}
                 />
+                <p className="text-white/40 text-sm mt-1">
+                  حروفی که بازیکن باید ازشون کلمه بسازه
+                </p>
               </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-white font-medium mb-2">Order</label>
-                  <input
-                    type="number"
-                    placeholder="Level order"
-                    className="w-full px-4 py-3 bg-glass-hover border border-glass-border rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-primary-400"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-white font-medium mb-2">Difficulty</label>
-                  <select className="w-full px-4 py-3 bg-glass-hover border border-glass-border rounded-lg text-white focus:outline-none focus:border-primary-400">
-                    <option value="easy">Easy</option>
-                    <option value="medium">Medium</option>
-                    <option value="hard">Hard</option>
-                  </select>
-                </div>
-              </div>
-              
+
+              {/* Words Input */}
               <div>
-                <label className="block text-white font-medium mb-2">Description</label>
+                <label className="block text-white font-medium mb-2">
+                  کلمات (هر کدوم تو یه خط یا با کاما جدا کن)
+                </label>
                 <textarea
-                  placeholder="Enter level description"
-                  rows={3}
-                  className="w-full px-4 py-3 bg-glass-hover border border-glass-border rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-primary-400 resize-none"
+                  placeholder="WET, TEA, ATE یا هر کدوم تو یه خط"
+                  value={words}
+                  onChange={(e) => setWords(e.target.value)}
+                  rows={6}
+                  className="w-full px-4 py-3 bg-glass-hover border border-glass-border rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-primary-400 resize-none font-mono"
+                  disabled={loading}
                 />
+                <p className="text-white/40 text-sm mt-1">
+                  کلماتی که باید پیدا بشن - سیستم خودکار اونا رو ایجاد می‌کنه!
+                </p>
               </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-white font-medium mb-2">Letters</label>
-                  <input
-                    type="text"
-                    placeholder="Enter letters (e.g., CATDOG)"
-                    className="w-full px-4 py-3 bg-glass-hover border border-glass-border rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-primary-400"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-white font-medium mb-2">Center Letter</label>
-                  <input
-                    type="text"
-                    placeholder="Center letter"
-                    maxLength={1}
-                    className="w-full px-4 py-3 bg-glass-hover border border-glass-border rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-primary-400"
-                  />
-                </div>
+
+              <div className="flex space-x-4 space-x-reverse mt-8">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowModal(false);
+                    setLetters('');
+                    setWords('');
+                    setError('');
+                  }}
+                  className="flex-1 bg-glass-hover hover:bg-glass text-white font-medium py-3 px-6 rounded-lg transition-colors"
+                  disabled={loading}
+                >
+                  لغو
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 bg-primary-500 hover:bg-primary-600 text-white font-medium py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={loading}
+                >
+                  {loading ? 'در حال ساخت...' : 'ساخت مرحله'}
+                </button>
               </div>
-              
-              <div>
-                <label className="block text-white font-medium mb-2">Words</label>
-                <select multiple className="w-full px-4 py-3 bg-glass-hover border border-glass-border rounded-lg text-white focus:outline-none focus:border-primary-400" size={6}>
-                  <option value="">CAT</option>
-                  <option value="">DOG</option>
-                  <option value="">ACT</option>
-                  <option value="">COT</option>
-                  <option value="">DOT</option>
-                  <option value="">GOD</option>
-                </select>
-                <p className="text-white/60 text-sm mt-1">Hold Ctrl/Cmd to select multiple words</p>
-              </div>
-            </div>
-            
-            <div className="flex space-x-4 mt-8">
-              <button
-                onClick={() => setShowModal(false)}
-                className="flex-1 bg-glass-hover hover:bg-glass text-white font-medium py-3 px-6 rounded-lg transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => setShowModal(false)}
-                className="flex-1 bg-primary-500 hover:bg-primary-600 text-white font-medium py-3 px-6 rounded-lg transition-colors"
-              >
-                Create Level
-              </button>
-            </div>
+            </form>
           </motion.div>
         </div>
       )}

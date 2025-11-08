@@ -110,12 +110,8 @@ const completeWord = async (req, res) => {
     if (isLevelCompleted && !user.completedLevels.includes(level._id)) {
       // Award level completion bonus
       const levelReward = parseInt(process.env.LEVEL_COMPLETE_REWARD) || 100;
-      await user.addCoins(levelReward + level.bonusCoins);
+      await user.addCoins(levelReward);
       await user.completeLevel(level._id);
-      
-      // Update level stats
-      level.timesCompleted += 1;
-      await level.save();
     }
 
     res.json({
@@ -127,7 +123,7 @@ const completeWord = async (req, res) => {
         totalCoins: user.coins,
         totalScore: user.totalScore,
         levelCompleted: isLevelCompleted,
-        levelBonus: isLevelCompleted ? level.bonusCoins : 0
+        levelBonus: isLevelCompleted ? levelReward : 0
       }
     });
   } catch (error) {
