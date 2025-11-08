@@ -38,20 +38,20 @@ const Store = () => {
     ({ packId }) => storeService.mockPurchase(packId),
     {
       onSuccess: (data) => {
-        toast.success(`Purchase successful! +${data.data.coinsAwarded} coins`);
+        toast.success(`خرید موفقیت‌آمیز بود! +${data.data.coinsAwarded} سکه`);
         queryClient.invalidateQueries(['coinPacks']);
         queryClient.invalidateQueries(['nextLevel', user?.id]);
         setSelectedPack(null);
       },
       onError: (error) => {
-        toast.error(error.message || 'Purchase failed');
+        toast.error(error.message || 'خرید ناموفق بود');
       },
     }
   );
 
   const handlePurchase = async (pack) => {
     if (user.coins < 0 && pack.price > 0) {
-      toast.error('Not enough coins for this purchase');
+      toast.error('سکه کافی برای این خرید ندارید');
       return;
     }
 
@@ -88,10 +88,10 @@ const Store = () => {
       >
         <div className="flex items-center justify-center space-x-3 mb-4">
           <ShoppingCart className="w-10 h-10 text-primary-400" />
-          <h1 className="text-4xl font-bold text-white">Coin Store</h1>
+          <h1 className="text-4xl font-bold text-white">فروشگاه سکه</h1>
         </div>
         <p className="text-xl text-white/80 max-w-2xl mx-auto">
-          Get coins to unlock hints, auto-solve features, and enhance your gaming experience
+          سکه بخرید تا راهنمایی‌ها، ویژگی حل خودکار و تجربه بازی خود را بهبود بخشید
         </p>
       </motion.div>
 
@@ -104,15 +104,15 @@ const Store = () => {
       >
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-bold text-white mb-1">Your Balance</h2>
-            <p className="text-white/60">Current coin balance</p>
+            <h2 className="text-2xl font-bold text-white mb-1">موجودی شما</h2>
+            <p className="text-white/60">موجودی فعلی سکه</p>
           </div>
           <div className="text-right">
             <div className="flex items-center space-x-2 text-3xl font-bold text-accent-400 mb-1">
               <Coins className="w-8 h-8" />
               <span>{user?.coins?.toLocaleString() || 0}</span>
             </div>
-            <p className="text-white/60 text-sm">Coins</p>
+            <p className="text-white/60 text-sm">سکه</p>
           </div>
         </div>
       </motion.div>
@@ -140,13 +140,13 @@ const Store = () => {
               
               {pack.featured && (
                 <span className="bg-gradient-to-r from-primary-500/20 to-secondary-500/20 text-primary-400 text-xs font-medium px-2 py-1 rounded-full border border-primary-400/30">
-                  Featured
+                  ویژه
                 </span>
               )}
 
               {pack.popular && (
                 <span className="bg-gradient-to-r from-secondary-500/20 to-accent-500/20 text-secondary-400 text-xs font-medium px-2 py-1 rounded-full border border-secondary-400/30">
-                  Popular
+                  محبوب
                 </span>
               )}
             </div>
@@ -168,12 +168,12 @@ const Store = () => {
               {pack.bonusCoins > 0 && (
                 <div className="flex items-center justify-center space-x-1 text-green-400 text-sm">
                   <Plus className="w-4 h-4" />
-                  <span>+{pack.bonusCoins} bonus coins</span>
+                  <span>+{pack.bonusCoins} سکه جایزه</span>
                 </div>
               )}
-              
+
               <div className="text-white/60 text-sm mt-1">
-                Total: {pack.totalCoins.toLocaleString()} coins
+                جمع: {pack.totalCoins.toLocaleString()} سکه
               </div>
             </div>
 
@@ -196,12 +196,12 @@ const Store = () => {
               {purchaseMutation.isLoading && selectedPack === pack._id ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>Processing...</span>
+                  <span>در حال پردازش...</span>
                 </>
               ) : (
                 <>
                   <ShoppingCart className="w-5 h-5" />
-                  <span>Purchase</span>
+                  <span>خرید</span>
                 </>
               )}
             </button>
@@ -216,31 +216,31 @@ const Store = () => {
         transition={{ delay: 0.6 }}
         className="bg-glass backdrop-blur-lg rounded-2xl border border-glass-border p-8"
       >
-        <h2 className="text-2xl font-bold text-white text-center mb-8">What You Can Do With Coins</h2>
-        
+        <h2 className="text-2xl font-bold text-white text-center mb-8">کارهایی که می‌توانید با سکه انجام دهید</h2>
+
         <div className="grid md:grid-cols-3 gap-6">
           <div className="text-center">
             <div className="w-16 h-16 bg-secondary-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
               <Lightbulb className="w-8 h-8 text-secondary-400" />
             </div>
-            <h3 className="text-lg font-semibold text-white mb-2">Get Hints</h3>
-            <p className="text-white/60">Reveal the next letter in a word for 10 coins</p>
+            <h3 className="text-lg font-semibold text-white mb-2">دریافت راهنمایی</h3>
+            <p className="text-white/60">حرف بعدی در یک کلمه را با 10 سکه نمایش دهید</p>
           </div>
-          
+
           <div className="text-center">
             <div className="w-16 h-16 bg-primary-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
               <Sparkles className="w-8 h-8 text-primary-400" />
             </div>
-            <h3 className="text-lg font-semibold text-white mb-2">Auto Solve</h3>
-            <p className="text-white/60">Automatically complete a word for 50 coins</p>
+            <h3 className="text-lg font-semibold text-white mb-2">حل خودکار</h3>
+            <p className="text-white/60">یک کلمه را به طور خودکار با 50 سکه کامل کنید</p>
           </div>
-          
+
           <div className="text-center">
             <div className="w-16 h-16 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
               <Trophy className="w-8 h-8 text-purple-400" />
             </div>
-            <h3 className="text-lg font-semibold text-white mb-2">Boost Progress</h3>
-            <p className="text-white/60">Complete levels faster and climb the leaderboard</p>
+            <h3 className="text-lg font-semibold text-white mb-2">تسریع پیشرفت</h3>
+            <p className="text-white/60">مراحل را سریع‌تر کامل کنید و در جدول امتیازات بالا بروید</p>
           </div>
         </div>
       </motion.div>
@@ -280,7 +280,7 @@ const PurchaseHistory = () => {
 
   return (
     <div className="bg-glass backdrop-blur-lg rounded-2xl border border-glass-border p-8">
-      <h2 className="text-2xl font-bold text-white mb-6">Purchase History</h2>
+      <h2 className="text-2xl font-bold text-white mb-6">تاریخچه خرید</h2>
       
       {purchases?.data?.purchases?.length > 0 ? (
         <div className="space-y-3">
@@ -291,7 +291,7 @@ const PurchaseHistory = () => {
             >
               <div>
                 <div className="text-white font-medium">
-                  {purchase.packId?.title || 'Coin Pack'}
+                  {purchase.packId?.title || 'بسته سکه'}
                 </div>
                 <div className="text-white/60 text-sm">
                   {new Date(purchase.createdAt).toLocaleDateString()}
@@ -311,7 +311,7 @@ const PurchaseHistory = () => {
         </div>
       ) : (
         <div className="text-center text-white/40 py-8">
-          No purchases yet
+          هنوز خریدی انجام نشده است
         </div>
       )}
     </div>
