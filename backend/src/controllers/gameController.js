@@ -27,10 +27,19 @@ const getNextLevel = async (req, res) => {
     // Update user's last active
     await user.updateLastActive();
 
+    const levelObject = nextLevel.toObject({ getters: true });
+
+    const completedWords = levelObject.words
+      .filter(word =>
+        user.completedWords.some(completedId => completedId.equals(word._id))
+      )
+      .map(word => word.text);
+
     res.json({
       success: true,
       data: {
-        level: nextLevel,
+        level: levelObject,
+        completedWords,
         userProgress: {
           currentLevel: user.currentLevel,
           levelsCleared: user.levelsCleared,

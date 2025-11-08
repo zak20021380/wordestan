@@ -37,8 +37,24 @@ export const GameProvider = ({ children }) => {
         // Handle null when no more levels are available
         if (data === null) {
           setCurrentLevel(null);
+          setGameState(prev => ({
+            ...prev,
+            selectedNodes: [],
+            selectionPreview: '',
+            currentWord: '',
+            completedWords: [],
+          }));
         } else {
           setCurrentLevel(data.level);
+          setGameState(prev => ({
+            ...prev,
+            selectedNodes: [],
+            selectionPreview: '',
+            currentWord: '',
+            completedWords: Array.from(
+              new Set((data.completedWords ?? []).filter(Boolean))
+            ),
+          }));
         }
       },
     }
@@ -58,7 +74,9 @@ export const GameProvider = ({ children }) => {
         // Add word to completed words
         setGameState(prev => ({
           ...prev,
-          completedWords: [...prev.completedWords, data.data.word.text],
+          completedWords: Array.from(
+            new Set([...prev.completedWords, data.data.word.text])
+          ),
           selectedNodes: [],
           selectionPreview: '',
           currentWord: '',
@@ -109,7 +127,9 @@ export const GameProvider = ({ children }) => {
         // Add word to completed words
         setGameState(prev => ({
           ...prev,
-          completedWords: [...prev.completedWords, data.data.solvedWord.text],
+          completedWords: Array.from(
+            new Set([...prev.completedWords, data.data.solvedWord.text])
+          ),
           selectedNodes: [],
           selectionPreview: '',
           currentWord: '',
