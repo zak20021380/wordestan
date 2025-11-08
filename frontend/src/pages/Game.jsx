@@ -226,32 +226,6 @@ const Game = () => {
               </button>
             </div>
 
-            {/* Success/Error Messages */}
-            <AnimatePresence>
-              {showSuccess && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  className="mt-4 p-4 bg-success/20 border border-success/30 rounded-lg text-success flex items-center space-x-2 space-x-reverse"
-                >
-                  <CheckCircle className="w-5 h-5" />
-                  <span>آفرین! درست بود! ✨</span>
-                </motion.div>
-              )}
-
-              {showError && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  className="mt-4 p-4 bg-danger/20 border border-danger/30 rounded-lg text-danger flex items-center space-x-2 space-x-reverse"
-                >
-                  <XCircle className="w-5 h-5" />
-                  <span>{errorMessage}</span>
-                </motion.div>
-              )}
-            </AnimatePresence>
           </motion.div>
         </div>
 
@@ -366,6 +340,79 @@ const Game = () => {
           </motion.div>
         </div>
       </div>
+
+      {/* Centered Success/Error Popups */}
+      <AnimatePresence>
+        {showSuccess && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.5 }}
+            transition={{ type: "spring", duration: 0.5 }}
+            className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none"
+          >
+            <div className="bg-gradient-to-br from-green-500/30 to-emerald-500/30 backdrop-blur-xl border-2 border-green-400/50 rounded-2xl p-8 shadow-[0_0_50px_rgba(34,197,94,0.5)] pointer-events-auto">
+              <div className="flex flex-col items-center space-y-4">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                >
+                  <CheckCircle className="w-20 h-20 text-green-400 drop-shadow-[0_0_20px_rgba(34,197,94,0.8)]" />
+                </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="text-center"
+                >
+                  <h3 className="text-3xl font-bold text-green-400 mb-2 drop-shadow-[0_0_10px_rgba(34,197,94,0.5)]">
+                    آفرین! 🎉
+                  </h3>
+                  <p className="text-xl text-white/90">
+                    درست بود! ✨
+                  </p>
+                </motion.div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {showError && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.5 }}
+            transition={{ type: "spring", duration: 0.5 }}
+            className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none"
+          >
+            <div className="bg-gradient-to-br from-red-500/30 to-pink-500/30 backdrop-blur-xl border-2 border-red-400/50 rounded-2xl p-8 shadow-[0_0_50px_rgba(239,68,68,0.5)] pointer-events-auto">
+              <div className="flex flex-col items-center space-y-4">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                >
+                  <XCircle className="w-20 h-20 text-red-400 drop-shadow-[0_0_20px_rgba(239,68,68,0.8)]" />
+                </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="text-center"
+                >
+                  <h3 className="text-3xl font-bold text-red-400 mb-2 drop-shadow-[0_0_10px_rgba(239,68,68,0.5)]">
+                    اشتباه! ❌
+                  </h3>
+                  <p className="text-xl text-white/90">
+                    {errorMessage}
+                  </p>
+                </motion.div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
