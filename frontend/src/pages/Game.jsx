@@ -41,10 +41,15 @@ const Game = () => {
 
     try {
       const result = await submitWord();
-      showSuccessMessage(result.message);
+
+      if (result?.message) {
+        showSuccessMessage(result.message);
+      } else {
+        showSuccessMessage('کلمه ثبت شد!');
+      }
 
       // Update user coins if provided
-      if (result.data) {
+      if (result?.data) {
         user.coins = result.data.totalCoins;
         user.totalScore = result.data.totalScore;
       }

@@ -203,13 +203,15 @@ export const GameProvider = ({ children }) => {
   };
 
   const submitWord = async () => {
-    if (!gameState.currentWord || !currentLevel) return;
-    
+    if (!gameState.currentWord || !currentLevel) return null;
+
     try {
-      await completeWordMutation.mutateAsync({
+      const result = await completeWordMutation.mutateAsync({
         word: gameState.currentWord,
         levelId: currentLevel._id,
       });
+
+      return result;
     } catch (error) {
       clearSelection();
       throw error;
