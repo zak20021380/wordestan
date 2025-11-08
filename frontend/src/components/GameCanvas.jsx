@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGame } from '../contexts/GameContext';
 
@@ -35,19 +35,28 @@ const GameCanvas = () => {
   }, [currentLevel?.letters, canvasSize]);
 
   // Handle mouse/touch events
-  const getEventPosition = useCallback((e) => {
+  const getEventPosition = useCallback((event) => {
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
 
     const rect = canvas.getBoundingClientRect();
-    const clientX = e.clientX || (e.touches && e.touches[0].clientX);
-    const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+    const clientX =
+      'touches' in event && event.touches?.length
+        ? event.touches[0].clientX
+        : event.clientX;
+    const clientY =
+      'touches' in event && event.touches?.length
+        ? event.touches[0].clientY
+        : event.clientY;
+
+    const scaleX = canvasSize.width / rect.width;
+    const scaleY = canvasSize.height / rect.height;
 
     return {
-      x: (clientX - rect.left) * (canvas.width / rect.width),
-      y: (clientY - rect.top) * (canvas.height / rect.height),
+      x: (clientX - rect.left) * scaleX,
+      y: (clientY - rect.top) * scaleY,
     };
-  }, []);
+  }, [canvasSize.height, canvasSize.width]);
 
   const getLetterAtPosition = useCallback((pos) => {
     const threshold = 30; // Distance threshold
@@ -64,23 +73,31 @@ const GameCanvas = () => {
     return null;
   }, [letterPositions]);
 
-  const handleStart = useCallback((e) => {
-    e.preventDefault();
-    const pos = getEventPosition(e);
+  const handleStart = useCallback((event) => {
+    event.preventDefault();
+    const pos = getEventPosition(event);
     const letter = getLetterAtPosition(pos);
-    
+
     if (letter) {
+      const svg = canvasRef.current;
+      if (svg && 'pointerId' in event) {
+        try {
+          svg.setPointerCapture(event.pointerId);
+        } catch (err) {
+          // Safari can throw if capture is unavailable; ignore silently
+        }
+      }
       setIsConnecting(true);
       selectLetter(letter);
       setMousePos(pos);
     }
   }, [getEventPosition, getLetterAtPosition, selectLetter]);
 
-  const handleMove = useCallback((e) => {
-    e.preventDefault();
+  const handleMove = useCallback((event) => {
     if (!isConnecting) return;
+    event.preventDefault();
 
-    const pos = getEventPosition(e);
+    const pos = getEventPosition(event);
     setMousePos(pos);
 
     const letter = getLetterAtPosition(pos);
@@ -89,35 +106,55 @@ const GameCanvas = () => {
     }
   }, [isConnecting, getEventPosition, getLetterAtPosition, selectLetter, gameState.selectedLetters]);
 
-  const handleEnd = useCallback((e) => {
-    e.preventDefault();
+  const handleEnd = useCallback((event) => {
+    event.preventDefault();
+    const svg = canvasRef.current;
+    if (svg && 'pointerId' in event) {
+      try {
+        svg.releasePointerCapture(event.pointerId);
+      } catch (err) {
+        // Ignore release errors when pointer wasn't captured
+      }
+    }
     setIsConnecting(false);
-    
+
     if (gameState.selectedLetters.length > 0) {
-      // Submit the word if it's valid length
-      if (gameState.currentWord.length >= 3) {
-        // Word will be submitted by parent component
-      } else {
+      if (gameState.currentWord.length < 3) {
         clearSelection();
       }
     }
   }, [gameState.selectedLetters.length, gameState.currentWord.length, clearSelection]);
 
-  // Generate SVG path for connection line
-  const generatePath = () => {
-    if (gameState.selectedLetters.length === 0) return '';
+  const handleCancel = useCallback((event) => {
+    if (!isConnecting) return;
+    handleEnd(event);
+  }, [handleEnd, isConnecting]);
 
-    const points = gameState.selectedLetters.map(letter => {
-      const pos = letterPositions[letter];
-      return pos ? `${pos.x},${pos.y}` : '';
-    }).filter(Boolean);
+  // Generate SVG path for connection line
+  const connectionPoints = useMemo(() => {
+    const points = gameState.selectedLetters
+      .map(letter => letterPositions[letter])
+      .filter(Boolean);
 
     if (isConnecting && points.length > 0) {
-      points.push(`${mousePos.x},${mousePos.y}`);
+      return [...points, mousePos];
     }
 
-    return points.join(' ');
-  };
+    return points;
+  }, [gameState.selectedLetters, letterPositions, isConnecting, mousePos]);
+
+  const generatePath = useCallback(() => {
+    if (connectionPoints.length === 0) return '';
+
+    const [first, ...rest] = connectionPoints;
+    let path = `M ${first.x} ${first.y}`;
+
+    rest.forEach(point => {
+      path += ` L ${point.x} ${point.y}`;
+    });
+
+    return path;
+  }, [connectionPoints]);
 
   // Resize handler
   useEffect(() => {
@@ -145,42 +182,43 @@ const GameCanvas = () => {
   return (
     <div className="relative w-full max-w-lg mx-auto">
       {/* Game Canvas */}
-      <div className="relative bg-glass/20 backdrop-blur-sm rounded-2xl border border-glass-border p-4">
+      <div className="relative rounded-3xl border border-purple-500/30 bg-[radial-gradient(circle_at_top,#2e1065_0%,#1a1033_55%,#130a23_100%)] shadow-[0_30px_60px_rgba(17,12,28,0.45)] p-5">
         <svg
           ref={canvasRef}
           width={canvasSize.width}
           height={canvasSize.height}
+          viewBox={`0 0 ${canvasSize.width} ${canvasSize.height}`}
           className="w-full h-auto select-none touch-none"
-          onMouseDown={handleStart}
-          onMouseMove={handleMove}
-          onMouseUp={handleEnd}
-          onMouseLeave={handleEnd}
-          onTouchStart={handleStart}
-          onTouchMove={handleMove}
-          onTouchEnd={handleEnd}
+          onPointerDown={handleStart}
+          onPointerMove={handleMove}
+          onPointerUp={handleEnd}
+          onPointerLeave={handleCancel}
+          onPointerCancel={handleCancel}
+          style={{ touchAction: 'none' }}
         >
           {/* Connection line */}
           <AnimatePresence>
-            {gameState.selectedLetters.length > 0 && (
-              <motion.polyline
+            {isConnecting && connectionPoints.length > 0 && (
+              <motion.path
+                key="connection-line"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                points={generatePath()}
+                d={generatePath()}
                 fill="none"
                 stroke="url(#connectionGradient)"
-                strokeWidth="5"
+                strokeWidth="6"
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 filter="url(#neonGlow)"
-                className="drop-shadow-[0_0_15px_rgba(168,85,247,0.8)]"
+                className="pointer-events-none"
               />
             )}
           </AnimatePresence>
 
           {/* Gradient definitions */}
           <defs>
-            <linearGradient id="connectionGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <linearGradient id="connectionGradient" x1="0" y1="0" x2={canvasSize.width} y2={canvasSize.height} gradientUnits="userSpaceOnUse">
               <stop offset="0%" stopColor="#a855f7" />
               <stop offset="50%" stopColor="#d946ef" />
               <stop offset="100%" stopColor="#06b6d4" />
@@ -189,11 +227,16 @@ const GameCanvas = () => {
               <stop offset="0%" stopColor="#d946ef" />
               <stop offset="100%" stopColor="#06b6d4" />
             </linearGradient>
-            <filter id="neonGlow">
-              <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+            <filter id="neonGlow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="6" result="coloredBlur" />
+              <feColorMatrix
+                in="coloredBlur"
+                type="matrix"
+                values="0 0 0 0 0.66  0 0 0 0 0.33  0 0 0 0 0.93  0 0 0 0.6 0"
+              />
               <feMerge>
-                <feMergeNode in="coloredBlur"/>
-                <feMergeNode in="SourceGraphic"/>
+                <feMergeNode />
+                <feMergeNode in="SourceGraphic" />
               </feMerge>
             </filter>
           </defs>
