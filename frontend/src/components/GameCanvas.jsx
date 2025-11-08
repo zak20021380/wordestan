@@ -1,13 +1,20 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { toast } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGame } from '../contexts/GameContext';
 
 const GameCanvas = () => {
-  const { currentLevel, gameState, selectLetter, deselectLetter, clearSelection } = useGame();
+  const {
+    currentLevel,
+    gameState,
+    selectLetter,
+    clearSelection,
+    setCurrentWord,
+  } = useGame();
   const canvasRef = useRef(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const [letterPositions, setLetterPositions] = useState({});
+  const [letterPositions, setLetterPositions] = useState([]);
   const [canvasSize, setCanvasSize] = useState({ width: 400, height: 400 });
 
   // Calculate letter positions in a circle
@@ -18,14 +25,14 @@ const GameCanvas = () => {
     const centerY = canvasSize.height / 2;
     const radius = Math.min(canvasSize.width, canvasSize.height) * 0.35;
 
-    const positions = {};
-    // Convert letters string to array
     const letters = currentLevel.letters.split('');
     const angleStep = (2 * Math.PI) / letters.length;
 
-    letters.forEach((letter, index) => {
+    const positions = letters.map((letter, index) => {
       const angle = index * angleStep - Math.PI / 2; // Start from top
-      positions[letter] = {
+      return {
+        id: `${letter}-${index}`,
+        letter,
         x: centerX + radius * Math.cos(angle),
         y: centerY + radius * Math.sin(angle),
       };
@@ -33,6 +40,22 @@ const GameCanvas = () => {
 
     setLetterPositions(positions);
   }, [currentLevel?.letters, canvasSize]);
+
+  const letterPositionMap = useMemo(() => {
+    const map = new Map();
+    letterPositions.forEach(position => {
+      map.set(position.id, position);
+    });
+    return map;
+  }, [letterPositions]);
+
+  const levelWords = useMemo(() => {
+    if (!currentLevel?.words) return [];
+
+    return currentLevel.words
+      .map(word => (typeof word === 'string' ? word : word.text ?? ''))
+      .map(word => word.toUpperCase());
+  }, [currentLevel?.words]);
 
   // Handle mouse/touch events
   const getEventPosition = useCallback((event) => {
@@ -60,14 +83,14 @@ const GameCanvas = () => {
 
   const getLetterAtPosition = useCallback((pos) => {
     const threshold = 30; // Distance threshold
-    
-    for (const [letter, position] of Object.entries(letterPositions)) {
+
+    for (const position of letterPositions) {
       const distance = Math.sqrt(
         Math.pow(pos.x - position.x, 2) + Math.pow(pos.y - position.y, 2)
       );
-      
+
       if (distance < threshold) {
-        return letter;
+        return position;
       }
     }
     return null;
@@ -79,6 +102,10 @@ const GameCanvas = () => {
     const letter = getLetterAtPosition(pos);
 
     if (letter) {
+      if (gameState.selectedNodes.length > 0 || gameState.currentWord) {
+        clearSelection();
+      }
+
       const svg = canvasRef.current;
       if (svg && 'pointerId' in event) {
         try {
@@ -87,11 +114,20 @@ const GameCanvas = () => {
           // Safari can throw if capture is unavailable; ignore silently
         }
       }
+      setCurrentWord('');
       setIsConnecting(true);
       selectLetter(letter);
       setMousePos(pos);
     }
-  }, [getEventPosition, getLetterAtPosition, selectLetter]);
+  }, [
+    clearSelection,
+    gameState.currentWord,
+    gameState.selectedNodes.length,
+    getEventPosition,
+    getLetterAtPosition,
+    selectLetter,
+    setCurrentWord,
+  ]);
 
   const handleMove = useCallback((event) => {
     if (!isConnecting) return;
@@ -101,10 +137,19 @@ const GameCanvas = () => {
     setMousePos(pos);
 
     const letter = getLetterAtPosition(pos);
-    if (letter && !gameState.selectedLetters.includes(letter)) {
+    if (
+      letter &&
+      !gameState.selectedNodes.some(selected => selected.id === letter.id)
+    ) {
       selectLetter(letter);
     }
-  }, [isConnecting, getEventPosition, getLetterAtPosition, selectLetter, gameState.selectedLetters]);
+  }, [
+    isConnecting,
+    getEventPosition,
+    getLetterAtPosition,
+    selectLetter,
+    gameState.selectedNodes,
+  ]);
 
   const handleEnd = useCallback((event) => {
     event.preventDefault();
@@ -118,12 +163,42 @@ const GameCanvas = () => {
     }
     setIsConnecting(false);
 
-    if (gameState.selectedLetters.length > 0) {
-      if (gameState.currentWord.length < 3) {
+    if (gameState.selectedNodes.length > 0) {
+      const formedWord = gameState.selectionPreview;
+
+      if (formedWord.length < 3) {
+        toast.error('کلمه باید حداقل سه حرف داشته باشد.');
         clearSelection();
+        return;
       }
+
+      const normalized = formedWord.toUpperCase();
+      const alreadyCompleted = gameState.completedWords.some(
+        word => word.toUpperCase() === normalized
+      );
+
+      if (alreadyCompleted) {
+        toast.error('این کلمه را قبلاً ثبت کرده‌ای.');
+        clearSelection();
+        return;
+      }
+
+      if (!levelWords.includes(normalized)) {
+        toast.error('این کلمه در فهرست مرحله نیست.');
+        clearSelection();
+        return;
+      }
+
+      setCurrentWord(formedWord);
     }
-  }, [gameState.selectedLetters.length, gameState.currentWord.length, clearSelection]);
+  }, [
+    clearSelection,
+    gameState.completedWords,
+    gameState.selectedNodes.length,
+    gameState.selectionPreview,
+    levelWords,
+    setCurrentWord,
+  ]);
 
   const handleCancel = useCallback((event) => {
     if (!isConnecting) return;
@@ -132,8 +207,8 @@ const GameCanvas = () => {
 
   // Generate SVG path for connection line
   const connectionPoints = useMemo(() => {
-    const points = gameState.selectedLetters
-      .map(letter => letterPositions[letter])
+    const points = gameState.selectedNodes
+      .map(node => letterPositionMap.get(node.id))
       .filter(Boolean);
 
     if (isConnecting && points.length > 0) {
@@ -141,7 +216,7 @@ const GameCanvas = () => {
     }
 
     return points;
-  }, [gameState.selectedLetters, letterPositions, isConnecting, mousePos]);
+  }, [gameState.selectedNodes, letterPositionMap, isConnecting, mousePos]);
 
   const generatePath = useCallback(() => {
     if (connectionPoints.length === 0) return '';
@@ -242,19 +317,18 @@ const GameCanvas = () => {
           </defs>
 
           {/* Letters */}
-          {currentLevel.letters.split('').map((letter, index) => {
-            const position = letterPositions[letter];
-            if (!position) return null;
-
-            const isSelected = gameState.selectedLetters.includes(letter);
-            const isHint = gameState.showHint && gameState.hintLetter === letter;
+          {letterPositions.map(letter => {
+            const isSelected = gameState.selectedNodes.some(
+              node => node.id === letter.id
+            );
+            const isHint = gameState.showHint && gameState.hintLetter === letter.letter;
 
             return (
-              <g key={`${letter}-${index}`}>
+              <g key={letter.id}>
                 {/* Letter circle */}
                 <motion.circle
-                  cx={position.x}
-                  cy={position.y}
+                  cx={letter.x}
+                  cy={letter.y}
                   r="24"
                   className={`cursor-pointer transition-all ${
                     isSelected
@@ -277,22 +351,22 @@ const GameCanvas = () => {
 
                 {/* Letter text */}
                 <text
-                  x={position.x}
-                  y={position.y}
+                  x={letter.x}
+                  y={letter.y}
                   textAnchor="middle"
                   dominantBaseline="middle"
                   className={`pointer-events-none font-bold text-lg ${
                     isSelected || isHint ? 'fill-white' : 'fill-white/80'
                   }`}
                 >
-                  {letter}
+                  {letter.letter}
                 </text>
 
                 {/* Selection indicator */}
                 {isSelected && (
                   <motion.circle
-                    cx={position.x}
-                    cy={position.y}
+                    cx={letter.x}
+                    cy={letter.y}
                     r="32"
                     fill="none"
                     stroke="url(#selectionGradient)"
@@ -310,7 +384,7 @@ const GameCanvas = () => {
 
         {/* Current word display */}
         <AnimatePresence>
-          {gameState.currentWord && (
+          {(gameState.selectionPreview || gameState.currentWord) && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -318,7 +392,7 @@ const GameCanvas = () => {
               className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-purple-500/20 to-pink-500/20 backdrop-blur-sm rounded-lg px-4 py-2 border border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.3)]"
             >
               <span className="font-mono text-lg tracking-wider bg-gradient-to-r from-purple-300 via-pink-300 to-cyan-300 bg-clip-text text-transparent font-bold">
-                {gameState.currentWord}
+                {gameState.selectionPreview || gameState.currentWord}
               </span>
             </motion.div>
           )}
@@ -329,8 +403,10 @@ const GameCanvas = () => {
       <div className="flex justify-center space-x-4 mt-6">
         <button
           onClick={clearSelection}
-          disabled={gameState.selectedLetters.length === 0}
-          className="px-4 py-2 bg-gradient-to-r from-pink-500/20 to-purple-500/20 hover:from-pink-500/30 hover:to-purple-500/30 border border-pink-500/30 text-white rounded-lg transition-all shadow-[0_0_10px_rgba(217,70,239,0.2)] hover:shadow-[0_0_20px_rgba(217,70,239,0.4)] disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={
+            gameState.selectedNodes.length === 0 && !gameState.currentWord
+          }
+          className="px-4 py-2 bg-gradient-to-r from-pink-500/20 to-purple-500/20 hover:from-pink-500/30 hover:to-purple-500/30border border-pink-500/30 text-white rounded-lg transition-all shadow-[0_0_10px_rgba(217,70,239,0.2)] hover:shadow-[0_0_20px_rgba(217,70,239,0.4)] disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Clear
         </button>

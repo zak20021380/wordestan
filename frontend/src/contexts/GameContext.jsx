@@ -18,7 +18,8 @@ export const GameProvider = ({ children }) => {
   const queryClient = useQueryClient();
   const [currentLevel, setCurrentLevel] = useState(null);
   const [gameState, setGameState] = useState({
-    selectedLetters: [],
+    selectedNodes: [],
+    selectionPreview: '',
     currentWord: '',
     completedWords: [],
     isConnecting: false,
@@ -58,7 +59,8 @@ export const GameProvider = ({ children }) => {
         setGameState(prev => ({
           ...prev,
           completedWords: [...prev.completedWords, data.data.word.text],
-          selectedLetters: [],
+          selectedNodes: [],
+          selectionPreview: '',
           currentWord: '',
         }));
 
@@ -108,6 +110,9 @@ export const GameProvider = ({ children }) => {
         setGameState(prev => ({
           ...prev,
           completedWords: [...prev.completedWords, data.data.solvedWord.text],
+          selectedNodes: [],
+          selectionPreview: '',
+          currentWord: '',
         }));
 
         // Invalidate queries
@@ -118,27 +123,53 @@ export const GameProvider = ({ children }) => {
   );
 
   // Letter selection handlers
-  const selectLetter = (letter) => {
-    setGameState(prev => ({
-      ...prev,
-      selectedLetters: [...prev.selectedLetters, letter],
-      currentWord: prev.currentWord + letter,
-    }));
+  const selectLetter = (node) => {
+    setGameState(prev => {
+      if (prev.selectedNodes.some(selected => selected.id === node.id)) {
+        return prev;
+      }
+
+      const updatedNodes = [...prev.selectedNodes, node];
+      const preview = updatedNodes.map(item => item.letter).join('');
+
+      return {
+        ...prev,
+        selectedNodes: updatedNodes,
+        selectionPreview: preview,
+      };
+    });
   };
 
   const deselectLetter = () => {
-    setGameState(prev => ({
-      ...prev,
-      selectedLetters: prev.selectedLetters.slice(0, -1),
-      currentWord: prev.currentWord.slice(0, -1),
-    }));
+    setGameState(prev => {
+      if (prev.selectedNodes.length === 0) {
+        return prev;
+      }
+
+      const updatedNodes = prev.selectedNodes.slice(0, -1);
+      const preview = updatedNodes.map(item => item.letter).join('');
+
+      return {
+        ...prev,
+        selectedNodes: updatedNodes,
+        selectionPreview: preview,
+      };
+    });
   };
 
   const clearSelection = () => {
     setGameState(prev => ({
       ...prev,
-      selectedLetters: [],
+      selectedNodes: [],
+      selectionPreview: '',
       currentWord: '',
+    }));
+  };
+
+  const setCurrentWord = (word) => {
+    setGameState(prev => ({
+      ...prev,
+      currentWord: word,
     }));
   };
 
@@ -184,6 +215,7 @@ export const GameProvider = ({ children }) => {
     selectLetter,
     deselectLetter,
     clearSelection,
+    setCurrentWord,
     submitWord,
     getHint,
     autoSolve,
