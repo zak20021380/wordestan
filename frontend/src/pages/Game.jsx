@@ -35,7 +35,7 @@ const Game = () => {
   // Handle word submission
   const handleSubmitWord = async () => {
     if (!gameState.currentWord || gameState.currentWord.length < 3) {
-      showErrorMessage('کلمه باید حداقل 3 حرف داشته باشد');
+      showErrorMessage('کلمه باید حداقل ۳ حرف باشه!');
       return;
     }
 
@@ -49,7 +49,7 @@ const Game = () => {
         user.totalScore = result.data.totalScore;
       }
     } catch (error) {
-      showErrorMessage(error.message || 'کلمه نامعتبر');
+      showErrorMessage(error.message || 'این کلمه رو نداریم!');
     }
   };
 
@@ -67,27 +67,27 @@ const Game = () => {
 
   const handleGetHint = async () => {
     if (user.coins < 10) {
-      toast.error('سکه کافی برای راهنما وجود ندارد');
+      toast.error('سکه کافی نداری برای راهنما!');
       return;
     }
 
     try {
       await getHint();
     } catch (error) {
-      toast.error(error.message || 'دریافت راهنما ناموفق بود');
+      toast.error(error.message || 'یه مشکلی پیش اومد!');
     }
   };
 
   const handleAutoSolve = async () => {
     if (user.coins < 50) {
-      toast.error('سکه کافی برای حل خودکار وجود ندارد');
+      toast.error('سکه کافی نداری برای حل خودکار!');
       return;
     }
 
     try {
       await autoSolve();
     } catch (error) {
-      toast.error(error.message || 'حل خودکار ناموفق بود');
+      toast.error(error.message || 'یه مشکلی پیش اومد!');
     }
   };
 
@@ -97,7 +97,7 @@ const Game = () => {
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4 drop-shadow-[0_0_10px_rgba(168,85,247,0.5)]"></div>
-          <p className="text-white/60">در حال بارگذاری بازی...</p>
+          <p className="text-white/60">صبر کن، داریم بازی رو میاریم...</p>
         </div>
       </div>
     );
@@ -113,13 +113,13 @@ const Game = () => {
           className="text-center bg-glass backdrop-blur-lg rounded-2xl border border-glass-border p-12"
         >
           <Trophy className="w-20 h-20 text-purple-400 mx-auto mb-4 drop-shadow-[0_0_20px_rgba(168,85,247,0.6)]" />
-          <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent mb-4">تبریک می‌گوییم!</h2>
+          <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent mb-4">واااای! دمت گرم! 🎉</h2>
           <p className="text-white/60 text-lg mb-6">
-            شما تمام مراحل موجود را تکمیل کردید!
+            همه مراحل رو رد کردی! افرین!
           </p>
           <div className="flex items-center justify-center space-x-2 space-x-reverse bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
             <Sparkles className="w-6 h-6 text-cyan-400 drop-shadow-[0_0_10px_rgba(6,182,212,0.5)]" />
-            <span className="text-xl font-semibold">کار فوق‌العاده‌ای بود!</span>
+            <span className="text-xl font-semibold">عالی بود! 🔥</span>
             <Sparkles className="w-6 h-6 text-cyan-400 drop-shadow-[0_0_10px_rgba(6,182,212,0.5)]" />
           </div>
         </motion.div>
@@ -212,7 +212,7 @@ const Game = () => {
                 ) : (
                   <>
                     <CheckCircle className="w-5 h-5" />
-                    <span>ارسال کلمه</span>
+                    <span>بفرست!</span>
                   </>
                 )}
               </button>
@@ -222,7 +222,7 @@ const Game = () => {
                 className="bg-gradient-to-r from-cyan-500/20 to-blue-500/20 hover:from-cyan-500/30 hover:to-blue-500/30 border border-cyan-500/30 text-white font-medium py-3 px-6 rounded-lg transition-all shadow-[0_0_15px_rgba(6,182,212,0.3)] hover:shadow-[0_0_25px_rgba(6,182,212,0.5)] flex items-center justify-center space-x-2 space-x-reverse"
               >
                 <RotateCcw className="w-5 h-5" />
-                <span>شروع مجدد</span>
+                <span>از اول</span>
               </button>
             </div>
 
@@ -236,7 +236,7 @@ const Game = () => {
                   className="mt-4 p-4 bg-success/20 border border-success/30 rounded-lg text-success flex items-center space-x-2 space-x-reverse"
                 >
                   <CheckCircle className="w-5 h-5" />
-                  <span>کلمه کامل شد!</span>
+                  <span>آفرین! درست بود! ✨</span>
                 </motion.div>
               )}
 
@@ -266,7 +266,7 @@ const Game = () => {
           >
             <h3 className="font-semibold mb-4 flex items-center space-x-2 space-x-reverse bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
               <Target className="w-5 h-5 text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]" />
-              <span>کلمه فعلی</span>
+              <span>کلمه الان</span>
             </h3>
 
             <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20 rounded-lg p-4 mb-4 min-h-[60px] flex items-center justify-center shadow-[inset_0_0_20px_rgba(168,85,247,0.1)]">
@@ -282,7 +282,7 @@ const Game = () => {
                     {gameState.currentWord}
                   </motion.span>
                 ) : (
-                  <span className="text-white/40">برای اتصال حروف بکشید</span>
+                  <span className="text-white/40">حروف رو وصل کن</span>
                 )}
               </AnimatePresence>
             </div>
@@ -299,7 +299,7 @@ const Game = () => {
             transition={{ delay: 0.4 }}
             className="bg-glass backdrop-blur-lg rounded-2xl border border-glass-border p-6"
           >
-            <h3 className="font-semibold mb-4 bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">قدرت‌های ویژه</h3>
+            <h3 className="font-semibold mb-4 bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">پاور آپ‌ها</h3>
 
             <div className="space-y-3">
               <button
@@ -341,7 +341,7 @@ const Game = () => {
             transition={{ delay: 0.5 }}
             className="bg-glass backdrop-blur-lg rounded-2xl border border-glass-border p-6"
           >
-            <h3 className="font-semibold mb-4 bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">کلمات یافته‌شده</h3>
+            <h3 className="font-semibold mb-4 bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">کلماتی که پیدا کردی</h3>
 
             <div className="space-y-2 max-h-48 overflow-y-auto">
               {gameState.completedWords.length > 0 ? (
@@ -359,7 +359,7 @@ const Game = () => {
                 ))
               ) : (
                 <div className="text-center text-white/40 py-8">
-                  هنوز کلمه‌ای پیدا نشده
+                  هنوز کلمه‌ای پیدا نکردی
                 </div>
               )}
             </div>

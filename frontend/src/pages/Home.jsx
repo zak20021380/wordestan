@@ -38,29 +38,29 @@ const Home = () => {
   const features = [
     {
       icon: Target,
-      title: 'کشیدن و اتصال',
-      description: 'گیم‌پلی آسان با اتصال حروف به یکدیگر',
+      title: 'بکش و وصل کن',
+      description: 'حروف رو به هم وصل کن و کلمه بساز - خیلی راحته!',
       color: 'text-primary-400',
       bgGradient: 'from-primary-500/20 to-primary-600/10'
     },
     {
       icon: Zap,
-      title: 'قدرت‌های ویژه',
-      description: 'از راهنما و حل خودکار برای عبور از مراحل سخت استفاده کنید',
+      title: 'پاور آپ‌ها',
+      description: 'راهنما و حل خودکار داریم برای وقتایی که گیر کردی',
       color: 'text-secondary-400',
       bgGradient: 'from-secondary-500/20 to-secondary-600/10'
     },
     {
       icon: Trophy,
       title: 'جدول امتیازات',
-      description: 'با بازیکنان سراسر جهان رقابت کنید و رتبه خود را ارتقا دهید',
+      description: 'با بقیه رقابت کن و برو بالای جدول!',
       color: 'text-accent-400',
       bgGradient: 'from-accent-500/20 to-accent-600/10'
     },
     {
       icon: Award,
       title: 'دستاوردها',
-      description: 'دستاوردها را باز کنید و با پیشرفت خود جوایز کسب کنید',
+      description: 'دستاوردها رو آنلاک کن و جایزه بگیر!',
       color: 'text-blue-400',
       bgGradient: 'from-blue-500/20 to-blue-600/10'
     }
@@ -76,11 +76,10 @@ const Home = () => {
         className="text-center"
       >
         <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-primary-400 via-secondary-400 to-accent-400 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(168,85,247,0.5)] animate-gradient-shift bg-[length:200%_auto]">
-          کلمات متصل
+          وردستان
         </h1>
         <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto drop-shadow-lg">
-          دانش واژگان خود را با بازی پازل کلمات اعتیادآور ما به چالش بکشید.
-          حروف را به هم وصل کنید و کلمات پنهان را کشف کنید.
+          بیا باهم کلمه بسازیم! حروف رو وصل کن، کلمات پنهان رو پیدا کن و با دوستات رقابت کن! 🎯
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -89,7 +88,7 @@ const Home = () => {
             className="bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-400 hover:to-secondary-400 text-white font-bold py-4 px-10 rounded-xl transition-all transform hover:scale-105 hover:-translate-y-1 flex items-center justify-center space-x-2 space-x-reverse shadow-[0_0_20px_rgba(168,85,247,0.5)] hover:shadow-[0_0_30px_rgba(168,85,247,0.7)]"
           >
             <Play className="w-6 h-6" />
-            <span>شروع بازی</span>
+            <span>بریم بازی! 🎮</span>
           </Link>
 
           <Link
@@ -97,7 +96,7 @@ const Home = () => {
             className="bg-glass hover:bg-glass-hover text-white font-bold py-4 px-10 rounded-xl transition-all transform hover:scale-105 hover:-translate-y-1 flex items-center justify-center space-x-2 space-x-reverse border-2 border-glass-border hover:border-primary-400 backdrop-blur-xl shadow-glass hover:shadow-[0_0_20px_rgba(168,85,247,0.3)]"
           >
             <Trophy className="w-6 h-6" />
-            <span>مشاهده جدول امتیازات</span>
+            <span>جدول امتیازات 🏆</span>
           </Link>
         </div>
       </motion.div>
@@ -110,12 +109,12 @@ const Home = () => {
           transition={{ delay: 0.2 }}
           className="bg-glass backdrop-blur-xl rounded-3xl border-2 border-glass-border p-8 shadow-[0_0_40px_rgba(168,85,247,0.15)] hover:shadow-[0_0_60px_rgba(168,85,247,0.25)] transition-all"
         >
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-primary-400 to-secondary-400 bg-clip-text text-transparent mb-8 text-center">پیشرفت شما</h2>
+          <h2 className="text-2xl font-bold bg-gradient-to-r from-primary-400 to-secondary-400 bg-clip-text text-transparent mb-8 text-center">پیشرفت تو</h2>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             <div className="text-center p-4 rounded-xl bg-gradient-to-br from-primary-500/10 to-primary-600/5 border border-primary-500/20 hover:border-primary-500/40 transition-all">
               <div className="text-4xl font-bold text-primary-400 mb-2 drop-shadow-[0_0_10px_rgba(168,85,247,0.5)]">{user.levelsCleared || 0}</div>
-              <div className="text-white/70 font-medium">مراحل طی‌شده</div>
+              <div className="text-white/70 font-medium">مرحله رد شده</div>
             </div>
 
             <div className="text-center p-4 rounded-xl bg-gradient-to-br from-accent-500/10 to-accent-600/5 border border-accent-500/20 hover:border-accent-500/40 transition-all">
@@ -125,12 +124,12 @@ const Home = () => {
 
             <div className="text-center p-4 rounded-xl bg-gradient-to-br from-secondary-500/10 to-secondary-600/5 border border-secondary-500/20 hover:border-secondary-500/40 transition-all">
               <div className="text-4xl font-bold text-secondary-400 mb-2 drop-shadow-[0_0_10px_rgba(217,70,239,0.5)]">{user.wordsFound || 0}</div>
-              <div className="text-white/70 font-medium">کلمات یافته‌شده</div>
+              <div className="text-white/70 font-medium">کلمه پیدا شده</div>
             </div>
 
             <div className="text-center p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20 hover:border-blue-500/40 transition-all">
               <div className="text-4xl font-bold text-blue-400 mb-2 drop-shadow-[0_0_10px_rgba(59,130,246,0.5)]">{user.totalScore || 0}</div>
-              <div className="text-white/70 font-medium">امتیاز کل</div>
+              <div className="text-white/70 font-medium">کل امتیازت</div>
             </div>
           </div>
         </motion.div>
@@ -142,7 +141,7 @@ const Home = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
       >
-        <h2 className="text-3xl font-bold bg-gradient-to-r from-primary-400 via-secondary-400 to-accent-400 bg-clip-text text-transparent text-center mb-12">ویژگی‌های بازی</h2>
+        <h2 className="text-3xl font-bold bg-gradient-to-r from-primary-400 via-secondary-400 to-accent-400 bg-clip-text text-transparent text-center mb-12">چی تو بازی داریم؟</h2>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
           {features.map((feature, index) => {
@@ -178,12 +177,12 @@ const Home = () => {
           className="bg-glass backdrop-blur-xl rounded-3xl border-2 border-glass-border p-8 shadow-[0_0_40px_rgba(168,85,247,0.15)]"
         >
           <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl font-bold bg-gradient-to-r from-primary-400 to-secondary-400 bg-clip-text text-transparent">بازیکنان برتر</h2>
+            <h2 className="text-2xl font-bold bg-gradient-to-r from-primary-400 to-secondary-400 bg-clip-text text-transparent">بازیکنای برتر</h2>
             <Link
               to="/leaderboard"
               className="text-primary-400 hover:text-primary-300 transition-all font-bold hover:drop-shadow-[0_0_10px_rgba(168,85,247,0.5)]"
             >
-              مشاهده همه ←
+              همشو ببین ←
             </Link>
           </div>
 
@@ -236,11 +235,10 @@ const Home = () => {
 
           <div className="relative z-10">
             <h2 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary-300 via-secondary-300 to-accent-300 bg-clip-text text-transparent mb-4 drop-shadow-[0_0_20px_rgba(168,85,247,0.3)]">
-              آماده‌اید دانش واژگان خود را به چالش بکشید؟
+              آماده‌ای بریم سراغ کلمه‌ها؟
             </h2>
             <p className="text-white/90 mb-8 max-w-2xl mx-auto text-lg">
-              به هزاران بازیکن در بهترین تجربه پازل کلمات بپیوندید.
-              حروف را به هم وصل کنید، کلمات را کشف کنید و در جدول امتیازات بالا بروید!
+              به جمع بازیکنا بپیوند! کلمه بساز، امتیاز بگیر و برو بالای جدول! 🚀
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -249,7 +247,7 @@ const Home = () => {
                   to="/register"
                   className="bg-gradient-to-r from-secondary-500 to-accent-500 hover:from-secondary-400 hover:to-accent-400 text-white font-bold py-4 px-10 rounded-xl transition-all transform hover:scale-105 hover:-translate-y-1 shadow-[0_0_20px_rgba(217,70,239,0.5)] hover:shadow-[0_0_30px_rgba(217,70,239,0.7)]"
                 >
-                  ساخت حساب کاربری
+                  بیا اکانت بسازیم!
                 </Link>
               )}
 
@@ -257,7 +255,7 @@ const Home = () => {
                 to="/game"
                 className="bg-gradient-to-r from-primary-500 to-blue-500 hover:from-primary-400 hover:to-blue-400 text-white font-bold py-4 px-10 rounded-xl transition-all transform hover:scale-105 hover:-translate-y-1 shadow-[0_0_20px_rgba(168,85,247,0.5)] hover:shadow-[0_0_30px_rgba(168,85,247,0.7)]"
               >
-                شروع بازی
+                بزن بریم! 🎮
               </Link>
             </div>
           </div>

@@ -35,9 +35,9 @@ const Login = () => {
       const from = location.state?.from?.pathname || '/';
       navigate(from, { replace: true });
 
-      toast.success('ورود با موفقیت انجام شد!');
+      toast.success('خوش اومدی! 🎉');
     } catch (error) {
-      toast.error(error.message || 'ورود ناموفق بود');
+      toast.error(error.message || 'یه مشکلی پیش اومد!');
     } finally {
       setIsLoading(false);
     }
@@ -57,9 +57,9 @@ const Login = () => {
             <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-xl flex items-center justify-center shadow-lg shadow-primary-500/50">
               <Gamepad2 className="w-8 h-8 text-white" />
             </div>
-            <span className="text-3xl font-bold bg-gradient-to-r from-primary-400 to-secondary-400 bg-clip-text text-transparent">کلمات متصل</span>
+            <span className="text-3xl font-bold bg-gradient-to-r from-primary-400 to-secondary-400 bg-clip-text text-transparent">وردستان</span>
           </div>
-          <p className="text-white/60">برای ادامه ماجراجویی خود وارد شوید</p>
+          <p className="text-white/60">خوشحالیم که برگشتی! 🎮</p>
         </div>
 
         {/* Login Form */}
@@ -68,19 +68,19 @@ const Login = () => {
             {/* Email */}
             <div>
               <label className="block text-white font-medium mb-2">
-                آدرس ایمیل
+                ایمیل تو
               </label>
               <div className="relative">
                 <Mail className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/40" />
                 <input
                   type="email"
-                  placeholder="ایمیل خود را وارد کنید"
+                  placeholder="ایمیلت رو بنویس"
                   className="w-full pr-12 pl-4 py-3 bg-glass-hover border-2 border-primary-500/30 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-primary-400 focus:shadow-lg focus:shadow-primary-500/50 transition-all"
                   {...register('email', {
-                    required: 'ایمیل الزامی است',
+                    required: 'ایمیل رو فراموش نکن!',
                     pattern: {
                       value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                      message: 'آدرس ایمیل نامعتبر است'
+                      message: 'این ایمیل درست نیست!'
                     }
                   })}
                 />
@@ -93,19 +93,19 @@ const Login = () => {
             {/* Password */}
             <div>
               <label className="block text-white font-medium mb-2">
-                رمز عبور
+                رمز عبورت
               </label>
               <div className="relative">
                 <Lock className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/40" />
                 <input
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="رمز عبور خود را وارد کنید"
+                  placeholder="رمزت رو بنویس"
                   className="w-full pr-12 pl-12 py-3 bg-glass-hover border-2 border-secondary-500/30 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-secondary-400 focus:shadow-lg focus:shadow-secondary-500/50 transition-all"
                   {...register('password', {
-                    required: 'رمز عبور الزامی است',
+                    required: 'رمز رو فراموش نکن!',
                     minLength: {
                       value: 6,
-                      message: 'رمز عبور باید حداقل 6 کاراکتر باشد'
+                      message: 'رمز باید حداقل ۶ کاراکتر باشه'
                     }
                   })}
                 />
@@ -131,10 +131,10 @@ const Login = () => {
               {isLoading ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>در حال ورود...</span>
+                  <span>صبر کن، داریم وارد میشیم...</span>
                 </>
               ) : (
-                <span>ورود</span>
+                <span>بزن بریم! 🚀</span>
               )}
             </button>
           </form>
@@ -151,10 +151,10 @@ const Login = () => {
 
           {/* Demo Account */}
           <div className="text-center">
-            <p className="text-white/60 mb-4">امتحان با حساب نمایشی:</p>
+            <p className="text-white/60 mb-4">با اکانت آزمایشی امتحان کن:</p>
             <div className="bg-glass-hover rounded-lg p-4 text-sm text-white/80">
               <p><strong>ایمیل:</strong> admin@wordconnect.com</p>
-              <p><strong>رمز عبور:</strong> admin123</p>
+              <p><strong>رمز:</strong> admin123</p>
             </div>
           </div>
         </div>
@@ -162,12 +162,12 @@ const Login = () => {
         {/* Sign Up Link */}
         <div className="text-center mt-6">
           <p className="text-white/60">
-            حساب کاربری ندارید؟{' '}
+            هنوز اکانت نساختی؟{' '}
             <Link
               to="/register"
               className="text-primary-400 hover:text-primary-300 font-medium transition-colors"
             >
-              ثبت‌نام کنید
+              بیا بسازیم!
             </Link>
           </p>
         </div>
