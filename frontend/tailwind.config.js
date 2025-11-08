@@ -53,8 +53,8 @@ export default {
         warning: '#f59e0b',
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        display: ['Poppins', 'system-ui', 'sans-serif'],
+        sans: ['Vazirmatn', 'Inter', 'system-ui', 'sans-serif'],
+        display: ['Vazirmatn', 'Poppins', 'system-ui', 'sans-serif'],
       },
       animation: {
         'fade-in': 'fadeIn 0.3s ease-in-out',

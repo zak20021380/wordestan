@@ -35,7 +35,7 @@ const Game = () => {
   // Handle word submission
   const handleSubmitWord = async () => {
     if (!gameState.currentWord || gameState.currentWord.length < 3) {
-      showErrorMessage('Word must be at least 3 letters long');
+      showErrorMessage('کلمه باید حداقل 3 حرف داشته باشد');
       return;
     }
 
@@ -49,7 +49,7 @@ const Game = () => {
         user.totalScore = result.data.totalScore;
       }
     } catch (error) {
-      showErrorMessage(error.message || 'Invalid word');
+      showErrorMessage(error.message || 'کلمه نامعتبر');
     }
   };
 
@@ -67,27 +67,27 @@ const Game = () => {
 
   const handleGetHint = async () => {
     if (user.coins < 10) {
-      toast.error('Not enough coins for hint');
+      toast.error('سکه کافی برای راهنما وجود ندارد');
       return;
     }
 
     try {
       await getHint();
     } catch (error) {
-      toast.error(error.message || 'Failed to get hint');
+      toast.error(error.message || 'دریافت راهنما ناموفق بود');
     }
   };
 
   const handleAutoSolve = async () => {
     if (user.coins < 50) {
-      toast.error('Not enough coins for auto-solve');
+      toast.error('سکه کافی برای حل خودکار وجود ندارد');
       return;
     }
 
     try {
       await autoSolve();
     } catch (error) {
-      toast.error(error.message || 'Failed to auto-solve');
+      toast.error(error.message || 'حل خودکار ناموفق بود');
     }
   };
 
@@ -97,7 +97,7 @@ const Game = () => {
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
-          <p className="text-white/60">Loading game...</p>
+          <p className="text-white/60">در حال بارگذاری بازی...</p>
         </div>
       </div>
     );
@@ -113,13 +113,13 @@ const Game = () => {
           className="text-center bg-glass backdrop-blur-lg rounded-2xl border border-glass-border p-12"
         >
           <Trophy className="w-20 h-20 text-primary-400 mx-auto mb-4" />
-          <h2 className="text-3xl font-bold text-white mb-4">Congratulations!</h2>
+          <h2 className="text-3xl font-bold text-white mb-4">تبریک می‌گوییم!</h2>
           <p className="text-white/60 text-lg mb-6">
-            You've completed all available levels!
+            شما تمام مراحل موجود را تکمیل کردید!
           </p>
-          <div className="flex items-center justify-center space-x-2 text-primary-400">
+          <div className="flex items-center justify-center space-x-2 space-x-reverse text-primary-400">
             <Sparkles className="w-6 h-6" />
-            <span className="text-xl font-semibold">Amazing work!</span>
+            <span className="text-xl font-semibold">کار فوق‌العاده‌ای بود!</span>
             <Sparkles className="w-6 h-6" />
           </div>
         </motion.div>
@@ -144,16 +144,16 @@ const Game = () => {
             {/* Level Info */}
             <div>
               <h1 className="text-3xl font-bold text-white mb-2">
-                Level {currentLevel.order}: {currentLevel.name}
+                مرحله {currentLevel.order}: {currentLevel.name}
               </h1>
               <p className="text-white/60 mb-4">{currentLevel.description}</p>
-              
+
               {/* Progress Bar */}
-              <div className="flex items-center space-x-4 mb-4">
+              <div className="flex items-center space-x-4 space-x-reverse mb-4">
                 <div className="flex-1">
                   <div className="flex justify-between text-sm text-white/60 mb-1">
-                    <span>Progress</span>
-                    <span>{completedCount}/{totalCount} words</span>
+                    <span>پیشرفت</span>
+                    <span>{completedCount}/{totalCount} کلمه</span>
                   </div>
                   <div className="w-full bg-glass-hover rounded-full h-2">
                     <motion.div
@@ -170,19 +170,19 @@ const Game = () => {
             {/* Stats */}
             <div className="flex flex-wrap gap-4">
               <div className="bg-glass-hover rounded-lg px-4 py-3 text-center">
-                <div className="flex items-center justify-center space-x-2 text-yellow-400 mb-1">
+                <div className="flex items-center justify-center space-x-2 space-x-reverse text-yellow-400 mb-1">
                   <Coins className="w-5 h-5" />
                   <span className="text-2xl font-bold">{user?.coins || 0}</span>
                 </div>
-                <p className="text-white/60 text-sm">Coins</p>
+                <p className="text-white/60 text-sm">سکه</p>
               </div>
-              
+
               <div className="bg-glass-hover rounded-lg px-4 py-3 text-center">
-                <div className="flex items-center justify-center space-x-2 text-primary-400 mb-1">
+                <div className="flex items-center justify-center space-x-2 space-x-reverse text-primary-400 mb-1">
                   <Trophy className="w-5 h-5" />
                   <span className="text-2xl font-bold">{user?.totalScore || 0}</span>
                 </div>
-                <p className="text-white/60 text-sm">Score</p>
+                <p className="text-white/60 text-sm">امتیاز</p>
               </div>
             </div>
           </div>
@@ -205,24 +205,24 @@ const Game = () => {
               <button
                 onClick={handleSubmitWord}
                 disabled={!gameState.currentWord || isCompletingWord}
-                className="flex-1 bg-primary-500 hover:bg-primary-600 disabled:bg-glass-hover disabled:cursor-not-allowed text-white font-medium py-3 px-6 rounded-lg transition-colors flex items-center justify-center space-x-2"
+                className="flex-1 bg-primary-500 hover:bg-primary-600 disabled:bg-glass-hover disabled:cursor-not-allowed text-white font-medium py-3 px-6 rounded-lg transition-colors flex items-center justify-center space-x-2 space-x-reverse"
               >
                 {isCompletingWord ? (
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                 ) : (
                   <>
                     <CheckCircle className="w-5 h-5" />
-                    <span>Submit Word</span>
+                    <span>ارسال کلمه</span>
                   </>
                 )}
               </button>
 
               <button
                 onClick={() => window.location.reload()}
-                className="bg-glass-hover hover:bg-glass text-white font-medium py-3 px-6 rounded-lg transition-colors flex items-center justify-center space-x-2"
+                className="bg-glass-hover hover:bg-glass text-white font-medium py-3 px-6 rounded-lg transition-colors flex items-center justify-center space-x-2 space-x-reverse"
               >
                 <RotateCcw className="w-5 h-5" />
-                <span>Reset</span>
+                <span>شروع مجدد</span>
               </button>
             </div>
 
@@ -233,19 +233,19 @@ const Game = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
-                  className="mt-4 p-4 bg-success/20 border border-success/30 rounded-lg text-success flex items-center space-x-2"
+                  className="mt-4 p-4 bg-success/20 border border-success/30 rounded-lg text-success flex items-center space-x-2 space-x-reverse"
                 >
                   <CheckCircle className="w-5 h-5" />
-                  <span>Word completed!</span>
+                  <span>کلمه کامل شد!</span>
                 </motion.div>
               )}
-              
+
               {showError && (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
-                  className="mt-4 p-4 bg-danger/20 border border-danger/30 rounded-lg text-danger flex items-center space-x-2"
+                  className="mt-4 p-4 bg-danger/20 border border-danger/30 rounded-lg text-danger flex items-center space-x-2 space-x-reverse"
                 >
                   <XCircle className="w-5 h-5" />
                   <span>{errorMessage}</span>
@@ -264,11 +264,11 @@ const Game = () => {
             transition={{ delay: 0.3 }}
             className="bg-glass backdrop-blur-lg rounded-2xl border border-glass-border p-6"
           >
-            <h3 className="text-white font-semibold mb-4 flex items-center space-x-2">
+            <h3 className="text-white font-semibold mb-4 flex items-center space-x-2 space-x-reverse">
               <Target className="w-5 h-5 text-primary-400" />
-              <span>Current Word</span>
+              <span>کلمه فعلی</span>
             </h3>
-            
+
             <div className="bg-glass-hover rounded-lg p-4 mb-4 min-h-[60px] flex items-center justify-center">
               <AnimatePresence mode="wait">
                 {gameState.currentWord ? (
@@ -282,13 +282,13 @@ const Game = () => {
                     {gameState.currentWord}
                   </motion.span>
                 ) : (
-                  <span className="text-white/40">Drag to connect letters</span>
+                  <span className="text-white/40">برای اتصال حروف بکشید</span>
                 )}
               </AnimatePresence>
             </div>
 
             <div className="text-sm text-white/60">
-              Length: {gameState.currentWord.length} letters
+              طول: {gameState.currentWord.length} حرف
             </div>
           </motion.div>
 
@@ -299,19 +299,19 @@ const Game = () => {
             transition={{ delay: 0.4 }}
             className="bg-glass backdrop-blur-lg rounded-2xl border border-glass-border p-6"
           >
-            <h3 className="text-white font-semibold mb-4">Power-ups</h3>
-            
+            <h3 className="text-white font-semibold mb-4">قدرت‌های ویژه</h3>
+
             <div className="space-y-3">
               <button
                 onClick={handleGetHint}
                 disabled={isGettingHint || user?.coins < 10}
                 className="w-full bg-secondary-500/20 hover:bg-secondary-500/30 disabled:opacity-50 disabled:cursor-not-allowed text-white py-3 px-4 rounded-lg transition-colors flex items-center justify-between"
               >
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 space-x-reverse">
                   <Lightbulb className="w-5 h-5 text-secondary-400" />
-                  <span>Hint</span>
+                  <span>راهنما</span>
                 </div>
-                <div className="flex items-center space-x-1 text-yellow-400">
+                <div className="flex items-center space-x-1 space-x-reverse text-yellow-400">
                   <Coins className="w-4 h-4" />
                   <span>10</span>
                 </div>
@@ -322,11 +322,11 @@ const Game = () => {
                 disabled={isAutoSolving || user?.coins < 50}
                 className="w-full bg-primary-500/20 hover:bg-primary-500/30 disabled:opacity-50 disabled:cursor-not-allowed text-white py-3 px-4 rounded-lg transition-colors flex items-center justify-between"
               >
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 space-x-reverse">
                   <Sparkles className="w-5 h-5 text-primary-400" />
-                  <span>Auto Solve</span>
+                  <span>حل خودکار</span>
                 </div>
-                <div className="flex items-center space-x-1 text-yellow-400">
+                <div className="flex items-center space-x-1 space-x-reverse text-yellow-400">
                   <Coins className="w-4 h-4" />
                   <span>50</span>
                 </div>
@@ -341,8 +341,8 @@ const Game = () => {
             transition={{ delay: 0.5 }}
             className="bg-glass backdrop-blur-lg rounded-2xl border border-glass-border p-6"
           >
-            <h3 className="text-white font-semibold mb-4">Found Words</h3>
-            
+            <h3 className="text-white font-semibold mb-4">کلمات یافته‌شده</h3>
+
             <div className="space-y-2 max-h-48 overflow-y-auto">
               {gameState.completedWords.length > 0 ? (
                 gameState.completedWords.map((word, index) => (
@@ -359,7 +359,7 @@ const Game = () => {
                 ))
               ) : (
                 <div className="text-center text-white/40 py-8">
-                  No words found yet
+                  هنوز کلمه‌ای پیدا نشده
                 </div>
               )}
             </div>
