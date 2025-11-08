@@ -70,19 +70,16 @@ export const GameProvider = ({ children }) => {
           user.coins = data.data.totalCoins;
           user.totalScore = data.data.totalScore;
         }
-        
-        // Add word to completed words
+
+        // Clear current selection
         setGameState(prev => ({
           ...prev,
-          completedWords: Array.from(
-            new Set([...prev.completedWords, data.data.word.text])
-          ),
           selectedNodes: [],
           selectionPreview: '',
           currentWord: '',
         }));
 
-        // Invalidate queries
+        // Invalidate queries to refetch and get updated completed words
         queryClient.invalidateQueries(['nextLevel', user?.id]);
         queryClient.invalidateQueries(['leaderboard']);
       },
@@ -123,19 +120,16 @@ export const GameProvider = ({ children }) => {
           user.coins = data.data.remainingCoins;
           user.totalScore = data.data.totalScore;
         }
-        
-        // Add word to completed words
+
+        // Clear current selection
         setGameState(prev => ({
           ...prev,
-          completedWords: Array.from(
-            new Set([...prev.completedWords, data.data.solvedWord.text])
-          ),
           selectedNodes: [],
           selectionPreview: '',
           currentWord: '',
         }));
 
-        // Invalidate queries
+        // Invalidate queries to refetch and get updated completed words
         queryClient.invalidateQueries(['nextLevel', user?.id]);
         queryClient.invalidateQueries(['leaderboard']);
       },
