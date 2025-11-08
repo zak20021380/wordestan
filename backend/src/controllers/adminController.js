@@ -192,16 +192,13 @@ const deleteWord = async (req, res) => {
 // @access  Admin
 const getLevels = async (req, res) => {
   try {
-    const { page = 1, limit = 20, isPublished = '', search = '' } = req.query;
+    const { page = 1, limit = 20, isPublished = '' } = req.query;
     const pageNum = parseInt(page);
     const limitNum = parseInt(limit);
 
     let query = {};
     if (isPublished !== '') {
       query.isPublished = isPublished === 'true';
-    }
-    if (search) {
-      query.name = { $regex: search, $options: 'i' };
     }
 
     const levels = await Level.find(query)
@@ -247,50 +244,63 @@ const createLevel = async (req, res) => {
       });
     }
 
-    const { name, order, words, letters, centerLetter, difficulty, description } = req.body;
+    const { letters, words } = req.body;
 
-    // Check if order already exists
-    const existingOrder = await Level.findOne({ order });
-    if (existingOrder) {
+    // Validate input
+    if (!letters || !words) {
       return res.status(400).json({
         success: false,
-        message: 'Level with this order already exists'
+        message: 'Letters and words are required'
       });
     }
 
-    // Validate all words exist
-    const wordCount = await Word.countDocuments({ _id: { $in: words } });
-    if (wordCount !== words.length) {
+    // Parse words input (comma or newline separated)
+    let wordList = [];
+    if (typeof words === 'string') {
+      wordList = words
+        .split(/[,\n]+/)
+        .map(w => w.trim().toUpperCase())
+        .filter(w => w.length > 0);
+    } else if (Array.isArray(words)) {
+      wordList = words.map(w => w.trim().toUpperCase());
+    }
+
+    if (wordList.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'Some words do not exist'
+        message: 'At least one word is required'
       });
     }
 
-    // Validate letters array
-    if (letters.length < 5 || letters.length > 12) {
-      return res.status(400).json({
-        success: false,
-        message: 'Letters array must contain between 5 and 12 letters'
-      });
+    // Auto-increment order (get max order + 1)
+    const maxLevel = await Level.findOne().sort({ order: -1 }).select('order');
+    const nextOrder = maxLevel ? maxLevel.order + 1 : 1;
+
+    // Auto-create Word documents if they don't exist
+    const wordIds = [];
+    for (const wordText of wordList) {
+      let word = await Word.findOne({ text: wordText });
+
+      if (!word) {
+        // Create new word with default values
+        word = new Word({
+          text: wordText,
+          length: wordText.length,
+          difficulty: 'medium',
+          points: wordText.length * 10
+        });
+        await word.save();
+      }
+
+      wordIds.push(word._id);
     }
 
-    // Validate center letter is in letters array
-    if (!letters.includes(centerLetter.toUpperCase())) {
-      return res.status(400).json({
-        success: false,
-        message: 'Center letter must be in the letters array'
-      });
-    }
-
+    // Create level
     const level = new Level({
-      name,
-      order,
-      words,
-      letters,
-      centerLetter,
-      difficulty,
-      description
+      order: nextOrder,
+      letters: letters.toUpperCase(),
+      words: wordIds,
+      isPublished: true
     });
 
     await level.save();
@@ -325,22 +335,54 @@ const updateLevel = async (req, res) => {
     }
 
     const { id } = req.params;
-    const { name, order, words, letters, centerLetter, difficulty, isPublished, description } = req.body;
+    const { letters, words, isPublished } = req.body;
 
-    // Check if order already exists for another level
-    if (order) {
-      const existingOrder = await Level.findOne({ order, _id: { $ne: id } });
-      if (existingOrder) {
-        return res.status(400).json({
-          success: false,
-          message: 'Level with this order already exists'
-        });
+    const updateData = {};
+
+    if (letters) {
+      updateData.letters = letters.toUpperCase();
+    }
+
+    if (isPublished !== undefined) {
+      updateData.isPublished = isPublished;
+    }
+
+    if (words) {
+      // Parse words input (comma or newline separated)
+      let wordList = [];
+      if (typeof words === 'string') {
+        wordList = words
+          .split(/[,\n]+/)
+          .map(w => w.trim().toUpperCase())
+          .filter(w => w.length > 0);
+      } else if (Array.isArray(words)) {
+        wordList = words.map(w => w.trim().toUpperCase());
       }
+
+      // Auto-create Word documents if they don't exist
+      const wordIds = [];
+      for (const wordText of wordList) {
+        let word = await Word.findOne({ text: wordText });
+
+        if (!word) {
+          word = new Word({
+            text: wordText,
+            length: wordText.length,
+            difficulty: 'medium',
+            points: wordText.length * 10
+          });
+          await word.save();
+        }
+
+        wordIds.push(word._id);
+      }
+
+      updateData.words = wordIds;
     }
 
     const level = await Level.findByIdAndUpdate(
       id,
-      { name, order, words, letters, centerLetter, difficulty, isPublished, description },
+      updateData,
       { new: true, runValidators: true }
     ).populate('words', 'text length difficulty');
 
@@ -548,8 +590,9 @@ const getDashboardStats = async (req, res) => {
     const unpublishedLevels = totalLevels - publishedLevels;
 
     const topLevels = await Level.find({ isPublished: true })
-      .select('name order timesCompleted')
-      .sort({ timesCompleted: -1 })
+      .select('order letters')
+      .populate('words', 'text')
+      .sort({ order: 1 })
       .limit(10);
 
     res.json({

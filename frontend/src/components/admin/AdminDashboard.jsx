@@ -164,22 +164,16 @@ const AdminDashboard = () => {
                   transition={{ delay: 0.8 + index * 0.1 }}
                   className="flex items-center justify-between bg-glass-hover rounded-lg p-4"
                 >
-                  <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-4 space-x-reverse">
                     <div className="w-10 h-10 bg-gradient-to-r from-primary-500 to-primary-700 rounded-lg flex items-center justify-center">
                       <span className="text-white font-bold">{level.order}</span>
                     </div>
                     <div>
-                      <div className="text-white font-medium">{level.name}</div>
+                      <div className="text-white font-medium">مرحله {level.order}: {level.letters}</div>
                       <div className="text-white/60 text-sm">
-                        {level.words?.length || 0} words • {level.difficulty} difficulty
+                        {level.words?.length || 0} کلمه
                       </div>
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-white font-bold">
-                      {level.timesCompleted.toLocaleString()}
-                    </div>
-                    <div className="text-white/60 text-sm">completions</div>
                   </div>
                 </motion.div>
               ))}

@@ -17,9 +17,10 @@ const GameCanvas = () => {
     const centerX = canvasSize.width / 2;
     const centerY = canvasSize.height / 2;
     const radius = Math.min(canvasSize.width, canvasSize.height) * 0.35;
-    
+
     const positions = {};
-    const letters = currentLevel.letters;
+    // Convert letters string to array
+    const letters = currentLevel.letters.split('');
     const angleStep = (2 * Math.PI) / letters.length;
 
     letters.forEach((letter, index) => {
@@ -198,7 +199,7 @@ const GameCanvas = () => {
           </defs>
 
           {/* Letters */}
-          {currentLevel.letters.map((letter) => {
+          {currentLevel.letters.split('').map((letter, index) => {
             const position = letterPositions[letter];
             if (!position) return null;
 
@@ -206,7 +207,7 @@ const GameCanvas = () => {
             const isHint = gameState.showHint && gameState.hintLetter === letter;
 
             return (
-              <g key={letter}>
+              <g key={`${letter}-${index}`}>
                 {/* Letter circle */}
                 <motion.circle
                   cx={position.x}
@@ -279,13 +280,6 @@ const GameCanvas = () => {
             </motion.div>
           )}
         </AnimatePresence>
-
-        {/* Center letter indicator */}
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-          <div className="text-white/40 text-sm font-medium">
-            {currentLevel.centerLetter}
-          </div>
-        </div>
       </div>
 
       {/* Controls */}

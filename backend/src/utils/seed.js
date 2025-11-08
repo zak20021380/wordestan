@@ -96,40 +96,25 @@ const seedDatabase = async () => {
     const createdWords = await Word.insertMany(sampleWords);
     console.log(`Created ${createdWords.length} sample words`);
 
-    // Create levels
+    // Create levels with simplified model
     const levels = [
       {
-        name: 'Animal Kingdom',
         order: 1,
         words: createdWords.slice(0, 5).map(w => w._id),
-        letters: ['C', 'A', 'T', 'D', 'O', 'G', 'B'],
-        centerLetter: 'A',
-        difficulty: 'easy',
-        description: 'Learn about animals',
-        isPublished: true,
-        bonusCoins: 50
+        letters: 'CATDOGB',
+        isPublished: true
       },
       {
-        name: 'Wild Adventures',
         order: 2,
         words: createdWords.slice(5, 10).map(w => w._id),
-        letters: ['L', 'I', 'O', 'N', 'T', 'E', 'R'],
-        centerLetter: 'I',
-        difficulty: 'medium',
-        description: 'More challenging animal words',
-        isPublished: true,
-        bonusCoins: 75
+        letters: 'LIONTER',
+        isPublished: true
       },
       {
-        name: 'Nature & Arts',
         order: 3,
         words: createdWords.slice(10, 15).map(w => w._id),
-        letters: ['W', 'A', 'T', 'E', 'R', 'L', 'I'],
-        centerLetter: 'A',
-        difficulty: 'medium',
-        description: 'Explore nature and artistic expressions',
-        isPublished: false,
-        bonusCoins: 100
+        letters: 'WATERLI',
+        isPublished: true
       }
     ];
 
