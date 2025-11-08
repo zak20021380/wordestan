@@ -433,7 +433,7 @@ const GameCanvas = () => {
 
         {/* Current word display */}
         <AnimatePresence>
-          {(gameState.selectionPreview || gameState.currentWord) && (
+          {gameState.selectionPreview && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -441,7 +441,7 @@ const GameCanvas = () => {
               className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-purple-500/20 to-pink-500/20 backdrop-blur-sm rounded-lg px-4 py-2 border border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.3)]"
             >
               <span className="font-mono text-lg tracking-wider bg-gradient-to-r from-purple-300 via-pink-300 to-cyan-300 bg-clip-text text-transparent font-bold">
-                {gameState.selectionPreview || gameState.currentWord}
+                {gameState.selectionPreview}
               </span>
             </motion.div>
           )}
