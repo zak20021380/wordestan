@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Search, Edit, Trash2, Words } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Type } from 'lucide-react';
 
 const WordManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -52,7 +52,7 @@ const WordManagement = () => {
             >
               <div className="flex items-center space-x-4">
                 <div className="w-12 h-12 bg-gradient-to-r from-primary-500 to-primary-700 rounded-lg flex items-center justify-center">
-                  <Words className="w-6 h-6 text-white" />
+                  <Type className="w-6 h-6 text-white" />
                 </div>
                 <div>
                   <div className="text-white font-bold text-lg">{word}</div>
