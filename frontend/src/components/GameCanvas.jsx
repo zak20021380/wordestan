@@ -40,14 +40,19 @@ const GameCanvas = () => {
     if (!canvas) return { x: 0, y: 0 };
 
     const rect = canvas.getBoundingClientRect();
-    const clientX = e.clientX || (e.touches && e.touches[0].clientX);
-    const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+    const clientX = e.clientX || (e.touches && e.touches[0]?.clientX);
+    const clientY = e.clientY || (e.touches && e.touches[0]?.clientY);
+
+    // For SVG, we need to use the viewBox or the canvasSize state
+    // since canvas.width doesn't work the same as HTML canvas
+    const scaleX = canvasSize.width / rect.width;
+    const scaleY = canvasSize.height / rect.height;
 
     return {
-      x: (clientX - rect.left) * (canvas.width / rect.width),
-      y: (clientY - rect.top) * (canvas.height / rect.height),
+      x: (clientX - rect.left) * scaleX,
+      y: (clientY - rect.top) * scaleY,
     };
-  }, []);
+  }, [canvasSize.width, canvasSize.height]);
 
   const getLetterAtPosition = useCallback((pos) => {
     const threshold = 30; // Distance threshold
@@ -77,8 +82,12 @@ const GameCanvas = () => {
   }, [getEventPosition, getLetterAtPosition, selectLetter]);
 
   const handleMove = useCallback((e) => {
-    e.preventDefault();
     if (!isConnecting) return;
+
+    // Prevent default for touch events to avoid scrolling
+    if (e.type.startsWith('touch')) {
+      e.preventDefault();
+    }
 
     const pos = getEventPosition(e);
     setMousePos(pos);
@@ -162,19 +171,37 @@ const GameCanvas = () => {
           {/* Connection line */}
           <AnimatePresence>
             {gameState.selectedLetters.length > 0 && (
-              <motion.polyline
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                points={generatePath()}
-                fill="none"
-                stroke="url(#connectionGradient)"
-                strokeWidth="5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                filter="url(#neonGlow)"
-                className="drop-shadow-[0_0_15px_rgba(168,85,247,0.8)]"
-              />
+              <>
+                <motion.polyline
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  points={generatePath()}
+                  fill="none"
+                  stroke="url(#connectionGradient)"
+                  strokeWidth="6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  filter="url(#neonGlow)"
+                  className="drop-shadow-[0_0_20px_rgba(168,85,247,0.9)]"
+                  style={{ pointerEvents: 'none' }}
+                />
+                {/* Touch position indicator */}
+                {isConnecting && (
+                  <motion.circle
+                    cx={mousePos.x}
+                    cy={mousePos.y}
+                    r="8"
+                    fill="url(#connectionGradient)"
+                    filter="url(#neonGlow)"
+                    className="drop-shadow-[0_0_15px_rgba(168,85,247,0.8)]"
+                    style={{ pointerEvents: 'none' }}
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    exit={{ scale: 0 }}
+                  />
+                )}
+              </>
             )}
           </AnimatePresence>
 
@@ -189,9 +216,10 @@ const GameCanvas = () => {
               <stop offset="0%" stopColor="#d946ef" />
               <stop offset="100%" stopColor="#06b6d4" />
             </linearGradient>
-            <filter id="neonGlow">
-              <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+            <filter id="neonGlow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
               <feMerge>
+                <feMergeNode in="coloredBlur"/>
                 <feMergeNode in="coloredBlur"/>
                 <feMergeNode in="SourceGraphic"/>
               </feMerge>
