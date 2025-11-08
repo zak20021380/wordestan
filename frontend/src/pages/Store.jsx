@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 
 const Store = () => {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
   const [selectedPack, setSelectedPack] = useState(null);
 
