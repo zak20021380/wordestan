@@ -4,15 +4,19 @@ import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { storeService } from '../services/storeService';
-import { 
-  ShoppingCart, 
-  Coins, 
-  Star, 
+import {
+  ShoppingCart,
+  Coins,
+  Star,
   CheckCircle,
   Loader2,
   Crown,
   Gem,
-  Zap
+  Zap,
+  Plus,
+  Lightbulb,
+  Sparkles,
+  Trophy
 } from 'lucide-react';
 
 const Store = () => {

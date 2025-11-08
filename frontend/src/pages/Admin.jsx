@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
-import { 
-  Dashboard, 
-  Words, 
-  Layers, 
-  ShoppingCart, 
+import {
+  LayoutDashboard,
+  BookOpen,
+  Layers,
+  ShoppingCart,
   Settings,
   BarChart3,
   Users,
@@ -27,13 +27,13 @@ const Admin = () => {
     {
       name: 'Dashboard',
       href: '/admin',
-      icon: Dashboard,
+      icon: LayoutDashboard,
       component: AdminDashboard
     },
     {
       name: 'Words',
       href: '/admin/words',
-      icon: Words,
+      icon: BookOpen,
       component: WordManagement
     },
     {
