@@ -70,8 +70,8 @@ const coinPackValidation = [
     .isInt({ min: 10, max: 10000 })
     .withMessage('Coins must be between 10 and 10000'),
   body('price')
-    .isFloat({ min: 0.99, max: 99.99 })
-    .withMessage('Price must be between 0.99 and 99.99'),
+    .isFloat({ min: 1, max: 10000000 })
+    .withMessage('Price must be a valid number'),
   body('bonusCoins')
     .optional()
     .isInt({ min: 0 })
