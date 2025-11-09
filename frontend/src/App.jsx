@@ -8,6 +8,7 @@ import { GameProvider } from './contexts/GameContext';
 import Home from './pages/Home';
 import Game from './pages/Game';
 import Store from './pages/Store';
+import PaymentVerify from './pages/PaymentVerify';
 import Leaderboard from './pages/Leaderboard';
 import Admin from './pages/Admin';
 import Login from './pages/Login';
@@ -54,6 +55,14 @@ function App() {
                           element={
                             <ProtectedRoute>
                               <Store />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/payment/verify"
+                          element={
+                            <ProtectedRoute>
+                              <PaymentVerify />
                             </ProtectedRoute>
                           }
                         />

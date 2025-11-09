@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from 'react-query';
+import { useQuery, useMutation } from 'react-query';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -8,7 +8,6 @@ import { formatToman } from '../utils/currency';
 import {
   ShoppingCart,
   Coins,
-  Star,
   CheckCircle,
   Loader2,
   Crown,
@@ -16,12 +15,13 @@ import {
   Zap,
   Plus,
   Sparkles,
-  Trophy
+  Trophy,
+  X,
+  ArrowRight
 } from 'lucide-react';
 
 const Store = () => {
   const { user, isAuthenticated } = useAuth();
-  const queryClient = useQueryClient();
   const [selectedPack, setSelectedPack] = useState(null);
 
   // Fetch coin packs
@@ -33,34 +33,36 @@ const Store = () => {
     }
   );
 
-  // Purchase mutation
-  const purchaseMutation = useMutation(
-    ({ packId }) => storeService.mockPurchase(packId),
+  const paymentMutation = useMutation(
+    ({ packId }) => storeService.requestPayment(packId),
     {
-      onSuccess: (data) => {
-        toast.success(`خرید موفقیت‌آمیز بود! +${data.data.coinsAwarded} سکه`);
-        queryClient.invalidateQueries(['coinPacks']);
-        queryClient.invalidateQueries(['nextLevel', user?.id]);
-        setSelectedPack(null);
+      onSuccess: (response) => {
+        const paymentUrl = response?.data?.paymentUrl || response?.paymentUrl;
+        if (paymentUrl) {
+          toast.success('در حال انتقال به درگاه پرداخت...');
+          window.location.href = paymentUrl;
+        } else {
+          toast.error('آدرس پرداخت یافت نشد');
+        }
       },
       onError: (error) => {
-        toast.error(error.message || 'خرید ناموفق بود');
+        toast.error(error.message || 'خطا در اتصال به درگاه پرداخت');
       },
     }
   );
 
-  const handlePurchase = async (pack) => {
-    if (user.coins < 0 && pack.price > 0) {
-      toast.error('سکه کافی برای این خرید ندارید');
-      return;
-    }
+  const handlePurchase = (pack) => {
+    setSelectedPack(pack);
+  };
 
-    setSelectedPack(pack._id);
-    try {
-      await purchaseMutation.mutateAsync({ packId: pack._id });
-    } finally {
-      setSelectedPack(null);
-    }
+  const handleCloseModal = () => {
+    if (paymentMutation.isLoading) return;
+    setSelectedPack(null);
+  };
+
+  const handleConfirmPurchase = () => {
+    if (!selectedPack) return;
+    paymentMutation.mutate({ packId: selectedPack._id });
   };
 
   const getPackIcon = (pack) => {
@@ -80,6 +82,107 @@ const Store = () => {
 
   return (
     <div className="max-w-6xl mx-auto">
+      <AnimatePresence>
+        {selectedPack && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4"
+            onClick={handleCloseModal}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+              className="relative w-full max-w-lg bg-gradient-to-br from-glass via-wood-900/90 to-glass/90 border border-glass-border rounded-2xl shadow-2xl p-6 text-white"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={handleCloseModal}
+                className="absolute top-4 left-4 text-white/60 hover:text-white"
+                aria-label="بستن"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="flex items-center justify-center space-x-2 mb-6">
+                <ShoppingCart className="w-6 h-6 text-primary-400" />
+                <h2 className="text-2xl font-bold">تایید خرید</h2>
+              </div>
+
+              <div className="bg-glass-hover rounded-xl border border-glass-border/60 p-5 mb-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-xl font-semibold">{selectedPack.name}</h3>
+                    {selectedPack.description && (
+                      <p className="text-white/60 text-sm mt-1">{selectedPack.description}</p>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <div className="text-lg font-semibold text-accent-300">{formatToman(selectedPack.price)}</div>
+                    <div className="text-white/50 text-xs">قیمت به تومان</div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="flex items-center space-x-2">
+                    <Coins className="w-5 h-5 text-accent-400" />
+                    <div>
+                      <div className="text-white/80">سکه اصلی</div>
+                      <div className="text-white font-semibold">{(selectedPack.coins ?? 0).toLocaleString()}</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Plus className="w-5 h-5 text-green-400" />
+                    <div>
+                      <div className="text-white/80">سکه جایزه</div>
+                      <div className="text-white font-semibold">{(selectedPack.bonusCoins ?? 0).toLocaleString()}</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2 col-span-2">
+                    <CheckCircle className="w-5 h-5 text-primary-400" />
+                    <div>
+                      <div className="text-white/80">جمع کل سکه دریافتی</div>
+                      <div className="text-white font-semibold">{(selectedPack.totalCoins ?? ((selectedPack.coins ?? 0) + (selectedPack.bonusCoins ?? 0))).toLocaleString()} سکه</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <button
+                  onClick={handleConfirmPurchase}
+                  disabled={paymentMutation.isLoading}
+                  className="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-primary-500 via-secondary-500 to-primary-500 hover:from-primary-600 hover:via-secondary-600 hover:to-primary-600 disabled:bg-glass-hover disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-xl shadow-lg shadow-primary-500/40 transition-all"
+                >
+                  {paymentMutation.isLoading ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span>در حال اتصال به درگاه...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>ادامه خرید</span>
+                      <ArrowRight className="w-5 h-5" />
+                    </>
+                  )}
+                </button>
+
+                <button
+                  onClick={handleCloseModal}
+                  disabled={paymentMutation.isLoading}
+                  className="w-full py-3 px-6 rounded-xl border border-white/20 text-white/80 hover:text-white hover:border-white/40 transition-colors"
+                >
+                  انصراف
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -188,10 +291,10 @@ const Store = () => {
             {/* Purchase Button */}
             <button
               onClick={() => handlePurchase(pack)}
-              disabled={purchaseMutation.isLoading && selectedPack === pack._id}
+              disabled={paymentMutation.isLoading}
               className="w-full bg-gradient-to-r from-primary-500 via-secondary-500 to-primary-500 hover:from-primary-600 hover:via-secondary-600 hover:to-primary-600 disabled:bg-glass-hover disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-lg transition-all flex items-center justify-center space-x-2 shadow-lg shadow-primary-500/50 hover:shadow-xl hover:shadow-secondary-500/50"
             >
-              {purchaseMutation.isLoading && selectedPack === pack._id ? (
+              {paymentMutation.isLoading ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
                   <span>در حال پردازش...</span>
@@ -281,10 +384,32 @@ const PurchaseHistory = () => {
             >
               <div>
                 <div className="text-white font-medium">
-                  {purchase.packId?.title || 'بسته سکه'}
+                  {purchase.packId?.name || purchase.packId?.title || 'بسته سکه'}
                 </div>
                 <div className="text-white/60 text-sm">
                   {new Date(purchase.createdAt).toLocaleDateString()}
+                </div>
+                <div className="mt-1 text-xs">
+                  <span
+                    className={`px-2 py-1 rounded-full font-semibold ${
+                      purchase.status === 'completed'
+                        ? 'bg-green-500/20 text-green-300'
+                        : purchase.status === 'pending'
+                          ? 'bg-yellow-500/20 text-yellow-300'
+                          : 'bg-red-500/20 text-red-300'
+                    }`}
+                  >
+                    {purchase.status === 'completed'
+                      ? 'موفق'
+                      : purchase.status === 'pending'
+                        ? 'در انتظار'
+                        : 'ناموفق'}
+                  </span>
+                  {purchase.paymentMethod && (
+                    <span className="ml-2 text-white/50">
+                      ({purchase.paymentMethod === 'zarinpal' ? 'زرین پال' : purchase.paymentMethod})
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="text-right">
