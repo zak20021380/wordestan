@@ -359,11 +359,12 @@ const CoinPackManagement = () => {
 
       {/* Add/Edit Pack Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-glass backdrop-blur-lg rounded-2xl border border-glass-border p-8 max-w-2xl w-full mx-4"
+            className="relative bg-glass backdrop-blur-lg rounded-2xl border border-glass-border w-full max-w-2xl max-h-[calc(100vh-2rem)] overflow-y-auto px-4 py-6 sm:px-6 sm:py-8"
           >
             <div className="flex items-start justify-between mb-6">
               <h3 className="text-xl font-bold text-white">
