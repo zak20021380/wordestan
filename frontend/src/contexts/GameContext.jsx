@@ -14,7 +14,7 @@ export const useGame = () => {
 };
 
 export const GameProvider = ({ children }) => {
-  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const { user, isAuthenticated, loading: authLoading, updateUser } = useAuth();
   const queryClient = useQueryClient();
   const [currentLevel, setCurrentLevel] = useState(null);
   const [levelMeta, setLevelMeta] = useState(null);
@@ -26,6 +26,7 @@ export const GameProvider = ({ children }) => {
     isConnecting: false,
   });
   const [levelTransition, setLevelTransition] = useState(null);
+  const [autoSolveResult, setAutoSolveResult] = useState(null);
   const previousLevelOrderRef = useRef(null);
   const pendingTransitionRef = useRef(null);
   const hasInitializedLevelRef = useRef(false);
@@ -48,6 +49,7 @@ export const GameProvider = ({ children }) => {
     pendingTransitionRef.current = null;
     hasInitializedLevelRef.current = false;
     setLevelTransition(null);
+    setAutoSolveResult(null);
   }, [isAuthenticated, authLoading]);
 
   // Fetch next level
@@ -220,8 +222,10 @@ export const GameProvider = ({ children }) => {
 
         // Update user coins in auth context
         if (user) {
-          user.coins = data.data.totalCoins;
-          user.totalScore = data.data.totalScore;
+          updateUser({
+            coins: data.data.totalCoins,
+            totalScore: data.data.totalScore,
+          });
         }
 
         // Clear current selection and update completed words locally
@@ -254,28 +258,61 @@ export const GameProvider = ({ children }) => {
       onSuccess: (data) => {
         // Update user coins
         if (user) {
-          user.coins = data.data.remainingCoins;
-          user.totalScore = data.data.totalScore;
+          updateUser({
+            coins: data.data.remainingCoins,
+            totalScore: data.data.totalScore,
+          });
         }
+
+        let updatedCompletedWords = [];
 
         // Clear current selection and update completed words locally
         setGameState(prev => {
           const solvedWord = data?.data?.solvedWord?.text?.toUpperCase();
-          const updatedCompletedWords = solvedWord
+          const updated = solvedWord
             ? Array.from(new Set([...prev.completedWords, solvedWord]))
             : prev.completedWords;
+
+          updatedCompletedWords = updated;
 
           return {
             ...prev,
             selectedNodes: [],
             selectionPreview: '',
             currentWord: '',
-            completedWords: updatedCompletedWords,
+            completedWords: updated,
           };
         });
 
-        // Invalidate queries to refetch and get updated completed words
-        queryClient.invalidateQueries(['nextLevel', user?.id]);
+        const totalWords = currentLevel?.words?.length ?? 0;
+        const completedAll = totalWords > 0 && updatedCompletedWords.length >= totalWords;
+
+        if (completedAll) {
+          const parseOrder = (value) => {
+            if (value === null || value === undefined) {
+              return null;
+            }
+            const numeric = Number(value);
+            return Number.isNaN(numeric) ? null : numeric;
+          };
+
+          pendingTransitionRef.current = {
+            type: 'completed',
+            from: parseOrder(currentLevel?.order),
+          };
+        }
+
+        setAutoSolveResult({
+          word: data?.data?.solvedWord ?? null,
+          coinsSpent: data?.data?.coinsSpent ?? null,
+          remainingCoins: data?.data?.remainingCoins ?? null,
+          levelCompleted: completedAll,
+        });
+
+        if (!completedAll) {
+          // Invalidate queries to refetch and get updated completed words
+          queryClient.invalidateQueries(['nextLevel', user?.id]);
+        }
         queryClient.invalidateQueries(['leaderboard']);
       },
     }
@@ -445,7 +482,7 @@ export const GameProvider = ({ children }) => {
       throw new Error('برای استفاده از پاور آپ‌ها باید وارد حساب کاربری شوی');
     }
 
-    await autoSolveMutation.mutateAsync({
+    return autoSolveMutation.mutateAsync({
       levelId: currentLevel._id,
     });
   };
@@ -453,6 +490,20 @@ export const GameProvider = ({ children }) => {
   const clearLevelTransition = useCallback(() => {
     setLevelTransition(null);
   }, []);
+
+  const clearAutoSolveResult = useCallback(() => {
+    setAutoSolveResult(null);
+  }, []);
+
+  const confirmAutoSolveCompletion = useCallback(async () => {
+    if (!user) {
+      setAutoSolveResult(null);
+      return;
+    }
+
+    await queryClient.invalidateQueries(['nextLevel', user.id]);
+    setAutoSolveResult(null);
+  }, [queryClient, user]);
 
   const value = {
     currentLevel,
@@ -479,6 +530,11 @@ export const GameProvider = ({ children }) => {
     // Level transitions
     levelTransition,
     clearLevelTransition,
+
+    // Auto-solve feedback
+    autoSolveResult,
+    clearAutoSolveResult,
+    confirmAutoSolveCompletion,
   };
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;

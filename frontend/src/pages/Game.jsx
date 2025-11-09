@@ -39,7 +39,10 @@ const Game = () => {
     levelMeta,
     isGuestMode,
     levelTransition,
-    clearLevelTransition
+    clearLevelTransition,
+    autoSolveResult,
+    clearAutoSolveResult,
+    confirmAutoSolveCompletion
   } = useGame();
   const { user, isAuthenticated, updateUser } = useAuth();
 
@@ -48,6 +51,9 @@ const Game = () => {
   const [shuffleUsageCount, setShuffleUsageCount] = useState(0);
   const [shuffleModal, setShuffleModal] = useState({ type: null });
   const [isPurchasingShuffle, setIsPurchasingShuffle] = useState(false);
+  const [showAutoSolveModal, setShowAutoSolveModal] = useState(false);
+  const [showAutoSolvePrompt, setShowAutoSolvePrompt] = useState(false);
+  const [isConfirmingNextLevel, setIsConfirmingNextLevel] = useState(false);
   const shuffleCost = 15;
   const currentLevelId = currentLevel?._id ?? null;
   const faNumberFormatter = useMemo(() => new Intl.NumberFormat('fa-IR'), []);
@@ -339,6 +345,19 @@ const Game = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [shuffleModal.type]);
 
+  useEffect(() => {
+    if (!autoSolveResult) {
+      setShowAutoSolveModal(false);
+      setShowAutoSolvePrompt(false);
+      return;
+    }
+
+    setShowAutoSolveModal(true);
+    if (autoSolveResult.levelCompleted) {
+      setShowAutoSolvePrompt(true);
+    }
+  }, [autoSolveResult]);
+
   const handleCloseShuffleModal = useCallback(() => {
     if (isPurchasingShuffle) {
       return;
@@ -534,6 +553,29 @@ const Game = () => {
       await autoSolve();
     } catch (error) {
       toast.error(error.message || 'یه مشکلی پیش اومد!');
+    }
+  };
+
+  const handleCloseAutoSolveModal = () => {
+    setShowAutoSolveModal(false);
+    if (!autoSolveResult?.levelCompleted) {
+      clearAutoSolveResult();
+    }
+  };
+
+  const handleConfirmNextLevel = async () => {
+    if (!autoSolveResult?.levelCompleted) {
+      clearAutoSolveResult();
+      setShowAutoSolvePrompt(false);
+      return;
+    }
+
+    try {
+      setIsConfirmingNextLevel(true);
+      await confirmAutoSolveCompletion();
+    } finally {
+      setIsConfirmingNextLevel(false);
+      setShowAutoSolvePrompt(false);
     }
   };
 
@@ -1062,6 +1104,47 @@ const Game = () => {
         </div>
       </div>
       <AnimatePresence>
+        {showAutoSolvePrompt && autoSolveResult?.levelCompleted && (
+          <motion.div
+            key="auto-solve-banner"
+            initial={{ opacity: 0, x: -30 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -30 }}
+            transition={{ type: 'spring', stiffness: 220, damping: 24 }}
+            className="fixed top-6 left-6 z-[65] max-w-sm"
+          >
+            <div className="bg-gradient-to-br from-emerald-500/20 via-purple-500/30 to-cyan-500/20 border border-white/15 backdrop-blur-md rounded-2xl p-5 shadow-[0_20px_60px_rgba(76,29,149,0.45)] text-right">
+              <div className="flex items-start gap-4">
+                <div className="p-2 rounded-xl bg-white/10 border border-white/20 text-emerald-200">
+                  <Sparkles className="w-6 h-6" />
+                </div>
+                <div className="flex-1 space-y-2">
+                  <div>
+                    <p className="text-sm font-semibold text-white/80">آخرین کلمه با حل خودکار پیدا شد!</p>
+                    <p className="text-xs text-white/70 mt-1">آماده‌ای به مرحله بعدی بروی و ماجراجویی تازه‌ای شروع کنی؟</p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={handleConfirmNextLevel}
+                      disabled={isConfirmingNextLevel}
+                      className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-400 hover:to-secondary-400 text-white text-sm font-semibold transition-all disabled:opacity-70"
+                    >
+                      {isConfirmingNextLevel ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <ArrowRight className="w-4 h-4" />
+                      )}
+                      <span>بله، بریم مرحله بعد</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
         {shuffleModal.type && (
           <motion.div
             key="shuffle-modal"
@@ -1233,6 +1316,84 @@ const Game = () => {
                   <span>بزن بریم</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {showAutoSolveModal && autoSolveResult && (
+          <motion.div
+            key="auto-solve-modal"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 backdrop-blur-sm px-4"
+            onClick={handleCloseAutoSolveModal}
+          >
+            <motion.div
+              initial={{ scale: 0.92, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.92, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 260, damping: 22 }}
+              onClick={(event) => event.stopPropagation()}
+              className="relative w-full max-w-lg bg-gradient-to-br from-slate-900/95 via-purple-900/90 to-slate-900/95 border border-white/10 rounded-3xl px-6 py-7 sm:px-8 shadow-[0_40px_140px_rgba(12,10,45,0.7)] text-right"
+            >
+              <button
+                type="button"
+                onClick={handleCloseAutoSolveModal}
+                className="absolute top-4 left-4 text-white/60 hover:text-white transition-colors"
+                aria-label="بستن"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 rounded-2xl bg-primary-500/20 border border-primary-400/30 text-primary-100">
+                    <Sparkles className="w-7 h-7" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-white">حل خودکار انجام شد ✨</h3>
+                    <p className="text-sm text-white/70 mt-1">یکی از کلمات مرحله برایت باز شد. از این فرصت برای ادامه استفاده کن!</p>
+                  </div>
+                </div>
+                {autoSolveResult?.word?.text && (
+                  <div className="rounded-2xl border border-primary-400/30 bg-primary-500/10 p-4">
+                    <p className="text-xs text-primary-200 mb-2">کلمه حل‌شده</p>
+                    <p className="text-2xl font-extrabold text-white tracking-wide" dir="ltr">
+                      {autoSolveResult.word.text}
+                    </p>
+                    {autoSolveResult.word.meaning && (
+                      <p className="text-sm text-white/70 mt-3 leading-relaxed">{autoSolveResult.word.meaning}</p>
+                    )}
+                  </div>
+                )}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white/70 flex items-center justify-between">
+                    <span className="font-medium">سکه مصرف‌شده</span>
+                    <span className="inline-flex items-center gap-1 text-amber-300">
+                      <Coins className="w-4 h-4" />
+                      {autoSolveResult?.coinsSpent ?? 50}
+                    </span>
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white/70 flex items-center justify-between">
+                    <span className="font-medium">سکه باقی‌مانده</span>
+                    <span className="inline-flex items-center gap-1 text-emerald-300">
+                      <Coins className="w-4 h-4" />
+                      {autoSolveResult?.remainingCoins ?? Math.max((user?.coins ?? 0), 0)}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={handleCloseAutoSolveModal}
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-400 hover:to-secondary-400 text-white text-sm font-semibold transition-all"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    <span>ادامه می‌دهم</span>
+                  </button>
+                </div>
               </div>
             </motion.div>
           </motion.div>
