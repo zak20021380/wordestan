@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../contexts/AuthContext';
+import { authService } from '../services/authService';
 import { toast } from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import {
@@ -18,14 +19,18 @@ const Register = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { register: registerUser } = useAuth();
+  const [serverError, setServerError] = useState('');
   const navigate = useNavigate();
-  
-  const { 
-    register, 
-    handleSubmit, 
+
+  const {
+    register,
+    handleSubmit,
     watch,
-    formState: { errors } 
-  } = useForm();
+    formState: { errors }
+  } = useForm({
+    mode: 'onBlur',
+    reValidateMode: 'onChange'
+  });
 
   const password = watch('password');
 
@@ -35,17 +40,28 @@ const Register = () => {
       return;
     }
 
+    setServerError('');
     setIsLoading(true);
     try {
+      const sanitizedUsername = data.username.trim();
       await registerUser({
-        username: data.username,
+        username: sanitizedUsername,
         password: data.password,
       });
 
       navigate('/game');
       toast.success('یِه‌هو! خوش اومدی! 🎉');
     } catch (error) {
-      toast.error(error.message || 'یه مشکلی پیش اومد، دوباره امتحان کن!');
+      if (error.message === 'User already exists with this username') {
+        setServerError('این اسم کاربری قبلاً ثبت شده! اگر حسابی داری، از صفحه ورود وارد شو یا اسم دیگه‌ای انتخاب کن.');
+        toast.error('اسم کاربری تکراریه.');
+      } else if (error.message === 'Username cannot contain spaces') {
+        setServerError('اسم کاربری نباید فاصله داشته باشه. فاصله‌ها رو حذف کن یا از _ استفاده کن.');
+        toast.error('فاصله مجاز نیست.');
+      } else {
+        setServerError('یه مشکلی پیش اومد، بعداً دوباره امتحان کن.');
+        toast.error(error.message || 'یه مشکلی پیش اومد، دوباره امتحان کن!');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -96,7 +112,33 @@ const Register = () => {
                     },
                     pattern: {
                       value: /^[a-zA-Z0-9_]+$/,
-                      message: 'فقط حروف انگلیسی، اعداد و _ استفاده کن'
+                      message: 'فقط حروف انگلیسی، اعداد و _ استفاده کن (بدون فاصله)'
+                    },
+                    validate: {
+                      noSpaces: value =>
+                        !/\s/.test(value || '') ||
+                        'اسم کاربری نباید فاصله داشته باشه. فاصله‌ها رو حذف کن یا از _ استفاده کن.',
+                      availability: async value => {
+                        if (!value || value.length < 3 || /\s/.test(value)) {
+                          return true;
+                        }
+
+                        try {
+                          const result = await authService.checkUsername(value);
+
+                          if (result.available) {
+                            return true;
+                          }
+
+                          if (result.message === 'Username cannot contain spaces') {
+                            return 'اسم کاربری نباید فاصله داشته باشه. فاصله‌ها رو حذف کن یا از _ استفاده کن.';
+                          }
+
+                          return 'این اسم کاربری قبلاً ثبت شده! اگر مال خودته، از صفحه ورود وارد شو.';
+                        } catch (error) {
+                          return 'نتونستیم اسم کاربری رو بررسی کنیم. لطفاً چند لحظه بعد دوباره امتحان کن.';
+                        }
+                      }
                     }
                   })}
                 />
@@ -182,26 +224,10 @@ const Register = () => {
                 <span>بزن بریم! 🚀</span>
               )}
             </button>
+            {serverError && (
+              <p className="text-sm text-danger text-center">{serverError}</p>
+            )}
           </form>
-
-          {/* Divider */}
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-glass-border"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-glass text-white/60">یا با اکانت آزمایشی امتحان کن</span>
-            </div>
-          </div>
-
-          {/* Demo Account */}
-          <div className="text-center">
-            <p className="text-white/60 mb-4">اطلاعات اکانت آزمایشی:</p>
-            <div className="bg-glass-hover rounded-lg p-4 text-sm text-white/80">
-              <p><strong>اسم کاربری:</strong> admin</p>
-              <p><strong>رمز:</strong> admin123</p>
-            </div>
-          </div>
         </div>
 
         {/* Login Link */}

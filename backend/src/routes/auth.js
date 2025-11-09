@@ -5,7 +5,8 @@ const {
   register,
   login,
   getMe,
-  updateProfile
+  updateProfile,
+  checkUsernameAvailability
 } = require('../controllers/authController');
 
 const router = express.Router();
@@ -49,5 +50,6 @@ router.post('/register', registerValidation, register);
 router.post('/login', loginValidation, login);
 router.get('/me', auth, getMe);
 router.put('/update', auth, updateValidation, updateProfile);
+router.get('/check-username', checkUsernameAvailability);
 
 module.exports = router;

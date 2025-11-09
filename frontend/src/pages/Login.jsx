@@ -16,6 +16,7 @@ import {
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [authError, setAuthError] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -29,6 +30,7 @@ const Login = () => {
   const onSubmit = async (data) => {
     setIsLoading(true);
     try {
+      setAuthError('');
       await login(data.username, data.password);
 
       // Redirect to original page or home
@@ -37,7 +39,13 @@ const Login = () => {
 
       toast.success('خوش اومدی! 🎉');
     } catch (error) {
-      toast.error(error.message || 'یه مشکلی پیش اومد!');
+      if (error.message === 'Invalid credentials') {
+        setAuthError('چنین حسابی پیدا نشد! اگر هنوز ثبت‌نام نکردی، از لینک پایین یه اکانت بساز.');
+        toast.error('نام کاربری یا رمز عبور اشتباهه.');
+      } else {
+        setAuthError('ورود ناموفق بود. لطفاً دوباره تلاش کن.');
+        toast.error(error.message || 'یه مشکلی پیش اومد!');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -137,26 +145,10 @@ const Login = () => {
                 <span>بزن بریم! 🚀</span>
               )}
             </button>
+            {authError && (
+              <p className="text-sm text-danger text-center">{authError}</p>
+            )}
           </form>
-
-          {/* Divider */}
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-glass-border"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-glass text-white/60">یا</span>
-            </div>
-          </div>
-
-          {/* Demo Account */}
-          <div className="text-center">
-            <p className="text-white/60 mb-4">با اکانت آزمایشی امتحان کن:</p>
-            <div className="bg-glass-hover rounded-lg p-4 text-sm text-white/80">
-              <p><strong>اسم کاربری:</strong> admin</p>
-              <p><strong>رمز:</strong> admin123</p>
-            </div>
-          </div>
         </div>
 
         {/* Sign Up Link */}
