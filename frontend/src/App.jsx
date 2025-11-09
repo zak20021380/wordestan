@@ -19,6 +19,11 @@ import NotFound from './pages/NotFound';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
+import AdminDashboard from './components/admin/AdminDashboard';
+import WordManagement from './components/admin/WordManagement';
+import LevelManagement from './components/admin/LevelManagement';
+import CoinPackManagement from './components/admin/CoinPackManagement';
+import UserManagement from './components/admin/UserManagement';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -69,11 +74,21 @@ function App() {
                         <Route path="/leaderboard" element={<Leaderboard />} />
                         
                         {/* Admin routes */}
-                        <Route path="/admin/*" element={
-                          <AdminRoute>
-                            <Admin />
-                          </AdminRoute>
-                        } />
+                        <Route
+                          path="/admin/*"
+                          element={
+                            <AdminRoute>
+                              <Admin />
+                            </AdminRoute>
+                          }
+                        >
+                          <Route index element={<AdminDashboard />} />
+                          <Route path="words" element={<WordManagement />} />
+                          <Route path="levels" element={<LevelManagement />} />
+                          <Route path="coin-packs" element={<CoinPackManagement />} />
+                          <Route path="users" element={<UserManagement />} />
+                          <Route path="*" element={<AdminDashboard />} />
+                        </Route>
                         
                         {/* 404 route */}
                         <Route path="*" element={<NotFound />} />

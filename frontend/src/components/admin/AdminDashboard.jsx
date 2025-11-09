@@ -1,5 +1,6 @@
 import { useQuery } from 'react-query';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { adminService } from '../../services/adminService';
 import { formatToman } from '../../utils/currency';
 import {
@@ -14,6 +15,7 @@ import {
 } from 'lucide-react';
 
 const AdminDashboard = () => {
+  const navigate = useNavigate();
   // Fetch dashboard statistics
   const { data: dashboardData, isLoading } = useQuery(
     ['adminDashboard'],
@@ -191,7 +193,16 @@ const AdminDashboard = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1 }}
-            className="bg-glass backdrop-blur-lg rounded-xl border border-glass-border p-4 hover:bg-glass-hover transition-colors cursor-pointer"
+            className="bg-glass backdrop-blur-lg rounded-xl border border-glass-border p-4 hover:bg-glass-hover transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary-400"
+            onClick={() => navigate('/admin/users')}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                navigate('/admin/users');
+              }
+            }}
+            role="button"
+            tabIndex={0}
           >
             <div className="text-center">
               <Users className="w-8 h-8 text-primary-400 mx-auto mb-2" />
@@ -199,12 +210,21 @@ const AdminDashboard = () => {
               <div className="text-white/60 text-sm">View and manage user accounts</div>
             </div>
           </motion.div>
-          
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.1 }}
-            className="bg-glass backdrop-blur-lg rounded-xl border border-glass-border p-4 hover:bg-glass-hover transition-colors cursor-pointer"
+            className="bg-glass backdrop-blur-lg rounded-xl border border-glass-border p-4 hover:bg-glass-hover transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-secondary-400"
+            onClick={() => navigate('/admin/words', { state: { openCreate: true } })}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                navigate('/admin/words', { state: { openCreate: true } });
+              }
+            }}
+            role="button"
+            tabIndex={0}
           >
             <div className="text-center">
               <Type className="w-8 h-8 text-secondary-400 mx-auto mb-2" />
@@ -212,12 +232,21 @@ const AdminDashboard = () => {
               <div className="text-white/60 text-sm">Create new word entries</div>
             </div>
           </motion.div>
-          
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.2 }}
-            className="bg-glass backdrop-blur-lg rounded-xl border border-glass-border p-4 hover:bg-glass-hover transition-colors cursor-pointer"
+            className="bg-glass backdrop-blur-lg rounded-xl border border-glass-border p-4 hover:bg-glass-hover transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-400"
+            onClick={() => navigate('/admin/levels', { state: { openCreate: true } })}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                navigate('/admin/levels', { state: { openCreate: true } });
+              }
+            }}
+            role="button"
+            tabIndex={0}
           >
             <div className="text-center">
               <Layers className="w-8 h-8 text-purple-400 mx-auto mb-2" />
@@ -225,12 +254,21 @@ const AdminDashboard = () => {
               <div className="text-white/60 text-sm">Design new game levels</div>
             </div>
           </motion.div>
-          
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.3 }}
-            className="bg-glass backdrop-blur-lg rounded-xl border border-glass-border p-4 hover:bg-glass-hover transition-colors cursor-pointer"
+            className="bg-glass backdrop-blur-lg rounded-xl border border-glass-border p-4 hover:bg-glass-hover transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-yellow-400"
+            onClick={() => navigate('/admin/coin-packs')}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                navigate('/admin/coin-packs');
+              }
+            }}
+            role="button"
+            tabIndex={0}
           >
             <div className="text-center">
               <ShoppingCart className="w-8 h-8 text-yellow-400 mx-auto mb-2" />
