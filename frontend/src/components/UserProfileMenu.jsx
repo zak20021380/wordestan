@@ -12,7 +12,8 @@ import {
   History,
   ListChecks,
   BookOpen,
-  X
+  X,
+  LogOut
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { authService } from '../services/authService';
@@ -53,7 +54,7 @@ const formatDate = (value, withTime = false) => {
 };
 
 const UserProfileMenu = () => {
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -222,6 +223,12 @@ const UserProfileMenu = () => {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleLogout = () => {
+    logout();
+    setIsOpen(false);
+    setIsEditing(false);
   };
 
   const activeProfile = profile || user;
@@ -416,10 +423,18 @@ const UserProfileMenu = () => {
                     <button
                       type="button"
                       onClick={() => setIsEditing(true)}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-sm font-bold text-white hover:border-primary-400/40 hover:bg-slate-700"
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-sm font-bold text-white hover:border-primary-400/40 hover:bg-slate-700"
                     >
                       <Pencil className="w-4 h-4" />
                       ویرایش پروفایل
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-red-500/20 to-pink-500/20 border border-red-400/40 text-sm font-bold text-red-200 hover:border-red-400/60 hover:shadow-[0_0_20px_rgba(239,68,68,0.4)] hover:scale-105 transition-all"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      خروج
                     </button>
                   </div>
                 )}
