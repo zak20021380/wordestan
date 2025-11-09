@@ -88,7 +88,7 @@ const Store = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md px-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md px-3 sm:px-4 py-6 sm:py-8"
             onClick={handleCloseModal}
           >
             <motion.div
@@ -96,11 +96,11 @@ const Store = () => {
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
               transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-              className="relative w-full max-w-md mx-4 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-2 border-primary-500/30 rounded-2xl sm:rounded-3xl shadow-2xl shadow-primary-500/20 overflow-hidden"
+              className="relative w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl mx-auto bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-primary-500/30 rounded-2xl sm:rounded-3xl shadow-2xl shadow-primary-500/20 flex flex-col max-h-[90vh]"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Decorative gradient overlay */}
-              <div className="absolute inset-0 bg-gradient-to-br from-primary-500/10 via-transparent to-secondary-500/10 pointer-events-none" />
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary-500/10 via-transparent to-secondary-500/10" />
 
               {/* Animated background pattern */}
               <div className="absolute inset-0 opacity-5">
@@ -120,19 +120,19 @@ const Store = () => {
                 <X className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
 
-              <div className="relative p-4 sm:p-6 md:p-8">
+              <div className="relative flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
                 {/* Header with icon */}
                 <div className="text-center mb-4 sm:mb-6 md:mb-8">
                   <motion.div
                     initial={{ scale: 0, rotate: -180 }}
                     animate={{ scale: 1, rotate: 0 }}
                     transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-                    className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 mx-auto mb-3 sm:mb-4 rounded-full bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center shadow-lg shadow-primary-500/50"
+                    className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 mx-auto mb-3 sm:mb-4 rounded-full bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center shadow-lg shadow-primary-500/50"
                   >
-                    <ShoppingCart className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-white" />
+                    <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white" />
                   </motion.div>
-                  <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-1 sm:mb-2">تایید خرید</h2>
-                  <p className="text-white/60 text-xs sm:text-sm">مشخصات بسته خریداری شده را بررسی کنید</p>
+                  <h2 className="text-lg sm:text-2xl md:text-3xl font-bold text-white mb-1 sm:mb-2">تایید خرید</h2>
+                  <p className="text-white/60 text-xs sm:text-sm leading-relaxed">مشخصات بسته خریداری شده را بررسی کنید</p>
                 </div>
 
                 {/* Pack Details Card */}
