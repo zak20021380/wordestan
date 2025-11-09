@@ -446,6 +446,7 @@ const Game = () => {
                             <div
                               key={`${word}-${index}`}
                               className="flex justify-center gap-2"
+                              dir="ltr"
                             >
                               {letters.map((letter, letterIndex) => (
                                 <div
