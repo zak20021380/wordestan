@@ -183,7 +183,6 @@ const Store = () => {
                     <span>مبلغ قابل پرداخت</span>
                     <div className="text-right text-sm font-semibold text-white">
                       {formatToman(selectedPack.price)}
-                      <span className="ml-1 text-xs text-white/50">تومان</span>
                     </div>
                   </div>
 
