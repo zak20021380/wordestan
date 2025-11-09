@@ -30,8 +30,16 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       // Token expired or invalid
-      localStorage.removeItem('token');
-      window.location.href = '/login';
+      const token = localStorage.getItem('token');
+
+      if (token) {
+        localStorage.removeItem('token');
+
+        // Avoid triggering a full page reload during login attempts
+        if (!error.config?.url?.includes('/auth/login')) {
+          window.location.href = '/login';
+        }
+      }
     }
     return Promise.reject(error);
   }
