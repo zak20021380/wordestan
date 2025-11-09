@@ -42,13 +42,15 @@ const register = async (req, res) => {
       });
     }
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ username: trimmedUsername });
+    // Check if user already exists (case-insensitive)
+    const existingUser = await User.findOne({
+      username: { $regex: new RegExp(`^${trimmedUsername}$`, 'i') }
+    });
 
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: 'User already exists with this username'
+        message: 'این نام کاربری قبلاً گرفته شده است. لطفاً یک نام کاربری دیگر انتخاب کنید.'
       });
     }
 
@@ -133,8 +135,10 @@ const login = async (req, res) => {
 
     const { username, password } = req.body;
 
-    // Find user by username
-    const user = await User.findOne({ username });
+    // Find user by username (case-insensitive)
+    const user = await User.findOne({
+      username: { $regex: new RegExp(`^${username}$`, 'i') }
+    });
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -235,16 +239,16 @@ const updateProfile = async (req, res) => {
     if (typeof username !== 'undefined') {
       const trimmedUsername = username.trim();
       if (trimmedUsername.length > 0) {
-        // Check if username already exists for other users
+        // Check if username already exists for other users (case-insensitive)
         const existingUser = await User.findOne({
           _id: { $ne: userId },
-          username: trimmedUsername
+          username: { $regex: new RegExp(`^${trimmedUsername}$`, 'i') }
         });
 
         if (existingUser) {
           return res.status(400).json({
             success: false,
-            message: 'Username already taken'
+            message: 'این نام کاربری قبلاً گرفته شده است. لطفاً یک نام کاربری دیگر انتخاب کنید.'
           });
         }
 
@@ -327,14 +331,17 @@ const checkUsernameAvailability = async (req, res) => {
       });
     }
 
-    const existingUser = await User.findOne({ username: trimmedUsername });
+    // Check if username exists (case-insensitive)
+    const existingUser = await User.findOne({
+      username: { $regex: new RegExp(`^${trimmedUsername}$`, 'i') }
+    });
 
     return res.json({
       success: true,
       available: !existingUser,
       message: existingUser
-        ? 'User already exists with this username'
-        : 'Username is available'
+        ? 'این نام کاربری قبلاً گرفته شده است.'
+        : 'این نام کاربری در دسترس است!'
     });
   } catch (error) {
     console.error('Username availability check error:', error);
