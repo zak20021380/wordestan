@@ -14,7 +14,6 @@ import {
   Gem,
   Zap,
   Plus,
-  Lightbulb,
   Sparkles,
   Trophy
 } from 'lucide-react';
@@ -91,7 +90,7 @@ const Store = () => {
           <h1 className="text-4xl font-bold text-white">فروشگاه سکه</h1>
         </div>
         <p className="text-xl text-white/80 max-w-2xl mx-auto">
-          سکه بخرید تا راهنمایی‌ها، ویژگی حل خودکار و تجربه بازی خود را بهبود بخشید
+          سکه بخرید تا ویژگی حل خودکار و تجربه بازی خود را بهبود بخشید
         </p>
       </motion.div>
 
@@ -218,15 +217,7 @@ const Store = () => {
       >
         <h2 className="text-2xl font-bold text-white text-center mb-8">کارهایی که می‌توانید با سکه انجام دهید</h2>
 
-        <div className="grid md:grid-cols-3 gap-6">
-          <div className="text-center">
-            <div className="w-16 h-16 bg-secondary-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Lightbulb className="w-8 h-8 text-secondary-400" />
-            </div>
-            <h3 className="text-lg font-semibold text-white mb-2">دریافت راهنمایی</h3>
-            <p className="text-white/60">حرف بعدی در یک کلمه را با 10 سکه نمایش دهید</p>
-          </div>
-
+        <div className="grid md:grid-cols-2 gap-6">
           <div className="text-center">
             <div className="w-16 h-16 bg-primary-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
               <Sparkles className="w-8 h-8 text-primary-400" />

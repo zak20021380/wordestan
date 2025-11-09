@@ -46,7 +46,7 @@ const Home = () => {
     {
       icon: Zap,
       title: 'پاور آپ‌ها',
-      description: 'راهنما و حل خودکار داریم برای وقتایی که گیر کردی',
+      description: 'حل خودکار داریم برای وقتایی که گیر کردی',
       color: 'text-secondary-400',
       bgGradient: 'from-secondary-500/20 to-secondary-600/10'
     },
