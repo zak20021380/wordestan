@@ -17,20 +17,15 @@ const registerValidation = [
     .withMessage('Username must be between 3 and 20 characters')
     .matches(/^[a-zA-Z0-9_]+$/)
     .withMessage('Username can only contain letters, numbers, and underscores'),
-  body('email')
-    .isEmail()
-    .withMessage('Please provide a valid email')
-    .normalizeEmail(),
   body('password')
     .isLength({ min: 6 })
     .withMessage('Password must be at least 6 characters long')
 ];
 
 const loginValidation = [
-  body('email')
-    .isEmail()
-    .withMessage('Please provide a valid email')
-    .normalizeEmail(),
+  body('username')
+    .isLength({ min: 3 })
+    .withMessage('Please provide a valid username'),
   body('password')
     .notEmpty()
     .withMessage('Password is required')
@@ -42,12 +37,7 @@ const updateValidation = [
     .isLength({ min: 3, max: 20 })
     .withMessage('Username must be between 3 and 20 characters')
     .matches(/^[a-zA-Z0-9_]+$/)
-    .withMessage('Username can only contain letters, numbers, and underscores'),
-  body('email')
-    .optional()
-    .isEmail()
-    .withMessage('Please provide a valid email')
-    .normalizeEmail()
+    .withMessage('Username can only contain letters, numbers, and underscores')
 ];
 
 // Routes

@@ -49,9 +49,9 @@ export const authService = {
   },
 
   // Login user
-  async login(email, password) {
+  async login(username, password) {
     try {
-      const response = await api.post('/auth/login', { email, password });
+      const response = await api.post('/auth/login', { username, password });
       return response.data.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Login failed');

@@ -37,17 +37,17 @@ export const AuthProvider = ({ children }) => {
     checkAuth();
   }, []);
 
-  const login = async (email, password) => {
+  const login = async (username, password) => {
     try {
       setError(null);
-      const response = await authService.login(email, password);
-      
+      const response = await authService.login(username, password);
+
       // Store token
       localStorage.setItem('token', response.token);
-      
+
       // Set user
       setUser(response.user);
-      
+
       return response;
     } catch (error) {
       setError(error.message);

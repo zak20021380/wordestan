@@ -25,24 +25,21 @@ const register = async (req, res) => {
       });
     }
 
-    const { username, email, password } = req.body;
+    const { username, password } = req.body;
 
     // Check if user already exists
-    const existingUser = await User.findOne({ 
-      $or: [{ email }, { username }] 
-    });
+    const existingUser = await User.findOne({ username });
 
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: 'User already exists with this email or username'
+        message: 'User already exists with this username'
       });
     }
 
     // Create new user with initial coins
     const user = new User({
       username,
-      email,
       password,
       coins: parseInt(process.env.INITIAL_COINS) || 100,
       isAdmin: false
@@ -61,7 +58,6 @@ const register = async (req, res) => {
         user: {
           id: user._id,
           username: user.username,
-          email: user.email,
           coins: user.coins,
           levelsCleared: user.levelsCleared,
           totalScore: user.totalScore,
@@ -93,10 +89,10 @@ const login = async (req, res) => {
       });
     }
 
-    const { email, password } = req.body;
+    const { username, password } = req.body;
 
-    // Find user by email
-    const user = await User.findOne({ email });
+    // Find user by username
+    const user = await User.findOne({ username });
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -127,7 +123,6 @@ const login = async (req, res) => {
         user: {
           id: user._id,
           username: user.username,
-          email: user.email,
           coins: user.coins,
           levelsCleared: user.levelsCleared,
           totalScore: user.totalScore,
@@ -182,25 +177,25 @@ const updateProfile = async (req, res) => {
       });
     }
 
-    const { username, email } = req.body;
+    const { username } = req.body;
     const userId = req.user.id;
 
-    // Check if username or email already exists for other users
+    // Check if username already exists for other users
     const existingUser = await User.findOne({
       _id: { $ne: userId },
-      $or: [{ email }, { username }]
+      username
     });
 
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: 'Username or email already taken'
+        message: 'Username already taken'
       });
     }
 
     const user = await User.findByIdAndUpdate(
       userId,
-      { username, email },
+      { username },
       { new: true, runValidators: true }
     ).select('-password');
 
