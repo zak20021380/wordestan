@@ -1,6 +1,22 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
+const levelProgressSchema = new mongoose.Schema({
+  levelId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Level',
+    required: true
+  },
+  completedWords: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Word'
+  }],
+  isComplete: {
+    type: Boolean,
+    default: false
+  }
+}, { _id: false });
+
 const userSchema = new mongoose.Schema({
   username: {
     type: String,
@@ -56,10 +72,10 @@ const userSchema = new mongoose.Schema({
     default: 0,
     min: 0
   },
-  completedWords: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Word'
-  }],
+  levelProgress: {
+    type: [levelProgressSchema],
+    default: []
+  },
   completedLevels: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Level'
@@ -117,20 +133,144 @@ userSchema.methods.spendCoins = function(amount) {
 
 // Update level progress
 userSchema.methods.completeLevel = function(levelId) {
-  this.levelsCleared += 1;
-  this.currentLevel += 1;
-  this.totalScore += 100; // Level completion bonus
-  this.completedLevels.push(levelId);
+  const normalizedLevelId = toObjectId(levelId);
+  if (!normalizedLevelId) {
+    return this.save();
+  }
+
+  const progress = this.getLevelProgress(normalizedLevelId, { createIfMissing: true });
+
+  if (!progress.isComplete) {
+    progress.isComplete = true;
+    this.levelsCleared += 1;
+    this.currentLevel += 1;
+    this.totalScore += 100; // Level completion bonus
+  }
+
+  if (!Array.isArray(this.completedLevels)) {
+    this.completedLevels = [];
+  }
+
+  const alreadyTracked = this.completedLevels.some(id => {
+    if (!id) {
+      return false;
+    }
+
+    if (typeof id.equals === 'function') {
+      return id.equals(normalizedLevelId);
+    }
+
+    return id.toString() === normalizedLevelId.toString();
+  });
+  if (!alreadyTracked) {
+    this.completedLevels.push(normalizedLevelId);
+  }
+
   return this.save();
 };
 
+const toObjectId = (value) => {
+  if (!value) {
+    return null;
+  }
+
+  if (value instanceof mongoose.Types.ObjectId) {
+    return value;
+  }
+
+  return new mongoose.Types.ObjectId(value);
+};
+
+userSchema.methods.getLevelProgress = function(levelId, { createIfMissing = false } = {}) {
+  if (!Array.isArray(this.levelProgress)) {
+    this.levelProgress = [];
+  }
+
+  const normalizedLevelId = toObjectId(levelId);
+  if (!normalizedLevelId) {
+    return null;
+  }
+
+  let progress = this.levelProgress.find(entry => {
+    if (!entry?.levelId) {
+      return false;
+    }
+
+    if (typeof entry.levelId.equals === 'function') {
+      return entry.levelId.equals(normalizedLevelId);
+    }
+
+    return entry.levelId.toString() === normalizedLevelId.toString();
+  });
+
+  if (!progress && createIfMissing) {
+    this.levelProgress.push({
+      levelId: normalizedLevelId,
+      completedWords: [],
+      isComplete: false
+    });
+    progress = this.levelProgress[this.levelProgress.length - 1];
+  }
+
+  return progress || null;
+};
+
+userSchema.methods.hasCompletedWordInLevel = function(levelId, wordId) {
+  const progress = this.getLevelProgress(levelId);
+  if (!progress || !Array.isArray(progress.completedWords)) {
+    return false;
+  }
+
+  const normalizedWordId = toObjectId(wordId);
+  if (!normalizedWordId) {
+    return false;
+  }
+
+  return progress.completedWords.some(id => {
+    if (!id) {
+      return false;
+    }
+
+    if (typeof id.equals === 'function') {
+      return id.equals(normalizedWordId);
+    }
+
+    return id.toString() === normalizedWordId.toString();
+  });
+};
+
 // Complete word
-userSchema.methods.completeWord = function(wordId) {
-  this.wordsFound += 1;
-  this.totalScore += 20; // Word completion bonus
-  this.currentStreak += 1;
-  this.bestStreak = Math.max(this.bestStreak, this.currentStreak);
-  this.completedWords.push(wordId);
+userSchema.methods.completeWord = function(levelId, wordId) {
+  const normalizedWordId = toObjectId(wordId);
+  if (!normalizedWordId) {
+    return this.save();
+  }
+
+  const progress = this.getLevelProgress(levelId, { createIfMissing: true });
+  if (!Array.isArray(progress.completedWords)) {
+    progress.completedWords = [];
+  }
+
+  const alreadyCompleted = progress.completedWords.some(id => {
+    if (!id) {
+      return false;
+    }
+
+    if (typeof id.equals === 'function') {
+      return id.equals(normalizedWordId);
+    }
+
+    return id.toString() === normalizedWordId.toString();
+  });
+
+  if (!alreadyCompleted) {
+    progress.completedWords.push(normalizedWordId);
+    this.wordsFound += 1;
+    this.totalScore += 20; // Word completion bonus
+    this.currentStreak += 1;
+    this.bestStreak = Math.max(this.bestStreak, this.currentStreak);
+  }
+
   return this.save();
 };
 
