@@ -147,4 +147,16 @@ export const adminService = {
       throw new Error(error.response?.data?.message || 'Failed to delete coin pack');
     }
   },
+
+  // Users
+  async getUsers(params = {}) {
+    try {
+      const queryString = new URLSearchParams(params).toString();
+      const suffix = queryString ? `?${queryString}` : '';
+      const response = await api.get(`/admin/users${suffix}`);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to get users');
+    }
+  },
 };

@@ -19,9 +19,12 @@ const {
   createCoinPack,
   updateCoinPack,
   deleteCoinPack,
-  
+
   // Dashboard
-  getDashboardStats
+  getDashboardStats,
+
+  // Users
+  getUsersWithStats
 } = require('../controllers/adminController');
 
 const router = express.Router();
@@ -130,5 +133,8 @@ router.delete('/packs/:id', adminAuth, deleteCoinPack);
 
 // Dashboard
 router.get('/dashboard', adminAuth, getDashboardStats);
+
+// Users
+router.get('/users', adminAuth, getUsersWithStats);
 
 module.exports = router;

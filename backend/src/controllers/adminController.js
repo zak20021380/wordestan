@@ -791,6 +791,181 @@ const getDashboardStats = async (req, res) => {
   }
 };
 
+// @desc    Get users with purchase statistics
+// @route   GET /api/admin/users
+// @access  Admin
+const getUsersWithStats = async (req, res) => {
+  try {
+    const {
+      search = '',
+      sort = 'recent',
+      page = 1,
+      limit = 20
+    } = req.query;
+
+    const pageNum = Math.max(parseInt(page, 10) || 1, 1);
+    const limitNum = Math.min(Math.max(parseInt(limit, 10) || 20, 1), 100);
+    const skip = (pageNum - 1) * limitNum;
+
+    const filters = {};
+    const trimmedSearch = String(search || '').trim();
+    if (trimmedSearch) {
+      const searchRegex = new RegExp(trimmedSearch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+      filters.$or = [
+        { username: searchRegex },
+        { email: searchRegex }
+      ];
+    }
+
+    const matchStage = Object.keys(filters).length ? filters : {};
+
+    const sortStage = (() => {
+      switch (sort) {
+        case 'oldest':
+          return { createdAt: 1 };
+        case 'highestSpend':
+          return { totalSpent: -1, createdAt: -1 };
+        case 'lowestSpend':
+          return { totalSpent: 1, createdAt: -1 };
+        case 'name':
+          return { username: 1 };
+        default:
+          return { createdAt: -1 };
+      }
+    })();
+
+    const basePipeline = [
+      { $match: matchStage },
+      {
+        $lookup: {
+          from: 'purchases',
+          let: { userId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$userId', '$$userId'] },
+                    { $eq: ['$status', 'completed'] }
+                  ]
+                }
+              }
+            },
+            {
+              $group: {
+                _id: null,
+                totalSpent: { $sum: { $ifNull: ['$price', 0] } },
+                totalCoins: { $sum: { $ifNull: ['$amount', 0] } },
+                lastPurchase: { $max: '$createdAt' }
+              }
+            }
+          ],
+          as: 'purchaseStats'
+        }
+      },
+      {
+        $addFields: {
+          purchaseStats: {
+            $ifNull: [
+              { $first: '$purchaseStats' },
+              { totalSpent: 0, totalCoins: 0, lastPurchase: null }
+            ]
+          }
+        }
+      },
+      {
+        $addFields: {
+          totalSpent: { $ifNull: ['$purchaseStats.totalSpent', 0] },
+          totalCoinsPurchased: { $ifNull: ['$purchaseStats.totalCoins', 0] },
+          lastPurchaseAt: { $ifNull: ['$purchaseStats.lastPurchase', null] }
+        }
+      },
+      {
+        $project: {
+          _id: 1,
+          username: 1,
+          email: 1,
+          coins: 1,
+          totalScore: 1,
+          levelsCleared: 1,
+          isAdmin: 1,
+          createdAt: 1,
+          updatedAt: 1,
+          lastActive: 1,
+          lastPurchaseAt: 1,
+          totalSpent: 1,
+          totalCoinsPurchased: 1
+        }
+      }
+    ];
+
+    const usersPipeline = [
+      ...basePipeline,
+      { $sort: sortStage },
+      { $skip: skip },
+      { $limit: limitNum }
+    ];
+
+    const summaryPipeline = [
+      ...basePipeline,
+      {
+        $group: {
+          _id: null,
+          totalRevenue: { $sum: '$totalSpent' },
+          payingUsers: {
+            $sum: {
+              $cond: [{ $gt: ['$totalSpent', 0] }, 1, 0]
+            }
+          },
+          totalCoinsPurchased: { $sum: '$totalCoinsPurchased' }
+        }
+      }
+    ];
+
+    const [users, summaryAgg, totalCount] = await Promise.all([
+      User.aggregate(usersPipeline),
+      User.aggregate(summaryPipeline),
+      User.countDocuments(matchStage)
+    ]);
+
+    const summary = summaryAgg[0] || {
+      totalRevenue: 0,
+      payingUsers: 0,
+      totalCoinsPurchased: 0
+    };
+
+    const averageSpendPerPayingUser = summary.payingUsers > 0
+      ? summary.totalRevenue / summary.payingUsers
+      : 0;
+
+    res.json({
+      success: true,
+      data: {
+        users,
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          totalPages: Math.ceil(totalCount / limitNum) || 1,
+          totalCount
+        },
+        summary: {
+          totalUsers: totalCount,
+          totalRevenue: summary.totalRevenue,
+          payingUsers: summary.payingUsers,
+          totalCoinsPurchased: summary.totalCoinsPurchased,
+          averageSpendPerPayingUser
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Get users error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error fetching users'
+    });
+  }
+};
+
 module.exports = {
   // Word management
   getWords,
@@ -803,13 +978,16 @@ module.exports = {
   createLevel,
   updateLevel,
   deleteLevel,
-  
+
   // Coin pack management
   getCoinPacks,
   createCoinPack,
   updateCoinPack,
   deleteCoinPack,
-  
+
   // Dashboard
-  getDashboardStats
+  getDashboardStats,
+
+  // Users
+  getUsersWithStats
 };
