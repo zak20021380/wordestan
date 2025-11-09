@@ -4,9 +4,9 @@ import { Plus, Search, Edit, Trash2, Coins, Star, Crown, ShieldAlert } from 'luc
 import { adminService } from '../../services/adminService';
 
 const initialFormState = {
-  title: '',
+  name: '',
   description: '',
-  amount: '',
+  coins: '',
   price: '',
   bonusCoins: '',
   order: '',
@@ -61,9 +61,9 @@ const CoinPackManagement = () => {
     setSelectedPack(pack);
     setFormError('');
     setFormData({
-      title: pack.title || '',
+      name: pack.name || '',
       description: pack.description || '',
-      amount: pack.amount != null ? String(pack.amount) : '',
+      coins: pack.coins != null ? String(pack.coins) : '',
       price: pack.price != null ? String(pack.price) : '',
       bonusCoins: pack.bonusCoins != null ? String(pack.bonusCoins) : '',
       order: pack.order != null ? String(pack.order) : '',
@@ -88,7 +88,7 @@ const CoinPackManagement = () => {
   };
 
   const handleDeletePack = async (pack) => {
-    if (!window.confirm(`آیا از حذف بسته «${pack.title}» مطمئن هستی؟`)) {
+    if (!window.confirm(`آیا از حذف بسته «${pack.name}» مطمئن هستی؟`)) {
       return;
     }
 
@@ -113,18 +113,18 @@ const CoinPackManagement = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    const amount = Number(formData.amount);
+    const coins = Number(formData.coins);
     const price = Number(formData.price);
     const bonusCoins = Number(formData.bonusCoins || 0);
     const order = formData.order === '' ? 0 : Number(formData.order);
 
-    if (!formData.title.trim()) {
+    if (!formData.name.trim()) {
       setFormError('عنوان بسته را وارد کن.');
       return;
     }
 
-    if (!Number.isFinite(amount) || amount <= 0) {
-      setFormError('تعداد سکه باید یک عدد معتبر باشد.');
+    if (!Number.isFinite(coins) || coins < 10) {
+      setFormError('تعداد سکه‌ها باید عددی معتبر و حداقل ۱۰ باشد.');
       return;
     }
 
@@ -141,12 +141,12 @@ const CoinPackManagement = () => {
     setFormError('');
 
     const payload = {
-      title: formData.title.trim(),
+      name: formData.name.trim(),
       description: formData.description.trim() || undefined,
-      amount,
+      coins,
       price,
       bonusCoins,
-      totalCoins: amount + bonusCoins,
+      totalCoins: coins + bonusCoins,
       order,
       currency: formData.currency || 'USD',
       imageUrl: formData.imageUrl.trim() || undefined,
@@ -154,6 +154,8 @@ const CoinPackManagement = () => {
       popular: formData.popular,
       isActive: formData.isActive
     };
+
+    console.log(`${isEditing ? 'Updating' : 'Creating'} coin pack payload:`, payload);
 
     try {
       setFormLoading(true);
@@ -184,9 +186,9 @@ const CoinPackManagement = () => {
 
     const lowerTerm = searchTerm.toLowerCase();
     return packs.filter((pack) => {
-      const title = pack.title?.toLowerCase() || '';
+      const name = pack.name?.toLowerCase() || '';
       const description = pack.description?.toLowerCase() || '';
-      return title.includes(lowerTerm) || description.includes(lowerTerm);
+      return name.includes(lowerTerm) || description.includes(lowerTerm);
     });
   }, [packs, searchTerm]);
 
@@ -283,9 +285,9 @@ const CoinPackManagement = () => {
                     {pack.popular && <Star className="w-6 h-6 text-orange-400" />}
                     {!pack.featured && !pack.popular && <Coins className="w-6 h-6 text-yellow-400" />}
                     <div>
-                      <h3 className="text-xl font-bold text-white">{pack.title}</h3>
+                      <h3 className="text-xl font-bold text-white">{pack.name}</h3>
                       <p className="text-white/50 text-xs mt-1">
-                        {pack.isActive ? 'فعال' : 'غیرفعال'} • ترتیب نمایش: {numberFormatter.format(pack.order || 0)}
+                        {pack.isActive ? 'فعال' : 'غیرفعال'} • ترتیب نمایش: {numberFormatter.format(pack.order ?? 0)}
                       </p>
                     </div>
                   </div>
@@ -300,12 +302,12 @@ const CoinPackManagement = () => {
                   <div className="flex items-center justify-center space-x-reverse space-x-2 mb-2">
                     <Coins className="w-8 h-8 text-yellow-400" />
                     <span className="text-3xl font-bold text-white">
-                      {numberFormatter.format(pack.totalCoins || pack.amount)}
+                      {numberFormatter.format(pack.totalCoins ?? ((pack.coins ?? 0) + (pack.bonusCoins ?? 0)))}
                     </span>
                   </div>
 
                   <div className="text-white/60 text-sm mt-1">
-                    مجموع سکه‌ها (اصلی: {numberFormatter.format(pack.amount)}
+                    مجموع سکه‌ها (اصلی: {numberFormatter.format(pack.coins ?? 0)}
                     {pack.bonusCoins ? ` + هدیه: ${numberFormatter.format(pack.bonusCoins)}` : ''})
                   </div>
                 </div>
@@ -377,8 +379,8 @@ const CoinPackManagement = () => {
                 <label className="block text-white font-medium mb-2">عنوان بسته</label>
                 <input
                   type="text"
-                  value={formData.title}
-                  onChange={(e) => handleFormChange('title', e.target.value)}
+                  value={formData.name}
+                  onChange={(e) => handleFormChange('name', e.target.value)}
                   placeholder="عنوان بسته را وارد کن"
                   className="w-full px-4 py-3 bg-glass-hover border border-glass-border rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-primary-400"
                   disabled={formLoading}
@@ -392,8 +394,8 @@ const CoinPackManagement = () => {
                   <input
                     type="number"
                     min="10"
-                    value={formData.amount}
-                    onChange={(e) => handleFormChange('amount', e.target.value)}
+                    value={formData.coins}
+                    onChange={(e) => handleFormChange('coins', e.target.value)}
                     placeholder="مثلاً 100"
                     className="w-full px-4 py-3 bg-glass-hover border border-glass-border rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-primary-400"
                     disabled={formLoading}

@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const coinPackSchema = new mongoose.Schema({
-  title: {
+  name: {
     type: String,
     required: true,
     trim: true,
@@ -12,7 +12,7 @@ const coinPackSchema = new mongoose.Schema({
     trim: true,
     maxlength: 200
   },
-  amount: {
+  coins: {
     type: Number,
     required: true,
     min: 10,
@@ -37,9 +37,9 @@ const coinPackSchema = new mongoose.Schema({
     type: Number,
     required: true,
     default: function() {
-      const amount = Number(this.amount) || 0;
+      const coins = Number(this.coins) || 0;
       const bonusCoins = Number(this.bonusCoins) || 0;
-      return amount + bonusCoins;
+      return coins + bonusCoins;
     }
   },
   isActive: {
@@ -79,9 +79,9 @@ const coinPackSchema = new mongoose.Schema({
 
 // Pre-save middleware to calculate total coins
 coinPackSchema.pre('save', function(next) {
-  const amount = Number(this.amount) || 0;
+  const coins = Number(this.coins) || 0;
   const bonusCoins = Number(this.bonusCoins) || 0;
-  this.totalCoins = amount + bonusCoins;
+  this.totalCoins = coins + bonusCoins;
   next();
 });
 
