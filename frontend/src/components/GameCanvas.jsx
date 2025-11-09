@@ -221,10 +221,9 @@ const GameCanvas = () => {
 
       // Auto-submit the word
       isSubmittingRef.current = true;
-      setCurrentWord(formedWord);
 
       try {
-        await submitWord();
+        await submitWord(formedWord);
         showFeedback('success', 'هورا! کلمهٔ درست رو پیدا کردی! 🎉');
       } catch (error) {
         showFeedback('error', error.message || 'این کلمه رو نداریم!');
@@ -240,7 +239,6 @@ const GameCanvas = () => {
     gameState.selectionPreview,
     levelWords,
     submitWord,
-    setCurrentWord,
     showFeedback,
     isCompletingWord,
   ]);
