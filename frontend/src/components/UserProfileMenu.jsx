@@ -11,7 +11,8 @@ import {
   Coins,
   History,
   ListChecks,
-  BookOpen
+  BookOpen,
+  X
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { authService } from '../services/authService';
@@ -254,15 +255,28 @@ const UserProfileMenu = () => {
                     {activeProfile?.email || 'ایمیل ثبت نشده'}
                   </p>
                 </div>
-                <div className="text-right">
-                  <p className="text-xs text-white/70 flex items-center gap-1 justify-end">
-                    <CalendarDays className="w-4 h-4 text-secondary-400" />
-                    عضو از {formatDate(activeProfile?.createdAt)}
-                  </p>
-                  <p className="text-xs text-white/70 flex items-center gap-1 justify-end mt-1">
-                    <History className="w-4 h-4 text-secondary-400" />
-                    آخرین فعالیت: {formatDate(activeProfile?.lastActive, true)}
-                  </p>
+                <div className="flex items-start gap-3">
+                  <div className="text-right">
+                    <p className="text-xs text-white/70 flex items-center gap-1 justify-end">
+                      <CalendarDays className="w-4 h-4 text-secondary-400" />
+                      عضو از {formatDate(activeProfile?.createdAt)}
+                    </p>
+                    <p className="text-xs text-white/70 flex items-center gap-1 justify-end mt-1">
+                      <History className="w-4 h-4 text-secondary-400" />
+                      آخرین فعالیت: {formatDate(activeProfile?.lastActive, true)}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsOpen(false);
+                      setIsEditing(false);
+                    }}
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-700 text-white/70 transition-colors hover:bg-slate-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-primary-500/60 focus:ring-offset-2 focus:ring-offset-slate-800"
+                    aria-label="بستن پنجره پروفایل"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
                 </div>
               </div>
             </div>
