@@ -9,10 +9,10 @@ import {
   Settings,
   Menu,
   X,
-  User,
   Coins
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import UserProfileMenu from './UserProfileMenu';
 
 const Layout = ({ children }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -99,12 +99,7 @@ const Layout = ({ children }) => {
                   </div>
 
                   {/* User Menu */}
-                  <div className="relative">
-                    <button className="flex items-center space-x-2 space-x-reverse text-white hover:bg-glass-hover px-4 py-2 rounded-xl transition-all hover:shadow-[0_0_15px_rgba(168,85,247,0.2)] border border-transparent hover:border-primary-500/30">
-                      <User className="w-5 h-5" />
-                      <span className="hidden sm:block font-medium">{user.username}</span>
-                    </button>
-                  </div>
+                  <UserProfileMenu />
                 </>
               ) : (
                 <div className="flex items-center space-x-4 space-x-reverse">
