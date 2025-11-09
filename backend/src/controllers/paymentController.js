@@ -1,11 +1,31 @@
-const ZarinpalCheckout = require('zarinpal-checkout');
 const CoinPack = require('../models/CoinPack');
 const Purchase = require('../models/Purchase');
 
 const merchantId = process.env.ZARINPAL_MERCHANT_ID || 'd97f7648-614f-4025-bee2-5f3cda6d8fcd';
 const isSandbox = (process.env.ZARINPAL_SANDBOX || 'true').toLowerCase() !== 'false';
 
-const zarinpal = ZarinpalCheckout.create(merchantId, isSandbox);
+let zarinpal = null;
+let zarinpalInitError = null;
+
+try {
+  const ZarinpalCheckout = require('zarinpal-checkout');
+  zarinpal = ZarinpalCheckout.create(merchantId, isSandbox);
+} catch (error) {
+  zarinpalInitError = error;
+  console.error(
+    'Failed to initialize ZarinPal client. Payment routes will be disabled until the dependency is installed.',
+    error
+  );
+}
+
+const ensureZarinpalClient = () => {
+  if (zarinpal) {
+    return { client: zarinpal };
+  }
+
+  const error = zarinpalInitError || new Error('ZarinPal client is not available');
+  return { error };
+};
 
 const buildCallbackUrl = () => {
   const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
@@ -17,6 +37,16 @@ const buildCallbackUrl = () => {
 // @access  Private
 const requestPayment = async (req, res) => {
   try {
+    const { client: zarinpalClient, error: clientError } = ensureZarinpalClient();
+
+    if (!zarinpalClient) {
+      console.error('ZarinPal client unavailable for payment request:', clientError);
+      return res.status(503).json({
+        success: false,
+        message: 'درگاه پرداخت زرین‌پال در دسترس نیست. لطفا بعدا تلاش کنید.'
+      });
+    }
+
     const { packId } = req.body;
 
     if (!packId) {
@@ -44,7 +74,7 @@ const requestPayment = async (req, res) => {
 
     const callbackUrl = buildCallbackUrl();
 
-    const response = await zarinpal.PaymentRequest({
+    const response = await zarinpalClient.PaymentRequest({
       Amount: coinPack.price,
       CallbackURL: callbackUrl,
       Description: `خرید ${coinPack.totalCoins} سکه`,
@@ -95,6 +125,16 @@ const requestPayment = async (req, res) => {
 // @access  Private
 const verifyPayment = async (req, res) => {
   try {
+    const { client: zarinpalClient, error: clientError } = ensureZarinpalClient();
+
+    if (!zarinpalClient) {
+      console.error('ZarinPal client unavailable for verification:', clientError);
+      return res.status(503).json({
+        success: false,
+        message: 'درگاه پرداخت زرین‌پال در دسترس نیست. لطفا بعدا تلاش کنید.'
+      });
+    }
+
     const { Authority: authority, Status: status } = req.query;
 
     if (!authority) {
@@ -153,7 +193,7 @@ const verifyPayment = async (req, res) => {
       });
     }
 
-    const verification = await zarinpal.PaymentVerification({
+    const verification = await zarinpalClient.PaymentVerification({
       Amount: purchase.price,
       Authority: authority
     });
