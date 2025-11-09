@@ -62,6 +62,7 @@ const UserProfileMenu = () => {
   const [formState, setFormState] = useState({ username: '', email: '' });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isConfirmingLogout, setIsConfirmingLogout] = useState(false);
   const containerRef = useRef(null);
 
   const completedLevels = useMemo(() => {
@@ -169,6 +170,24 @@ const UserProfileMenu = () => {
     };
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!isConfirmingLogout) {
+      return undefined;
+    }
+
+    const handleEsc = (event) => {
+      if (event.key === 'Escape') {
+        setIsConfirmingLogout(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleEsc);
+
+    return () => {
+      document.removeEventListener('keydown', handleEsc);
+    };
+  }, [isConfirmingLogout]);
+
   const handleChange = (event) => {
     const { name, value } = event.target;
     setFormState((prev) => ({
@@ -226,9 +245,18 @@ const UserProfileMenu = () => {
   };
 
   const handleLogout = () => {
+    setIsConfirmingLogout(true);
+  };
+
+  const handleCancelLogout = () => {
+    setIsConfirmingLogout(false);
+  };
+
+  const handleConfirmLogout = () => {
     logout();
     setIsOpen(false);
     setIsEditing(false);
+    setIsConfirmingLogout(false);
   };
 
   const activeProfile = profile || user;
@@ -440,6 +468,51 @@ const UserProfileMenu = () => {
                 )}
               </div>
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isConfirmingLogout && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/70 backdrop-blur-sm px-4"
+            onClick={handleCancelLogout}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="w-full max-w-sm rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-2xl"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="mb-4 text-center">
+                <h3 className="text-lg font-bold text-white">آیا از خروج اطمینان دارید؟</h3>
+                <p className="mt-2 text-sm text-white/70">
+                  با خروج از حساب کاربری، برای ادامه بازی باید دوباره وارد شوید.
+                </p>
+              </div>
+              <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-center">
+                <button
+                  type="button"
+                  onClick={handleCancelLogout}
+                  className="flex-1 rounded-xl border border-slate-700 px-4 py-2.5 text-sm font-semibold text-white/80 transition-colors hover:bg-slate-800 hover:text-white"
+                >
+                  انصراف
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmLogout}
+                  className="flex-1 rounded-xl bg-gradient-to-r from-red-500 via-rose-500 to-pink-500 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-red-500/30 transition-transform hover:scale-[1.02]"
+                >
+                  خروج
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
