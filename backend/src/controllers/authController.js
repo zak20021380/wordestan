@@ -26,9 +26,24 @@ const register = async (req, res) => {
     }
 
     const { username, password, email } = req.body;
+    const trimmedUsername = typeof username === 'string' ? username.trim() : '';
+
+    if (!trimmedUsername) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a valid username'
+      });
+    }
+
+    if (/\s/.test(trimmedUsername)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Username cannot contain spaces'
+      });
+    }
 
     // Check if user already exists
-    const existingUser = await User.findOne({ username });
+    const existingUser = await User.findOne({ username: trimmedUsername });
 
     if (existingUser) {
       return res.status(400).json({
@@ -57,7 +72,7 @@ const register = async (req, res) => {
 
     // Create new user with initial coins
     const user = new User({
-      username,
+      username: trimmedUsername,
       password,
       email: normalizedEmail,
       coins: parseInt(process.env.INITIAL_COINS) || 100,
@@ -289,9 +304,51 @@ const updateProfile = async (req, res) => {
   }
 };
 
+// @desc    Check if a username is available
+// @route   GET /api/auth/check-username
+// @access  Public
+const checkUsernameAvailability = async (req, res) => {
+  try {
+    const rawUsername = typeof req.query.username === 'string' ? req.query.username : '';
+    const trimmedUsername = rawUsername.trim();
+
+    if (!trimmedUsername) {
+      return res.status(400).json({
+        success: false,
+        message: 'Username query parameter is required'
+      });
+    }
+
+    if (/\s/.test(trimmedUsername)) {
+      return res.json({
+        success: true,
+        available: false,
+        message: 'Username cannot contain spaces'
+      });
+    }
+
+    const existingUser = await User.findOne({ username: trimmedUsername });
+
+    return res.json({
+      success: true,
+      available: !existingUser,
+      message: existingUser
+        ? 'User already exists with this username'
+        : 'Username is available'
+    });
+  } catch (error) {
+    console.error('Username availability check error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error checking username availability'
+    });
+  }
+};
+
 module.exports = {
   register,
   login,
   getMe,
-  updateProfile
+  updateProfile,
+  checkUsernameAvailability
 };

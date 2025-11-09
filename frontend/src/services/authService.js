@@ -41,8 +41,10 @@ export const authService = {
   // Register new user
   async register(userData) {
     try {
+      const sanitizedUsername =
+        typeof userData.username === 'string' ? userData.username.trim() : userData.username;
       const payload = {
-        username: userData.username,
+        username: sanitizedUsername,
         password: userData.password,
       };
 
@@ -65,7 +67,10 @@ export const authService = {
   // Login user
   async login(username, password) {
     try {
-      const response = await api.post('/auth/login', { username, password });
+      const response = await api.post('/auth/login', {
+        username: typeof username === 'string' ? username.trim() : username,
+        password,
+      });
       return response.data.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Login failed');
@@ -95,8 +100,10 @@ export const authService = {
   // Check if username is available
   async checkUsername(username) {
     try {
-      const response = await api.get(`/auth/check-username?username=${username}`);
-      return response.data.available;
+      const response = await api.get('/auth/check-username', {
+        params: { username },
+      });
+      return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Username check failed');
     }
