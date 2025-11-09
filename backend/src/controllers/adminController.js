@@ -471,7 +471,19 @@ const createCoinPack = async (req, res) => {
       });
     }
 
-    const coinPack = new CoinPack(req.body);
+    const amount = Number(req.body.amount);
+    const bonusCoins = req.body.bonusCoins !== undefined
+      ? Number(req.body.bonusCoins)
+      : 0;
+
+    const coinPackData = {
+      ...req.body,
+      amount,
+      bonusCoins,
+      totalCoins: amount + bonusCoins
+    };
+
+    const coinPack = new CoinPack(coinPackData);
     await coinPack.save();
 
     res.status(201).json({
@@ -503,11 +515,7 @@ const updateCoinPack = async (req, res) => {
     }
 
     const { id } = req.params;
-    const coinPack = await CoinPack.findByIdAndUpdate(
-      id,
-      req.body,
-      { new: true, runValidators: true }
-    );
+    const coinPack = await CoinPack.findById(id);
 
     if (!coinPack) {
       return res.status(404).json({
@@ -515,6 +523,22 @@ const updateCoinPack = async (req, res) => {
         message: 'Coin pack not found'
       });
     }
+
+    const updateData = { ...req.body };
+
+    if (updateData.amount !== undefined) {
+      updateData.amount = Number(updateData.amount);
+    }
+    if (updateData.bonusCoins !== undefined) {
+      updateData.bonusCoins = Number(updateData.bonusCoins);
+    }
+
+    Object.assign(coinPack, updateData);
+    const amount = Number(coinPack.amount) || 0;
+    const bonusCoins = Number(coinPack.bonusCoins) || 0;
+    coinPack.totalCoins = amount + bonusCoins;
+
+    await coinPack.save();
 
     res.json({
       success: true,
