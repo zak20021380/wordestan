@@ -15,14 +15,14 @@ const coinPackSchema = new mongoose.Schema({
   coins: {
     type: Number,
     required: true,
-    min: 10,
-    max: 10000
+    min: 0,
+    max: 1000000000
   },
   price: {
     type: Number,
     required: true,
-    min: 0.99,
-    max: 99.99
+    min: 0,
+    max: 100000000
   },
   currency: {
     type: String,
@@ -31,11 +31,14 @@ const coinPackSchema = new mongoose.Schema({
   bonusCoins: {
     type: Number,
     default: 0,
-    min: 0
+    min: 0,
+    max: 1000000000
   },
   totalCoins: {
     type: Number,
     required: true,
+    min: 0,
+    max: 1000000000,
     default: function() {
       const coins = Number(this.coins) || 0;
       const bonusCoins = Number(this.bonusCoins) || 0;
