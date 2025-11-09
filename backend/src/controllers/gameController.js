@@ -2,6 +2,34 @@ const Level = require('../models/Level');
 const Word = require('../models/Word');
 const User = require('../models/User');
 
+// @desc    Get the first level (public)
+// @route   GET /api/game/level/1
+// @access  Public
+const getFirstLevel = async (req, res) => {
+  try {
+    const level = await Level.findOne({ order: 1, isPublished: true })
+      .populate('words');
+
+    if (!level) {
+      return res.status(404).json({
+        success: false,
+        message: 'First level not available yet'
+      });
+    }
+
+    return res.json({
+      success: true,
+      data: level
+    });
+  } catch (error) {
+    console.error('Get first level error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Server error fetching first level'
+    });
+  }
+};
+
 // @desc    Get next level for user
 // @route   GET /api/game/next-level
 // @access  Private
@@ -349,6 +377,7 @@ const getGameStats = async (req, res) => {
 };
 
 module.exports = {
+  getFirstLevel,
   getNextLevel,
   completeWord,
   getHint,

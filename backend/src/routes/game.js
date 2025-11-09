@@ -2,6 +2,7 @@ const express = require('express');
 const { body } = require('express-validator');
 const { auth } = require('../middleware/auth');
 const {
+  getFirstLevel,
   getNextLevel,
   completeWord,
   getHint,
@@ -36,6 +37,7 @@ const autoSolveValidation = [
 ];
 
 // Routes
+router.get('/level/1', getFirstLevel);
 router.get('/next-level', auth, getNextLevel);
 router.post('/complete-word', auth, completeWordValidation, completeWord);
 router.post('/hint', auth, hintValidation, getHint);

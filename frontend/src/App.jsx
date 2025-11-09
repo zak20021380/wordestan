@@ -49,7 +49,14 @@ function App() {
                       <Routes>
                         <Route path="/" element={<Home />} />
                         <Route path="/game" element={<Game />} />
-                        <Route path="/store" element={<Store />} />
+                        <Route
+                          path="/store"
+                          element={
+                            <ProtectedRoute>
+                              <Store />
+                            </ProtectedRoute>
+                          }
+                        />
                         <Route path="/leaderboard" element={<Leaderboard />} />
                         
                         {/* Admin routes */}
