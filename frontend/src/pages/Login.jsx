@@ -163,6 +163,16 @@ const Login = () => {
             </Link>
           </p>
         </div>
+
+        {/* Skip Login Link */}
+        <div className="text-center mt-4">
+          <button
+            onClick={() => navigate('/')}
+            className="text-white/50 hover:text-white/80 text-sm font-medium transition-colors underline decoration-dotted"
+          >
+            رد شدن از ورود و ادامه به عنوان مهمان
+          </button>
+        </div>
       </motion.div>
     </div>
   );
