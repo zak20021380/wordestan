@@ -82,6 +82,53 @@ const Game = () => {
     });
   }, [gameState.completedWords, levelWordDetails]);
 
+  const completedWordSet = useMemo(() => {
+    if (!Array.isArray(gameState.completedWords)) {
+      return new Set();
+    }
+
+    return new Set(
+      gameState.completedWords
+        .filter(Boolean)
+        .map((word) => word.toUpperCase())
+    );
+  }, [gameState.completedWords]);
+
+  const levelWordsByLength = useMemo(() => {
+    if (!Array.isArray(currentLevel?.words) || currentLevel.words.length === 0) {
+      return [];
+    }
+
+    const groups = new Map();
+
+    currentLevel.words.forEach((entry) => {
+      if (!entry) {
+        return;
+      }
+
+      const text = (typeof entry === 'string' ? entry : entry.text || '').toUpperCase();
+
+      if (!text) {
+        return;
+      }
+
+      const length = text.length;
+
+      if (!groups.has(length)) {
+        groups.set(length, []);
+      }
+
+      groups.get(length).push(text);
+    });
+
+    return Array.from(groups.entries())
+      .map(([length, words]) => ({
+        length,
+        words,
+      }))
+      .sort((a, b) => a.length - b.length);
+  }, [currentLevel?.words]);
+
   const completedMeaningDetails = useMemo(
     () => completedWordDetails.filter((detail) => detail.meaning),
     [completedWordDetails]
@@ -393,6 +440,59 @@ const Game = () => {
 
             <div className="text-sm text-white/60">
               طول: {(gameState.currentWord || '').length} حرف
+            </div>
+
+            <div className="mt-6">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-sm font-semibold text-white/70">کلمات این مرحله</h4>
+                <span className="text-xs text-white/50">با هر کشف، حروف کامل می‌شن</span>
+              </div>
+
+              {levelWordsByLength.length === 0 ? (
+                <div className="text-center text-xs text-white/40 bg-white/5 border border-white/10 rounded-lg py-3">
+                  هنوز کلمه‌ای برای این مرحله ثبت نشده.
+                </div>
+              ) : (
+                <div className="space-y-5">
+                  {levelWordsByLength.map(({ length, words }) => (
+                    <div key={length} className="bg-white/5 border border-white/10 rounded-xl p-3">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-xs font-medium text-white/80">
+                          کلمات {length} حرفی
+                        </span>
+                        <span className="text-[11px] text-white/40">{words.length} کلمه</span>
+                      </div>
+
+                      <div className="space-y-3">
+                        {words.map((word, index) => {
+                          const isCompleted = completedWordSet.has(word);
+                          const letters = word.split('');
+
+                          return (
+                            <div
+                              key={`${word}-${index}`}
+                              className="flex justify-center gap-2"
+                            >
+                              {letters.map((letter, letterIndex) => (
+                                <div
+                                  key={`${word}-${letterIndex}`}
+                                  className={`w-10 h-10 rounded-lg border flex items-center justify-center text-lg font-bold tracking-wide uppercase transition-all ${
+                                    isCompleted
+                                      ? 'border-purple-400/70 bg-gradient-to-br from-purple-500/40 via-pink-500/40 to-cyan-500/40 text-white shadow-[0_0_12px_rgba(168,85,247,0.35)]'
+                                      : 'border-white/15 bg-white/5 text-transparent'
+                                  }`}
+                                >
+                                  {isCompleted ? letter : ''}
+                                </div>
+                              ))}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </motion.div>
 
