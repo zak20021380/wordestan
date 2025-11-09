@@ -1,10 +1,62 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Search, Edit, Trash2, Type } from 'lucide-react';
+import { adminService } from '../../services/adminService';
 
 const WordManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [words, setWords] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchWords = async () => {
+      try {
+        setLoading(true);
+        setError('');
+        const response = await adminService.getWords({ limit: 200 });
+        if (isMounted) {
+          setWords(response.data.words || []);
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(err.message || 'Failed to fetch words');
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchWords();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const filteredWords = useMemo(() => {
+    if (!searchTerm.trim()) {
+      return words;
+    }
+
+    const term = searchTerm.trim().toLowerCase();
+    return words.filter((word) =>
+      [word.text, word.category, word.description]
+        .filter(Boolean)
+        .some((value) => value.toLowerCase().includes(term))
+    );
+  }, [searchTerm, words]);
+
+  const difficultyLabels = {
+    easy: 'Easy',
+    medium: 'Medium',
+    hard: 'Hard',
+  };
 
   return (
     <div className="space-y-6">
@@ -38,39 +90,68 @@ const WordManagement = () => {
         </div>
       </div>
 
+      {/* Error Message */}
+      {error && (
+        <div className="bg-danger/20 border border-danger rounded-lg p-4">
+          <p className="text-danger text-center font-medium">{error}</p>
+        </div>
+      )}
+
       {/* Word Grid */}
       <div className="bg-glass backdrop-blur-lg rounded-2xl border border-glass-border p-6">
-        <div className="grid gap-4">
-          {/* Sample Word Cards */}
-          {['CAT', 'DOG', 'HOUSE', 'WATER', 'LIGHT', 'MUSIC'].map((word, index) => (
-            <motion.div
-              key={word}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="flex items-center justify-between bg-glass-hover rounded-lg p-4 hover:bg-glass transition-colors"
-            >
-              <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 bg-gradient-to-r from-primary-500 to-primary-700 rounded-lg flex items-center justify-center">
-                  <Type className="w-6 h-6 text-white" />
+        {loading ? (
+          <div className="text-center text-white/60 py-10">Loading words...</div>
+        ) : filteredWords.length === 0 ? (
+          <div className="text-center text-white/60 py-10">
+            {searchTerm ? 'No words match your search yet.' : 'No words have been added by the admin yet.'}
+          </div>
+        ) : (
+          <div className="grid gap-4">
+            {filteredWords.map((word, index) => (
+              <motion.div
+                key={word._id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+                className="flex items-center justify-between bg-glass-hover rounded-lg p-4 hover:bg-glass transition-colors"
+              >
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 h-12 bg-gradient-to-r from-primary-500 to-primary-700 rounded-lg flex items-center justify-center">
+                    <Type className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <div className="text-white font-bold text-lg">{word.text}</div>
+                    <div className="text-white/60 text-sm">
+                      {difficultyLabels[word.difficulty] || word.difficulty}
+                      <span className="mx-2">•</span>
+                      {word.category || 'Uncategorized'}
+                      <span className="mx-2">•</span>
+                      {word.length} letters
+                    </div>
+                    {word.description && (
+                      <div className="text-white/40 text-xs mt-1">{word.description}</div>
+                    )}
+                    {!word.isActive && (
+                      <div className="text-warning text-xs mt-1">Inactive</div>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <div className="text-white font-bold text-lg">{word}</div>
-                  <div className="text-white/60 text-sm">Easy • Animals • 3 letters</div>
+
+                <div className="flex items-center space-x-2">
+                  <div className="text-white/40 text-xs mr-3 hidden sm:block">
+                    {word.points} pts
+                  </div>
+                  <button className="p-2 text-white/60 hover:text-white hover:bg-glass rounded-lg transition-colors">
+                    <Edit className="w-4 h-4" />
+                  </button>
+                  <button className="p-2 text-white/60 hover:text-danger hover:bg-glass rounded-lg transition-colors">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <button className="p-2 text-white/60 hover:text-white hover:bg-glass rounded-lg transition-colors">
-                  <Edit className="w-4 h-4" />
-                </button>
-                <button className="p-2 text-white/60 hover:text-danger hover:bg-glass rounded-lg transition-colors">
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Add Word Modal */}
