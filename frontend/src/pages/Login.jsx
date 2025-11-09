@@ -37,7 +37,7 @@ const Login = () => {
       const from = location.state?.from?.pathname || '/';
       navigate(from, { replace: true });
 
-      toast.success('خوش اومدی! 🎉');
+      toast.success('ورود موفقیت‌آمیز بود!');
     } catch (error) {
       if (error.message === 'Invalid credentials') {
         setAuthError('چنین حسابی پیدا نشد! اگر هنوز ثبت‌نام نکردی، از لینک پایین یه اکانت بساز.');
@@ -67,7 +67,7 @@ const Login = () => {
             </div>
             <span className="text-3xl font-bold bg-gradient-to-r from-primary-400 to-secondary-400 bg-clip-text text-transparent">وردستان</span>
           </div>
-          <p className="text-white/60">خوشحالیم که برگشتی! 🎮</p>
+          <p className="text-white/60">به حساب کاربری خود وارد شوید</p>
         </div>
 
         {/* Login Form */}
