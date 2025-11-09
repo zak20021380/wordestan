@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGame } from '../contexts/GameContext';
@@ -8,7 +9,7 @@ import {
   CheckCircle,
   Trophy,
   Coins,
-  RotateCcw,
+  Shuffle,
   Target,
   Lock,
   LogIn,
@@ -18,6 +19,8 @@ import {
 import GameCanvas from '../components/GameCanvas';
 
 const Game = () => {
+  const gameCanvasRef = useRef(null);
+
   const {
     currentLevel,
     gameState,
@@ -263,16 +266,16 @@ const Game = () => {
             transition={{ delay: 0.2 }}
             className="bg-glass/30 backdrop-blur-lg rounded-2xl border border-glass-border p-6"
           >
-            <GameCanvas />
+            <GameCanvas ref={gameCanvasRef} />
 
             {/* Action Buttons */}
             <div className="flex justify-center mt-6">
               <button
-                onClick={() => window.location.reload()}
+                onClick={() => gameCanvasRef.current?.shuffleLetters?.()}
                 className="bg-gradient-to-r from-cyan-500/20 to-blue-500/20 hover:from-cyan-500/30 hover:to-blue-500/30 border border-cyan-500/30 text-white font-medium py-3 px-6 rounded-lg transition-all shadow-[0_0_15px_rgba(6,182,212,0.3)] hover:shadow-[0_0_25px_rgba(6,182,212,0.5)] flex items-center justify-center space-x-2 space-x-reverse"
               >
-                <RotateCcw className="w-5 h-5" />
-                <span>از اول</span>
+                <Shuffle className="w-5 h-5" />
+                <span>چیدمان جدید</span>
               </button>
             </div>
           </motion.div>

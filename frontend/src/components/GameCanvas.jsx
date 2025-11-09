@@ -1,8 +1,16 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  useMemo,
+  forwardRef,
+  useImperativeHandle,
+} from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGame } from '../contexts/GameContext';
 
-const GameCanvas = () => {
+const GameCanvas = forwardRef((_, ref) => {
   const {
     currentLevel,
     gameState,
@@ -15,6 +23,7 @@ const GameCanvas = () => {
   const canvasRef = useRef(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [letterOrder, setLetterOrder] = useState([]);
   const [letterPositions, setLetterPositions] = useState([]);
   const [canvasSize, setCanvasSize] = useState({ width: 400, height: 400 });
   const [feedback, setFeedback] = useState(null);
@@ -42,29 +51,60 @@ const GameCanvas = () => {
     }
   }, []);
 
-  // Calculate letter positions in a circle
+  // Initialize letter order when level changes
   useEffect(() => {
     if (!currentLevel?.letters) return;
+
+    const letters = currentLevel.letters.split('');
+    setLetterOrder(
+      letters.map((letter, index) => ({
+        letter,
+        originalIndex: index,
+      }))
+    );
+  }, [currentLevel?.letters]);
+
+  // Calculate letter positions in a circle
+  useEffect(() => {
+    if (!letterOrder.length) return;
 
     const centerX = canvasSize.width / 2;
     const centerY = canvasSize.height / 2;
     const radius = Math.min(canvasSize.width, canvasSize.height) * 0.35;
+    const angleStep = (2 * Math.PI) / letterOrder.length;
 
-    const letters = currentLevel.letters.split('');
-    const angleStep = (2 * Math.PI) / letters.length;
-
-    const positions = letters.map((letter, index) => {
+    const positions = letterOrder.map((item, index) => {
       const angle = index * angleStep - Math.PI / 2; // Start from top
       return {
-        id: `${letter}-${index}`,
-        letter,
+        id: `${item.letter}-${item.originalIndex}`,
+        letter: item.letter,
         x: centerX + radius * Math.cos(angle),
         y: centerY + radius * Math.sin(angle),
       };
     });
 
     setLetterPositions(positions);
-  }, [currentLevel?.letters, canvasSize]);
+  }, [letterOrder, canvasSize]);
+
+  const shuffleLetters = useCallback(() => {
+    setLetterOrder(prevOrder => {
+      if (!prevOrder.length) return prevOrder;
+      const shuffled = [...prevOrder];
+      for (let i = shuffled.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
+    });
+  }, []);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      shuffleLetters,
+    }),
+    [shuffleLetters]
+  );
 
   const letterPositionMap = useMemo(() => {
     const map = new Map();
@@ -224,7 +264,12 @@ const GameCanvas = () => {
 
       try {
         await submitWord(formedWord);
-        showFeedback('success', 'هورا! کلمهٔ درست رو پیدا کردی! 🎉');
+        const totalWords = levelWords.length;
+        const newlyCompletedCount = gameState.completedWords.length + 1;
+        const successMessage = `آفرین! ${
+          formedWord.toUpperCase()
+        } رو پیدا کردی! ${newlyCompletedCount} از ${totalWords} کلمه`;
+        showFeedback('success', successMessage);
       } catch (error) {
         showFeedback('error', error.message || 'این کلمه رو نداریم!');
         clearSelection();
@@ -480,6 +525,6 @@ const GameCanvas = () => {
       </div>
     </div>
   );
-};
+});
 
 export default GameCanvas;
