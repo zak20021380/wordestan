@@ -1,4 +1,4 @@
-import { useRef, useState, useMemo, useEffect } from 'react';
+import { useRef, useState, useMemo, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGame } from '../contexts/GameContext';
@@ -14,10 +14,14 @@ import {
   LogIn,
   UserPlus,
   ArrowRight,
+  ArrowUpRight,
+  ArrowDownLeft,
   Lightbulb,
   ChevronDown,
   ChevronUp,
-  BookOpen
+  BookOpen,
+  Milestone,
+  X
 } from 'lucide-react';
 import GameCanvas from '../components/GameCanvas';
 
@@ -31,12 +35,168 @@ const Game = () => {
     isAutoSolving,
     levelLoading,
     levelMeta,
-    isGuestMode
+    isGuestMode,
+    levelTransition,
+    clearLevelTransition
   } = useGame();
   const { user, isAuthenticated } = useAuth();
 
   const [showMeanings, setShowMeanings] = useState(false);
   const [activeMeaning, setActiveMeaning] = useState(null);
+  const faNumberFormatter = useMemo(() => new Intl.NumberFormat('fa-IR'), []);
+  const formatNumber = useCallback(
+    (value) => {
+      if (value === null || value === undefined) {
+        return '—';
+      }
+      const numeric = Number(value);
+      if (Number.isNaN(numeric)) {
+        return '—';
+      }
+      return faNumberFormatter.format(numeric);
+    },
+    [faNumberFormatter]
+  );
+
+  const transitionCopy = useMemo(() => {
+    if (!levelTransition) {
+      return null;
+    }
+
+    const parseOrder = (value) => {
+      if (value === null || value === undefined) {
+        return null;
+      }
+      const numeric = Number(value);
+      return Number.isNaN(numeric) ? null : numeric;
+    };
+
+    const to = parseOrder(
+      levelTransition.to ?? levelTransition?.cause?.to ?? levelTransition?.cause?.target
+    );
+    const from = parseOrder(levelTransition.from ?? levelTransition?.cause?.from);
+    const difference =
+      typeof levelTransition.difference === 'number'
+        ? levelTransition.difference
+        : to !== null && from !== null
+        ? to - from
+        : null;
+    const diffValue = difference ?? 0;
+    const absDifference = Math.abs(diffValue);
+    const isForward = diffValue >= 0;
+    let type = levelTransition.type || levelTransition?.cause?.type || 'advanced';
+    if (type === 'changed') {
+      type = 'advanced';
+    }
+
+    const toLabel = to !== null ? `مرحله ${formatNumber(to)}` : 'یک مرحله جدید';
+    let title;
+    let description;
+    let badge;
+
+    if (type === 'completed') {
+      title = 'مرحله رو ترکوندی! 🎉';
+      description = `تبریک! مرحله قبلی رو کامل کردی و حالا ${toLabel} جلوت قرار داره.`;
+      badge = 'اتمام مرحله';
+    } else if (type === 'skipped') {
+      title = 'پرش سریع به مرحله جدید 🚀';
+      if (absDifference > 1) {
+        description = `یکهو ${formatNumber(absDifference)} مرحله جلو زدی و حالا توی ${toLabel} هستی.`;
+      } else {
+        description = `این مرحله رو رد کردی و مستقیم رفتی سراغ ${toLabel}.`;
+      }
+      badge = 'پرش مرحله';
+    } else if (!isForward) {
+      title = 'برگشتی یه مرحله عقب 🔁';
+      description = `برگشتی به ${toLabel} تا دوباره امتحانش کنی.`;
+      badge = 'بازگشت';
+      type = 'revisit';
+    } else {
+      title = 'مرحله جدید باز شد ✨';
+      description = `الان وارد ${toLabel} شدی. بزن بریم برای شکار کلمات تازه!`;
+      badge = 'مرحله جدید';
+      type = 'advanced';
+    }
+
+    const differenceLabel =
+      absDifference > 0
+        ? `${isForward ? '+' : '−'}${formatNumber(absDifference)}`
+        : null;
+
+    const differenceSummary =
+      absDifference > 0
+        ? isForward
+          ? `${formatNumber(absDifference)} مرحله جلو رفتی`
+          : `${formatNumber(absDifference)} مرحله برگشتی`
+        : null;
+
+    return {
+      title,
+      description,
+      badge,
+      type,
+      from,
+      to,
+      difference: diffValue,
+      absDifference,
+      isForward,
+      differenceLabel,
+      differenceSummary,
+      userProgress: levelTransition.userProgress ?? null,
+    };
+  }, [levelTransition, formatNumber]);
+
+  const transitionAccent = useMemo(() => {
+    if (!transitionCopy) {
+      return null;
+    }
+
+    switch (transitionCopy.type) {
+      case 'completed':
+        return {
+          icon: 'text-emerald-200',
+          chip: 'from-emerald-500/20 to-green-500/20',
+          chipBorder: 'border-emerald-500/40',
+          chipText: 'text-emerald-100',
+        };
+      case 'skipped':
+        return {
+          icon: 'text-amber-200',
+          chip: 'from-amber-500/20 to-orange-500/20',
+          chipBorder: 'border-amber-500/40',
+          chipText: 'text-amber-100',
+        };
+      case 'revisit':
+        return {
+          icon: 'text-cyan-200',
+          chip: 'from-cyan-500/20 to-blue-500/20',
+          chipBorder: 'border-cyan-500/40',
+          chipText: 'text-cyan-100',
+        };
+      default:
+        return {
+          icon: 'text-primary-200',
+          chip: 'from-primary-500/20 to-secondary-500/20',
+          chipBorder: 'border-primary-500/40',
+          chipText: 'text-primary-100',
+        };
+    }
+  }, [transitionCopy]);
+
+  useEffect(() => {
+    if (!levelTransition) {
+      return;
+    }
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        clearLevelTransition();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [levelTransition, clearLevelTransition]);
 
   const levelWordDetails = useMemo(() => {
     if (!Array.isArray(currentLevel?.words)) {
@@ -683,6 +843,151 @@ const Game = () => {
           </motion.div>
         </div>
       </div>
+      <AnimatePresence>
+        {levelTransition && transitionCopy && (
+          <motion.div
+            key="level-transition-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm px-4 py-10"
+            onClick={clearLevelTransition}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+              onClick={(event) => event.stopPropagation()}
+              className="relative w-full max-w-2xl bg-gradient-to-br from-purple-900/90 via-slate-900/95 to-cyan-900/85 border border-white/10 rounded-3xl px-6 py-8 sm:px-8 shadow-[0_40px_120px_rgba(15,6,32,0.65)] text-right"
+            >
+              <button
+                type="button"
+                onClick={clearLevelTransition}
+                className="absolute top-4 left-4 text-white/60 hover:text-white transition-colors"
+                aria-label="بستن"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 flex-1">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 sm:p-4 rounded-2xl bg-white/10 border border-white/15 shadow-[0_0_25px_rgba(168,85,247,0.3)]">
+                      <Milestone className={`w-10 h-10 ${transitionAccent?.icon ?? 'text-primary-200'}`} />
+                    </div>
+                    <div>
+                      <div
+                        className={`inline-flex items-center gap-2 bg-gradient-to-r ${transitionAccent?.chip ?? 'from-primary-500/20 to-secondary-500/20'} ${transitionAccent?.chipText ?? 'text-primary-100'} ${transitionAccent?.chipBorder ?? 'border-primary-500/40'} border rounded-full px-3 py-1.5 text-[11px] font-semibold`}
+                      >
+                        <Sparkles className="w-4 h-4" />
+                        <span>{transitionCopy.badge}</span>
+                      </div>
+                      <h3 className="mt-3 text-2xl sm:text-3xl font-extrabold text-white leading-snug">
+                        {transitionCopy.title}
+                      </h3>
+                      <p className="mt-2 text-sm sm:text-base text-white/80 leading-relaxed">
+                        {transitionCopy.description}
+                      </p>
+                      {transitionCopy.differenceSummary && (
+                        <div className="mt-3 inline-flex items-center gap-2 bg-white/10 border border-white/15 rounded-full px-3 py-1 text-[11px] text-white/70">
+                          {transitionCopy.isForward ? (
+                            <ArrowUpRight className="w-4 h-4 text-emerald-200" />
+                          ) : (
+                            <ArrowDownLeft className="w-4 h-4 text-cyan-200" />
+                          )}
+                          <span>{transitionCopy.differenceSummary}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {transitionCopy.to !== null && (
+                  <div className="sm:self-start">
+                    <div className="bg-white/10 border border-white/20 rounded-2xl px-5 py-4 text-center shadow-[0_0_25px_rgba(6,182,212,0.25)]">
+                      <p className="text-xs text-white/60">مرحله جدید</p>
+                      <p className="mt-1 text-3xl font-black text-white">
+                        {formatNumber(transitionCopy.to)}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {(transitionCopy.from !== null || transitionCopy.to !== null) && (
+                <div className="mt-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white/5 border border-white/10 rounded-2xl px-4 py-3">
+                    <div className="flex-1 flex items-center justify-between gap-6">
+                      <div className="flex flex-col text-right">
+                        <span className="text-xs text-white/50">مرحله قبلی</span>
+                        <span className="text-lg font-bold text-white">
+                          {transitionCopy.from !== null ? formatNumber(transitionCopy.from) : '—'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-primary-100">
+                        <ArrowRight className="w-5 h-5" />
+                        {transitionCopy.differenceLabel && (
+                          <span className="text-sm font-semibold text-white/80">
+                            {transitionCopy.differenceLabel}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex flex-col text-right">
+                        <span className="text-xs text-white/50">مرحله فعلی</span>
+                        <span className="text-lg font-bold text-white">
+                          {transitionCopy.to !== null ? formatNumber(transitionCopy.to) : '—'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {transitionCopy.userProgress && (
+                <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-right">
+                    <p className="text-xs text-white/60 mb-1">مرحله فعلی</p>
+                    <p className="text-lg font-semibold text-white">
+                      {transitionCopy.userProgress.currentLevel != null
+                        ? `مرحله ${formatNumber(transitionCopy.userProgress.currentLevel)}`
+                        : '—'}
+                    </p>
+                  </div>
+                  <div className="bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-right">
+                    <p className="text-xs text-white/60 mb-1">مراحل تکمیل‌شده</p>
+                    <p className="text-lg font-semibold text-white">
+                      {formatNumber(transitionCopy.userProgress.levelsCleared ?? 0)}
+                    </p>
+                  </div>
+                  <div className="bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-right">
+                    <p className="text-xs text-white/60 mb-1">امتیاز کل</p>
+                    <p className="text-lg font-semibold text-white">
+                      {formatNumber(transitionCopy.userProgress.totalScore ?? 0)}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <div className="mt-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="text-xs text-white/50">
+                  {transitionCopy.type === 'completed'
+                    ? 'امتیاز مرحله قبل برات ذخیره شد. برای مرحله جدید آماده‌ای؟'
+                    : 'تغییر مرحله ذخیره شد. وقتشه ادامه بدی!'}
+                </div>
+                <button
+                  type="button"
+                  onClick={clearLevelTransition}
+                  className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-primary-500 via-secondary-500 to-primary-500 hover:from-primary-400 hover:via-secondary-400 hover:to-primary-400 text-white font-semibold px-6 py-3 rounded-xl shadow-[0_0_25px_rgba(168,85,247,0.45)] transition-all"
+                >
+                  <span>بزن بریم</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <AnimatePresence>
         {guestCompletionUnlocked && (
           <motion.div
