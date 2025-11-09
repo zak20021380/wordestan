@@ -85,14 +85,14 @@ const Leaderboard = () => {
             </span>
             {isUser && (
               <span className="bg-primary-500/20 text-primary-400 text-xs px-2 py-1 rounded-full">
-                You
+                شما
               </span>
             )}
           </div>
           <div className="text-white/60 text-sm flex items-center space-x-4">
-            <span>{player.levelsCleared || 0} levels</span>
-            <span>{player.wordsFound || 0} words</span>
-            <span>{player.bestStreak || 0} best streak</span>
+            <span>{player.levelsCleared || 0} مرحله</span>
+            <span>{player.wordsFound || 0} کلمه</span>
+            <span>{player.bestStreak || 0} بهترین رکورد</span>
           </div>
         </div>
       </div>
@@ -102,7 +102,7 @@ const Leaderboard = () => {
         <div className="text-2xl font-bold text-white">
           {player.totalScore?.toLocaleString() || 0}
         </div>
-        <div className="text-white/60 text-sm">points</div>
+        <div className="text-white/60 text-sm">امتیاز</div>
       </div>
     </motion.div>
   );
@@ -125,10 +125,10 @@ const Leaderboard = () => {
       >
         <div className="flex items-center justify-center space-x-3 mb-4">
           <Trophy className="w-10 h-10 text-yellow-400" />
-          <h1 className="text-4xl font-bold text-white">Leaderboard</h1>
+          <h1 className="text-4xl font-bold text-white">جدول امتیازات</h1>
         </div>
         <p className="text-xl text-white/80 max-w-2xl mx-auto">
-          See how you stack up against other word puzzle enthusiasts from around the world
+          ببینید در مقایسه با سایر علاقه‌مندان پازل کلمه در سراسر جهان در چه جایگاهی هستید
         </p>
       </motion.div>
 
@@ -145,31 +145,31 @@ const Leaderboard = () => {
             <div className="text-2xl font-bold text-white">
               {statsData.data.totalPlayers.toLocaleString()}
             </div>
-            <div className="text-white/60 text-sm">Total Players</div>
+            <div className="text-white/60 text-sm">کل بازیکنان</div>
           </div>
-          
+
           <div className="bg-glass backdrop-blur-lg rounded-xl border border-glass-border p-4 text-center">
             <TrendingUp className="w-8 h-8 text-success mx-auto mb-2" />
             <div className="text-2xl font-bold text-white">
               {statsData.data.activePlayersToday.toLocaleString()}
             </div>
-            <div className="text-white/60 text-sm">Active Today</div>
+            <div className="text-white/60 text-sm">فعال امروز</div>
           </div>
-          
+
           <div className="bg-glass backdrop-blur-lg rounded-xl border border-glass-border p-4 text-center">
             <Zap className="w-8 h-8 text-secondary-400 mx-auto mb-2" />
             <div className="text-2xl font-bold text-white">
               {Math.round(statsData.data.statistics.averageScore).toLocaleString()}
             </div>
-            <div className="text-white/60 text-sm">Avg Score</div>
+            <div className="text-white/60 text-sm">میانگین امتیاز</div>
           </div>
-          
+
           <div className="bg-glass backdrop-blur-lg rounded-xl border border-glass-border p-4 text-center">
             <Target className="w-8 h-8 text-purple-400 mx-auto mb-2" />
             <div className="text-2xl font-bold text-white">
               {statsData.data.statistics.maxScore.toLocaleString()}
             </div>
-            <div className="text-white/60 text-sm">Top Score</div>
+            <div className="text-white/60 text-sm">بالاترین امتیاز</div>
           </div>
         </motion.div>
       )}
@@ -185,7 +185,7 @@ const Leaderboard = () => {
                 : 'text-white/60 hover:text-white'
             }`}
           >
-            Global
+            جهانی
           </button>
           {isAuthenticated && (
             <button
@@ -196,7 +196,7 @@ const Leaderboard = () => {
                   : 'text-white/60 hover:text-white'
               }`}
             >
-              Your Rank
+              رتبه شما
             </button>
           )}
         </div>
@@ -212,10 +212,10 @@ const Leaderboard = () => {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-white flex items-center space-x-2">
               <Trophy className="w-6 h-6 text-yellow-400" />
-              <span>Global Rankings</span>
+              <span>رتبه‌بندی جهانی</span>
             </h2>
             <div className="text-white/60">
-              Top 50 Players
+              50 بازیکن برتر
             </div>
           </div>
           
@@ -227,7 +227,7 @@ const Leaderboard = () => {
             </div>
           ) : (
             <div className="text-center text-white/60 py-12">
-              No players found
+              هیچ بازیکنی یافت نشد
             </div>
           )}
         </motion.div>
@@ -244,7 +244,7 @@ const Leaderboard = () => {
           <div className="bg-glass backdrop-blur-lg rounded-2xl border border-glass-border p-6">
             <h2 className="text-2xl font-bold text-white mb-6 flex items-center space-x-2">
               <Star className="w-6 h-6 text-primary-400" />
-              <span>Your Ranking</span>
+              <span>رتبه‌بندی شما</span>
             </h2>
             
             {renderPlayerRow(myRankData.data.user, true)}
@@ -253,7 +253,7 @@ const Leaderboard = () => {
           {/* Nearby Players */}
           {myRankData.data.nearby && myRankData.data.nearby.length > 0 && (
             <div className="bg-glass backdrop-blur-lg rounded-2xl border border-glass-border p-6">
-              <h3 className="text-xl font-bold text-white mb-6">Players Near You</h3>
+              <h3 className="text-xl font-bold text-white mb-6">بازیکنان نزدیک به شما</h3>
               <div className="space-y-2">
                 {myRankData.data.nearby.map((player) => 
                   renderPlayerRow(player, player._id === user._id)
