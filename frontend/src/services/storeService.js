@@ -42,7 +42,9 @@ export const storeService = {
   async getCoinPacks() {
     try {
       const response = await api.get('/store/packs');
-      return response.data;
+      // Normalize the response so components always receive an array of packs
+      const packs = response?.data?.data;
+      return Array.isArray(packs) ? packs : [];
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to get coin packs');
     }

@@ -32,6 +32,8 @@ const Store = () => {
     }
   );
 
+  const packs = coinPacks ?? [];
+
   // Purchase mutation
   const purchaseMutation = useMutation(
     ({ packId }) => storeService.mockPurchase(packId),
@@ -118,7 +120,13 @@ const Store = () => {
 
       {/* Coin Packs */}
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-        {coinPacks?.data?.map((pack, index) => (
+        {packs.length === 0 && (
+          <div className="col-span-full text-center text-white/60 py-12 bg-glass backdrop-blur-lg rounded-2xl border border-glass-border">
+            در حال حاضر بسته‌ای برای نمایش وجود ندارد.
+          </div>
+        )}
+
+        {packs.map((pack, index) => (
           <motion.div
             key={pack._id}
             initial={{ opacity: 0, y: 20 }}
