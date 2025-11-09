@@ -41,7 +41,21 @@ export const authService = {
   // Register new user
   async register(userData) {
     try {
-      const response = await api.post('/auth/register', userData);
+      const payload = {
+        username: userData.username,
+        password: userData.password,
+      };
+
+      if (typeof userData.email === 'string') {
+        const trimmedEmail = userData.email.trim();
+        if (trimmedEmail.length > 0) {
+          payload.email = trimmedEmail;
+        }
+      } else if (userData.email) {
+        payload.email = userData.email;
+      }
+
+      const response = await api.post('/auth/register', payload);
       return response.data.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Registration failed');

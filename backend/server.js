@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const User = require('./src/models/User');
 require('dotenv').config();
 
 // Import routes
@@ -145,10 +146,33 @@ app.use((err, req, res, next) => {
 });
 
 // Database connection
+const removeLegacyEmailIndex = async () => {
+  try {
+    const collectionName = (User.collection && (User.collection.collectionName || User.collection.name)) || 'users';
+    const collection = mongoose.connection.collection(collectionName);
+    const indexes = await collection.indexes();
+    const emailIndex = indexes.find(index => index.name === 'email_1');
+
+    if (emailIndex) {
+      await collection.dropIndex('email_1');
+      console.log('Dropped legacy unique index on email');
+    }
+  } catch (error) {
+    if (error.codeName === 'IndexNotFound' || error.code === 27) {
+      console.log('Legacy email index already removed');
+    } else if (error.codeName === 'NamespaceNotFound' || error.code === 26) {
+      console.log('User collection not found yet; no legacy email index to drop');
+    } else {
+      console.error('Failed to drop legacy email index:', error);
+    }
+  }
+};
+
 const connectDB = async () => {
   try {
     const conn = await mongoose.connect(process.env.MONGODB_URI);
     console.log(`MongoDB Connected: ${conn.connection.host}`);
+    await removeLegacyEmailIndex();
   } catch (error) {
     console.error('Database connection error:', error);
     process.exit(1);

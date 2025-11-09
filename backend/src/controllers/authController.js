@@ -25,7 +25,7 @@ const register = async (req, res) => {
       });
     }
 
-    const { username, password } = req.body;
+    const { username, password, email } = req.body;
 
     // Check if user already exists
     const existingUser = await User.findOne({ username });
@@ -37,10 +37,29 @@ const register = async (req, res) => {
       });
     }
 
+    let normalizedEmail = null;
+    if (typeof email !== 'undefined') {
+      const trimmedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
+
+      if (trimmedEmail) {
+        const existingEmailUser = await User.findOne({ email: trimmedEmail });
+
+        if (existingEmailUser) {
+          return res.status(400).json({
+            success: false,
+            message: 'Email already in use'
+          });
+        }
+
+        normalizedEmail = trimmedEmail;
+      }
+    }
+
     // Create new user with initial coins
     const user = new User({
       username,
       password,
+      email: normalizedEmail,
       coins: parseInt(process.env.INITIAL_COINS) || 100,
       isAdmin: false
     });
