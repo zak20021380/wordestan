@@ -430,7 +430,13 @@ const PurchaseHistory = () => {
                   {purchase.packId?.name || purchase.packId?.title || 'بسته سکه'}
                 </div>
                 <div className="text-white/60 text-sm">
-                  {new Date(purchase.createdAt).toLocaleDateString()}
+                  {new Date(purchase.createdAt).toLocaleString('fa-IR', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
                 </div>
                 <div className="mt-1 text-xs">
                   <span
