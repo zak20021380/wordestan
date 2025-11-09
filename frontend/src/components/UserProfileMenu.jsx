@@ -250,45 +250,49 @@ const UserProfileMenu = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.2 }}
-            className="absolute right-0 mt-3 w-[320px] sm:w-[360px] bg-glass-dark/95 backdrop-blur-xl border border-glass-border rounded-2xl shadow-[0_12px_45px_rgba(15,23,42,0.45)] overflow-hidden"
+            className="fixed sm:absolute left-0 sm:left-auto sm:right-0 top-16 sm:top-auto mt-0 sm:mt-3 w-full sm:w-[360px] md:w-[420px] max-w-[95vw] bg-gradient-to-br from-gray-900/95 via-purple-900/90 to-gray-900/95 backdrop-blur-xl border border-primary-500/30 rounded-none sm:rounded-2xl shadow-[0_20px_60px_rgba(168,85,247,0.4),0_0_100px_rgba(217,70,239,0.2)] overflow-hidden z-50"
           >
-            <div className="px-5 py-4 border-b border-white/10 bg-gradient-to-br from-primary-500/10 to-secondary-500/10">
-              <div className="flex items-start justify-between gap-3">
+            <div className="px-5 py-5 border-b border-primary-500/20 bg-gradient-to-br from-primary-500/20 via-secondary-500/15 to-accent-500/10 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-primary-500/10 to-secondary-500/10 animate-pulse-glow-purple"></div>
+              <div className="relative flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-lg font-semibold text-white">{activeProfile?.username || 'کاربر'}</p>
-                  <p className="text-sm text-white/60 flex items-center gap-2 mt-1">
-                    <Mail className="w-4 h-4 text-secondary-300" />
+                  <p className="text-xl font-bold text-white drop-shadow-[0_0_10px_rgba(168,85,247,0.5)]">{activeProfile?.username || 'کاربر'}</p>
+                  <p className="text-sm text-white/70 flex items-center gap-2 mt-2">
+                    <Mail className="w-4 h-4 text-accent-400 drop-shadow-[0_0_8px_rgba(6,182,212,0.5)]" />
                     {activeProfile?.email || 'ایمیل ثبت نشده'}
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs text-white/60 flex items-center gap-1 justify-end">
-                    <CalendarDays className="w-4 h-4 text-secondary-300" />
+                  <p className="text-xs text-white/70 flex items-center gap-1 justify-end">
+                    <CalendarDays className="w-4 h-4 text-secondary-400 drop-shadow-[0_0_8px_rgba(217,70,239,0.5)]" />
                     عضو از {formatDate(activeProfile?.createdAt)}
                   </p>
-                  <p className="text-xs text-white/60 flex items-center gap-1 justify-end mt-1">
-                    <History className="w-4 h-4 text-secondary-300" />
+                  <p className="text-xs text-white/70 flex items-center gap-1 justify-end mt-1">
+                    <History className="w-4 h-4 text-secondary-400 drop-shadow-[0_0_8px_rgba(217,70,239,0.5)]" />
                     آخرین فعالیت: {formatDate(activeProfile?.lastActive, true)}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="px-5 py-4 space-y-4">
+            <div className="px-5 py-4 space-y-4 max-h-[calc(100vh-200px)] sm:max-h-[600px] overflow-y-auto">
               <div>
-                <h4 className="text-sm font-semibold text-white/80 mb-3">آمار بازی</h4>
+                <h4 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
+                  <Trophy className="w-5 h-5 text-primary-400" />
+                  آمار بازی
+                </h4>
                 <div className="grid grid-cols-2 gap-3">
                   {stats.map(({ label, value, icon: IconComponent }) => (
                     <div
                       key={label}
-                      className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 flex items-center gap-3"
+                      className="bg-gradient-to-br from-primary-500/10 via-secondary-500/5 to-accent-500/10 border border-primary-500/20 rounded-xl px-3 py-3 flex items-center gap-2 hover:border-primary-500/40 hover:shadow-[0_0_20px_rgba(168,85,247,0.3)] transition-all group"
                     >
-                      <div className="w-9 h-9 rounded-full bg-primary-500/10 border border-primary-500/30 flex items-center justify-center">
-                        <IconComponent className="w-5 h-5 text-primary-200" />
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500/20 to-secondary-500/20 border border-primary-400/30 flex items-center justify-center group-hover:shadow-[0_0_15px_rgba(168,85,247,0.5)] transition-all">
+                        <IconComponent className="w-5 h-5 text-primary-300 drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]" />
                       </div>
                       <div>
-                        <p className="text-lg font-bold text-white">{value}</p>
-                        <p className="text-xs text-white/60">{label}</p>
+                        <p className="text-lg font-bold text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]">{value}</p>
+                        <p className="text-xs text-white/70">{label}</p>
                       </div>
                     </div>
                   ))}
@@ -296,57 +300,62 @@ const UserProfileMenu = () => {
               </div>
 
               <div>
-                <h4 className="text-sm font-semibold text-white/80 mb-3">تاریخچه پیشرفت</h4>
+                <h4 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
+                  <History className="w-5 h-5 text-accent-400" />
+                  تاریخچه پیشرفت
+                </h4>
                 {error && !isLoading ? (
-                  <p className="text-sm text-red-300">{error}</p>
+                  <p className="text-sm text-red-300 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">{error}</p>
                 ) : null}
 
                 {isLoading ? (
                   <div className="flex items-center justify-center py-6">
-                    <Loader2 className="w-6 h-6 text-white animate-spin" />
+                    <Loader2 className="w-8 h-8 text-primary-400 animate-spin drop-shadow-[0_0_15px_rgba(168,85,247,0.8)]" />
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 flex items-center gap-3">
-                      <History className="w-5 h-5 text-secondary-200" />
+                    <div className="bg-gradient-to-r from-secondary-500/10 to-accent-500/10 border border-secondary-500/20 rounded-xl px-4 py-3 flex items-center gap-3 hover:border-secondary-500/40 hover:shadow-[0_0_20px_rgba(217,70,239,0.3)] transition-all">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-secondary-500/20 to-accent-500/20 border border-secondary-400/30 flex items-center justify-center">
+                        <History className="w-5 h-5 text-secondary-300 drop-shadow-[0_0_8px_rgba(217,70,239,0.5)]" />
+                      </div>
                       <div>
-                        <p className="text-sm text-white/80">آخرین بازی</p>
-                        <p className="text-xs text-white/60">{formatDate(activeProfile?.lastActive, true)}</p>
+                        <p className="text-sm font-semibold text-white">آخرین بازی</p>
+                        <p className="text-xs text-white/70">{formatDate(activeProfile?.lastActive, true)}</p>
                       </div>
                     </div>
 
-                    <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-3">
-                      <p className="text-sm text-white/80 mb-2 flex items-center gap-2">
-                        <ListChecks className="w-5 h-5 text-secondary-200" />
+                    <div className="bg-gradient-to-br from-accent-500/10 to-primary-500/10 border border-accent-500/20 rounded-xl px-4 py-3">
+                      <p className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+                        <ListChecks className="w-5 h-5 text-accent-300 drop-shadow-[0_0_8px_rgba(6,182,212,0.5)]" />
                         لیست مراحل تکمیل‌شده
                       </p>
                       {completedLevels.length > 0 ? (
-                        <ul className="max-h-28 overflow-y-auto space-y-2 pr-1">
+                        <ul className="max-h-28 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
                           {completedLevels.map((level, index) => (
                             <li
                               key={level.id}
-                              className="flex items-center justify-between text-xs text-white/70 bg-white/5 border border-white/5 rounded-lg px-3 py-2"
+                              className="flex items-center justify-between text-xs text-white/80 bg-gradient-to-r from-primary-500/10 to-secondary-500/10 border border-primary-400/20 rounded-lg px-3 py-2 hover:border-primary-400/40 hover:shadow-[0_0_15px_rgba(168,85,247,0.3)] transition-all"
                             >
-                              <span className="font-semibold">مرحله {level.order ?? index + 1}</span>
+                              <span className="font-bold">مرحله {level.order ?? index + 1}</span>
                               {level.letters ? (
-                                <span className="text-white/50">{level.letters}</span>
+                                <span className="text-white/60 font-medium">{level.letters}</span>
                               ) : null}
                             </li>
                           ))}
                         </ul>
                       ) : (
-                        <p className="text-xs text-white/50">هنوز مرحله‌ای تکمیل نشده است.</p>
+                        <p className="text-xs text-white/60">هنوز مرحله‌ای تکمیل نشده است.</p>
                       )}
                     </div>
                   </div>
                 )}
               </div>
 
-              <div className="border-t border-white/10 pt-4">
+              <div className="border-t border-primary-500/20 pt-4">
                 {isEditing ? (
                   <form onSubmit={handleSave} className="space-y-3">
                     <div>
-                      <label htmlFor="username" className="block text-xs text-white/60 mb-1">
+                      <label htmlFor="username" className="block text-xs font-semibold text-white/70 mb-2">
                         نام کاربری
                       </label>
                       <input
@@ -355,12 +364,12 @@ const UserProfileMenu = () => {
                         type="text"
                         value={formState.username}
                         onChange={handleChange}
-                        className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary-400/60"
+                        className="w-full bg-gradient-to-r from-primary-500/10 to-secondary-500/10 border border-primary-400/30 rounded-lg px-4 py-2.5 text-sm text-white placeholder-white/40 focus:outline-none focus:border-primary-400/60 focus:shadow-[0_0_20px_rgba(168,85,247,0.4)] transition-all"
                       />
                     </div>
 
                     <div>
-                      <label htmlFor="email" className="block text-xs text-white/60 mb-1">
+                      <label htmlFor="email" className="block text-xs font-semibold text-white/70 mb-2">
                         ایمیل
                       </label>
                       <input
@@ -369,11 +378,11 @@ const UserProfileMenu = () => {
                         type="email"
                         value={formState.email}
                         onChange={handleChange}
-                        className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-secondary-400/60"
+                        className="w-full bg-gradient-to-r from-secondary-500/10 to-accent-500/10 border border-secondary-400/30 rounded-lg px-4 py-2.5 text-sm text-white placeholder-white/40 focus:outline-none focus:border-secondary-400/60 focus:shadow-[0_0_20px_rgba(217,70,239,0.4)] transition-all"
                       />
                     </div>
 
-                    <div className="flex items-center justify-end gap-2 pt-1">
+                    <div className="flex items-center justify-end gap-2 pt-2">
                       <button
                         type="button"
                         onClick={() => {
@@ -383,14 +392,14 @@ const UserProfileMenu = () => {
                             email: activeProfile?.email || ''
                           });
                         }}
-                        className="px-4 py-2 rounded-lg text-sm text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+                        className="px-5 py-2.5 rounded-lg text-sm font-semibold text-white/80 hover:text-white hover:bg-white/10 border border-white/20 hover:border-white/30 transition-all"
                       >
                         انصراف
                       </button>
                       <button
                         type="submit"
                         disabled={isSaving}
-                        className="px-4 py-2 rounded-lg bg-gradient-to-r from-primary-500 to-secondary-500 text-sm font-semibold text-white shadow-[0_0_15px_rgba(168,85,247,0.4)] disabled:opacity-60 disabled:cursor-not-allowed"
+                        className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-primary-500 to-secondary-500 text-sm font-bold text-white shadow-[0_0_20px_rgba(168,85,247,0.5)] hover:shadow-[0_0_30px_rgba(168,85,247,0.7)] hover:scale-105 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all"
                       >
                         {isSaving ? 'در حال ذخیره...' : 'ذخیره تغییرات'}
                       </button>
@@ -401,7 +410,7 @@ const UserProfileMenu = () => {
                     <button
                       type="button"
                       onClick={() => setIsEditing(true)}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-sm font-semibold text-white hover:bg-white/15 transition-colors"
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-primary-500/20 to-secondary-500/20 border border-primary-400/30 text-sm font-bold text-white hover:border-primary-400/50 hover:shadow-[0_0_20px_rgba(168,85,247,0.4)] hover:scale-105 transition-all"
                     >
                       <Pencil className="w-4 h-4" />
                       ویرایش پروفایل
@@ -409,7 +418,7 @@ const UserProfileMenu = () => {
                     <button
                       type="button"
                       onClick={handleLogout}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-red-500/10 border border-red-400/40 text-sm font-semibold text-red-200 hover:bg-red-500/20 transition-colors"
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-red-500/20 to-pink-500/20 border border-red-400/40 text-sm font-bold text-red-200 hover:border-red-400/60 hover:shadow-[0_0_20px_rgba(239,68,68,0.4)] hover:scale-105 transition-all"
                     >
                       <LogOut className="w-4 h-4" />
                       خروج
