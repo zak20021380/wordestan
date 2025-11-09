@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGame } from '../contexts/GameContext';
 import { useAuth } from '../contexts/AuthContext';
+import { gameService } from '../services/gameService';
 import { toast } from 'react-hot-toast';
 import {
   Sparkles,
@@ -10,6 +11,7 @@ import {
   Trophy,
   Coins,
   Shuffle,
+  Loader2,
   Lock,
   LogIn,
   UserPlus,
@@ -39,10 +41,15 @@ const Game = () => {
     levelTransition,
     clearLevelTransition
   } = useGame();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, updateUser } = useAuth();
 
   const [showMeanings, setShowMeanings] = useState(false);
   const [activeMeaning, setActiveMeaning] = useState(null);
+  const [shuffleUsageCount, setShuffleUsageCount] = useState(0);
+  const [shuffleModal, setShuffleModal] = useState({ type: null });
+  const [isPurchasingShuffle, setIsPurchasingShuffle] = useState(false);
+  const shuffleCost = 15;
+  const currentLevelId = currentLevel?._id ?? null;
   const faNumberFormatter = useMemo(() => new Intl.NumberFormat('fa-IR'), []);
   const formatNumber = useCallback(
     (value) => {
@@ -298,7 +305,8 @@ const Game = () => {
   useEffect(() => {
     setShowMeanings(false);
     setActiveMeaning(null);
-  }, [currentLevel?._id]);
+    setShuffleUsageCount(0);
+  }, [currentLevelId]);
 
   useEffect(() => {
     if (!activeMeaning) {
@@ -315,6 +323,201 @@ const Game = () => {
       setShowMeanings(false);
     }
   }, [completedMeaningDetails.length]);
+
+  useEffect(() => {
+    if (!shuffleModal.type) {
+      return undefined;
+    }
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setShuffleModal({ type: null });
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [shuffleModal.type]);
+
+  const handleCloseShuffleModal = useCallback(() => {
+    if (isPurchasingShuffle) {
+      return;
+    }
+    setShuffleModal({ type: null });
+  }, [isPurchasingShuffle]);
+
+  const handleShuffleClick = useCallback(() => {
+    if (!gameCanvasRef.current?.shuffleLetters) {
+      return;
+    }
+
+    if (shuffleUsageCount === 0) {
+      gameCanvasRef.current.shuffleLetters();
+      setShuffleUsageCount(1);
+      return;
+    }
+
+    if (!isAuthenticated) {
+      setShuffleModal({ type: 'guest' });
+      return;
+    }
+
+    if ((user?.coins ?? 0) < shuffleCost) {
+      setShuffleModal({ type: 'insufficient' });
+      return;
+    }
+
+    setShuffleModal({ type: 'confirm' });
+  }, [shuffleUsageCount, isAuthenticated, user?.coins, shuffleCost]);
+
+  const handleConfirmShufflePurchase = useCallback(async () => {
+    if (!isAuthenticated || isPurchasingShuffle) {
+      if (!isAuthenticated) {
+        setShuffleModal({ type: 'guest' });
+      }
+      return;
+    }
+
+    setIsPurchasingShuffle(true);
+
+    try {
+      const response = await gameService.purchaseShuffle(currentLevelId);
+      const remainingCoins = response?.data?.remainingCoins;
+
+      if (typeof remainingCoins === 'number' && Number.isFinite(remainingCoins)) {
+        updateUser({ coins: remainingCoins });
+      }
+
+      setShuffleUsageCount(prev => prev + 1);
+      setShuffleModal({ type: null });
+      gameCanvasRef.current?.shuffleLetters?.();
+      toast.success('چیدمان با موفقیت تغییر کرد ✨');
+    } catch (error) {
+      toast.error(error.message || 'در خرید چیدمان مشکلی پیش اومد');
+    } finally {
+      setIsPurchasingShuffle(false);
+    }
+  }, [
+    isAuthenticated,
+    isPurchasingShuffle,
+    currentLevelId,
+    updateUser,
+  ]);
+
+  const renderShuffleModalContent = () => {
+    switch (shuffleModal.type) {
+      case 'confirm':
+        return (
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <h3 className="text-xl font-bold text-white">تغییر چیدمان با پرداخت سکه</h3>
+              <p className="text-sm text-white/70 leading-relaxed">
+                برای تغییر دوباره چیدمان، باید {formatNumber(shuffleCost)} سکه پرداخت کنی. بعد از تایید، حروف با یک ترکیب جدید نمایش داده می‌شن.
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row items-stretch gap-4">
+              <div className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-yellow-500/20 border border-yellow-500/30 text-yellow-300">
+                    <Coins className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-white/50">موجودی فعلی</p>
+                    <p className="text-lg font-semibold text-white">{formatNumber(user?.coins ?? 0)} سکه</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 text-white/60 text-sm">
+                  <span>−</span>
+                  <span className="font-semibold text-white">{formatNumber(shuffleCost)}</span>
+                </div>
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
+              <button
+                type="button"
+                onClick={handleCloseShuffleModal}
+                disabled={isPurchasingShuffle}
+                className="inline-flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 border border-white/15 text-white/80 hover:text-white px-4 py-2.5 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <span>انصراف</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmShufflePurchase}
+                disabled={isPurchasingShuffle}
+                className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 hover:from-cyan-400 hover:via-blue-400 hover:to-purple-400 text-white font-semibold px-5 py-2.5 rounded-xl shadow-[0_0_25px_rgba(59,130,246,0.4)] transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                {isPurchasingShuffle ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Coins className="w-4 h-4" />
+                )}
+                <span>تایید و پرداخت</span>
+              </button>
+            </div>
+          </div>
+        );
+      case 'insufficient':
+        return (
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <h3 className="text-xl font-bold text-white">سکه کافی نیست!</h3>
+              <p className="text-sm text-white/70 leading-relaxed">
+                برای تغییر دوباره چیدمان به {formatNumber(shuffleCost)} سکه نیاز داری، اما موجودی فعلی‌ت کمتره. می‌تونی به فروشگاه بری و بسته سکه تهیه کنی.
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
+              <button
+                type="button"
+                onClick={handleCloseShuffleModal}
+                className="inline-flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 border border-white/15 text-white/80 hover:text-white px-4 py-2.5 rounded-xl transition-all"
+              >
+                <span>باشه</span>
+              </button>
+              <Link
+                to="/store"
+                onClick={handleCloseShuffleModal}
+                className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-primary-500 via-secondary-500 to-primary-500 hover:from-primary-400 hover:via-secondary-400 hover:to-primary-400 text-white font-semibold px-5 py-2.5 rounded-xl shadow-[0_0_25px_rgba(168,85,247,0.4)] transition-all"
+              >
+                <Coins className="w-4 h-4" />
+                <span>رفتن به فروشگاه</span>
+              </Link>
+            </div>
+          </div>
+        );
+      case 'guest':
+        return (
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <h3 className="text-xl font-bold text-white">ورود یا ثبت‌نام برای سکه‌ها</h3>
+              <p className="text-sm text-white/70 leading-relaxed">
+                اولین تغییر چیدمان رایگان بود! برای اینکه بتونی دوباره چیدمان حروف رو عوض کنی و سکه خرج کنی، لازمه وارد حساب کاربری‌ت بشی یا ثبت‌نام کنی.
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
+              <Link
+                to="/register"
+                onClick={handleCloseShuffleModal}
+                className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-primary-500 via-secondary-500 to-primary-500 hover:from-primary-400 hover:via-secondary-400 hover:to-primary-400 text-white font-semibold px-5 py-2.5 rounded-xl shadow-[0_0_25px_rgba(168,85,247,0.4)] transition-all"
+              >
+                <UserPlus className="w-4 h-4" />
+                <span>ثبت‌نام</span>
+              </Link>
+              <Link
+                to="/login"
+                onClick={handleCloseShuffleModal}
+                className="inline-flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 border border-white/15 text-white/80 hover:text-white px-5 py-2.5 rounded-xl transition-all"
+              >
+                <LogIn className="w-4 h-4" />
+                <span>ورود</span>
+              </Link>
+            </div>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
 
   const handleAutoSolve = async () => {
     if (!isAuthenticated) {
@@ -555,13 +758,28 @@ const Game = () => {
             {/* Action Buttons */}
             <div className="flex justify-center mt-6">
               <button
-                onClick={() => gameCanvasRef.current?.shuffleLetters?.()}
-                className="bg-gradient-to-r from-cyan-500/20 to-blue-500/20 hover:from-cyan-500/30 hover:to-blue-500/30 border border-cyan-500/30 text-white font-medium py-3 px-6 rounded-lg transition-all shadow-[0_0_15px_rgba(6,182,212,0.3)] hover:shadow-[0_0_25px_rgba(6,182,212,0.5)] flex items-center justify-center space-x-2 space-x-reverse"
+                type="button"
+                onClick={handleShuffleClick}
+                disabled={isPurchasingShuffle}
+                aria-busy={isPurchasingShuffle}
+                className="bg-gradient-to-r from-cyan-500/20 to-blue-500/20 hover:from-cyan-500/30 hover:to-blue-500/30 disabled:hover:from-cyan-500/20 disabled:hover:to-blue-500/20 border border-cyan-500/30 text-white font-medium py-3 px-6 rounded-lg transition-all shadow-[0_0_15px_rgba(6,182,212,0.3)] hover:shadow-[0_0_25px_rgba(6,182,212,0.5)] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center space-x-2 space-x-reverse"
               >
-                <Shuffle className="w-5 h-5" />
-                <span>چیدمان جدید</span>
+                {isPurchasingShuffle ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span>در حال تغییر...</span>
+                  </>
+                ) : (
+                  <>
+                    <Shuffle className="w-5 h-5" />
+                    <span>چیدمان جدید</span>
+                  </>
+                )}
               </button>
             </div>
+            <p className="mt-3 text-xs text-white/50 text-center">
+              اولین تغییر چیدمان رایگانه؛ بعد از اون هر بار {formatNumber(shuffleCost)} سکه هزینه داره.
+            </p>
           </motion.div>
         </div>
 
@@ -843,6 +1061,38 @@ const Game = () => {
           </motion.div>
         </div>
       </div>
+      <AnimatePresence>
+        {shuffleModal.type && (
+          <motion.div
+            key="shuffle-modal"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75 backdrop-blur-sm px-4"
+            onClick={handleCloseShuffleModal}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 260, damping: 22 }}
+              onClick={(event) => event.stopPropagation()}
+              className="relative w-full max-w-lg bg-gradient-to-br from-slate-900/95 via-purple-900/90 to-slate-900/95 border border-white/10 rounded-3xl px-6 py-7 sm:px-8 shadow-[0_40px_140px_rgba(12,10,45,0.65)]"
+            >
+              <button
+                type="button"
+                onClick={handleCloseShuffleModal}
+                disabled={isPurchasingShuffle}
+                className="absolute top-4 left-4 text-white/60 hover:text-white transition-colors disabled:opacity-50"
+                aria-label="بستن"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <div className="mt-2">{renderShuffleModalContent()}</div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <AnimatePresence>
         {levelTransition && transitionCopy && (
           <motion.div
