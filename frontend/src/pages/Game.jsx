@@ -6,7 +6,6 @@ import { toast } from 'react-hot-toast';
 import {
   Sparkles,
   CheckCircle,
-  XCircle,
   Trophy,
   Coins,
   RotateCcw,
@@ -18,54 +17,11 @@ const Game = () => {
   const {
     currentLevel,
     gameState,
-    submitWord,
     autoSolve,
-    isCompletingWord,
     isAutoSolving,
     levelLoading
   } = useGame();
   const { user } = useAuth();
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [showError, setShowError] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
-
-  // Handle word submission
-  const handleSubmitWord = async () => {
-    if (!gameState.currentWord || gameState.currentWord.length < 3) {
-      showErrorMessage('کلمه باید حداقل ۳ حرف باشه!');
-      return;
-    }
-
-    try {
-      const result = await submitWord();
-
-      if (result?.message) {
-        showSuccessMessage(result.message);
-      } else {
-        showSuccessMessage('کلمه ثبت شد!');
-      }
-
-      // Update user coins if provided
-      if (result?.data) {
-        user.coins = result.data.totalCoins;
-        user.totalScore = result.data.totalScore;
-      }
-    } catch (error) {
-      showErrorMessage(error.message || 'این کلمه رو نداریم!');
-    }
-  };
-
-  const showSuccessMessage = (message) => {
-    setShowSuccess(true);
-    toast.success(message);
-    setTimeout(() => setShowSuccess(false), 2000);
-  };
-
-  const showErrorMessage = (message) => {
-    setErrorMessage(message);
-    setShowError(true);
-    setTimeout(() => setShowError(false), 2000);
-  };
 
   const handleAutoSolve = async () => {
     if (user.coins < 50) {
@@ -188,24 +144,9 @@ const Game = () => {
             className="bg-glass/30 backdrop-blur-lg rounded-2xl border border-glass-border p-6"
           >
             <GameCanvas />
-            
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 mt-6">
-              <button
-                onClick={handleSubmitWord}
-                disabled={!gameState.currentWord || isCompletingWord}
-                className="flex-1 bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500 hover:from-purple-600 hover:via-pink-600 hover:to-purple-600 disabled:bg-glass-hover disabled:cursor-not-allowed text-white font-medium py-3 px-6 rounded-lg transition-all shadow-[0_0_20px_rgba(168,85,247,0.4)] hover:shadow-[0_0_30px_rgba(168,85,247,0.6)] flex items-center justify-center space-x-2 space-x-reverse"
-              >
-                {isCompletingWord ? (
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                ) : (
-                  <>
-                    <CheckCircle className="w-5 h-5" />
-                    <span>بفرست!</span>
-                  </>
-                )}
-              </button>
 
+            {/* Action Buttons */}
+            <div className="flex justify-center mt-6">
               <button
                 onClick={() => window.location.reload()}
                 className="bg-gradient-to-r from-cyan-500/20 to-blue-500/20 hover:from-cyan-500/30 hover:to-blue-500/30 border border-cyan-500/30 text-white font-medium py-3 px-6 rounded-lg transition-all shadow-[0_0_15px_rgba(6,182,212,0.3)] hover:shadow-[0_0_25px_rgba(6,182,212,0.5)] flex items-center justify-center space-x-2 space-x-reverse"
@@ -214,33 +155,6 @@ const Game = () => {
                 <span>از اول</span>
               </button>
             </div>
-
-            {/* Success/Error Messages */}
-            <AnimatePresence>
-              {showSuccess && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  className="mt-4 p-4 bg-success/20 border border-success/30 rounded-lg text-success flex items-center space-x-2 space-x-reverse"
-                >
-                  <CheckCircle className="w-5 h-5" />
-                  <span>آفرین! درست بود! ✨</span>
-                </motion.div>
-              )}
-
-              {showError && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  className="mt-4 p-4 bg-danger/20 border border-danger/30 rounded-lg text-danger flex items-center space-x-2 space-x-reverse"
-                >
-                  <XCircle className="w-5 h-5" />
-                  <span>{errorMessage}</span>
-                </motion.div>
-              )}
-            </AnimatePresence>
           </motion.div>
         </div>
 
