@@ -20,6 +20,7 @@ import {
   BookOpen
 } from 'lucide-react';
 import GameCanvas from '../components/GameCanvas';
+import StageCompletionPopup from '../components/StageCompletionPopup';
 
 const Game = () => {
   const gameCanvasRef = useRef(null);
@@ -31,7 +32,9 @@ const Game = () => {
     isAutoSolving,
     levelLoading,
     levelMeta,
-    isGuestMode
+    isGuestMode,
+    stageCompletion,
+    clearStageCompletion
   } = useGame();
   const { user, isAuthenticated } = useAuth();
 
@@ -683,6 +686,7 @@ const Game = () => {
           </motion.div>
         </div>
       </div>
+      {/* Guest Completion Popup */}
       <AnimatePresence>
         {guestCompletionUnlocked && (
           <motion.div
@@ -740,6 +744,19 @@ const Game = () => {
               </div>
             </motion.div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Stage Completion Popup for Authenticated Users */}
+      <AnimatePresence>
+        {stageCompletion && !isGuestMode && (
+          <StageCompletionPopup
+            currentStage={stageCompletion.currentStage}
+            nextStage={stageCompletion.nextStage}
+            coinsEarned={stageCompletion.coinsEarned}
+            levelBonus={stageCompletion.levelBonus}
+            onClose={clearStageCompletion}
+          />
         )}
       </AnimatePresence>
     </div>

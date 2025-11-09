@@ -25,6 +25,7 @@ export const GameProvider = ({ children }) => {
     completedWords: [],
     isConnecting: false,
   });
+  const [stageCompletion, setStageCompletion] = useState(null);
 
   useEffect(() => {
     if (authLoading) {
@@ -40,6 +41,7 @@ export const GameProvider = ({ children }) => {
       completedWords: [],
       isConnecting: false,
     });
+    setStageCompletion(null);
   }, [isAuthenticated, authLoading]);
 
   // Fetch next level
@@ -136,6 +138,9 @@ export const GameProvider = ({ children }) => {
     {
       onSuccess: (data) => {
         const completedWord = data?.data?.word?.text;
+        const isLevelCompleted = data?.data?.levelCompleted;
+        const levelBonus = data?.data?.levelBonus || 0;
+        const coinsEarned = data?.data?.coinsEarned || 0;
 
         // Update user coins in auth context
         if (user) {
@@ -158,6 +163,16 @@ export const GameProvider = ({ children }) => {
             completedWords: updatedCompletedWords,
           };
         });
+
+        // If level is completed, show completion popup
+        if (isLevelCompleted && currentLevel) {
+          setStageCompletion({
+            currentStage: currentLevel.order,
+            nextStage: currentLevel.order + 1,
+            coinsEarned,
+            levelBonus,
+          });
+        }
 
         // Invalidate queries to refetch and get updated completed words
         queryClient.invalidateQueries(['nextLevel', user?.id]);
@@ -354,6 +369,10 @@ export const GameProvider = ({ children }) => {
     });
   };
 
+  const clearStageCompletion = () => {
+    setStageCompletion(null);
+  };
+
   const value = {
     currentLevel,
     gameState,
@@ -362,6 +381,8 @@ export const GameProvider = ({ children }) => {
     isCompletingWord: completeWordMutation.isLoading,
     isAutoSolving: autoSolveMutation.isLoading,
     isGuestMode: !isAuthenticated,
+    stageCompletion,
+    clearStageCompletion,
 
     // Actions
     selectLetter,
