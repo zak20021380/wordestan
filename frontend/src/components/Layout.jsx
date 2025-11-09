@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useState, useRef, useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import {
   Home,
@@ -10,14 +10,24 @@ import {
   Menu,
   X,
   User,
-  Coins
+  Coins,
+  LogOut,
+  Edit2,
+  Calendar,
+  Award,
+  Target,
+  Zap,
+  Mail
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Layout = ({ children }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user, isAuthenticated } = useAuth();
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const { user, isAuthenticated, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
+  const profileRef = useRef(null);
 
   const navigation = [
     { name: 'خونه', href: '/', icon: Home },
@@ -31,6 +41,36 @@ const Layout = ({ children }) => {
   ];
 
   const isActive = (path) => location.pathname === path;
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (profileRef.current && !profileRef.current.contains(event.target)) {
+        setIsProfileOpen(false);
+      }
+    };
+
+    if (isProfileOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isProfileOpen]);
+
+  const handleLogout = () => {
+    logout();
+    setIsProfileOpen(false);
+    navigate('/');
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'نامشخص';
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('fa-IR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    }).format(date);
+  };
 
   return (
     <div className="min-h-screen">
@@ -99,11 +139,164 @@ const Layout = ({ children }) => {
                   </div>
 
                   {/* User Menu */}
-                  <div className="relative">
-                    <button className="flex items-center space-x-2 space-x-reverse text-white hover:bg-glass-hover px-4 py-2 rounded-xl transition-all hover:shadow-[0_0_15px_rgba(168,85,247,0.2)] border border-transparent hover:border-primary-500/30">
+                  <div className="relative" ref={profileRef}>
+                    <button
+                      onClick={() => setIsProfileOpen(!isProfileOpen)}
+                      className={`flex items-center space-x-2 space-x-reverse text-white hover:bg-glass-hover px-4 py-2 rounded-xl transition-all hover:shadow-[0_0_15px_rgba(168,85,247,0.2)] border ${
+                        isProfileOpen
+                          ? 'border-primary-500/50 bg-glass-hover shadow-[0_0_15px_rgba(168,85,247,0.3)]'
+                          : 'border-transparent hover:border-primary-500/30'
+                      }`}
+                    >
                       <User className="w-5 h-5" />
                       <span className="hidden sm:block font-medium">{user.username}</span>
                     </button>
+
+                    {/* Profile Dropdown */}
+                    <AnimatePresence>
+                      {isProfileOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                          transition={{ duration: 0.2 }}
+                          className="absolute left-0 mt-2 w-80 bg-glass-dark backdrop-blur-xl border-2 border-glass-border rounded-2xl shadow-[0_8px_40px_rgba(168,85,247,0.3)] overflow-hidden z-50"
+                          style={{ direction: 'rtl' }}
+                        >
+                          {/* Header */}
+                          <div className="bg-gradient-to-br from-primary-500/20 via-secondary-500/20 to-accent-500/20 p-4 border-b-2 border-glass-border">
+                            <div className="flex items-center space-x-3 space-x-reverse">
+                              <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(168,85,247,0.5)]">
+                                <User className="w-6 h-6 text-white" />
+                              </div>
+                              <div className="flex-1">
+                                <h3 className="text-white font-bold text-lg">{user.username}</h3>
+                                {user.email && (
+                                  <div className="flex items-center space-x-1 space-x-reverse text-white/60 text-sm">
+                                    <Mail className="w-3 h-3" />
+                                    <span>{user.email}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* User Info */}
+                          <div className="p-4 border-b border-glass-border/50">
+                            <div className="flex items-center space-x-2 space-x-reverse text-white/60 text-sm">
+                              <Calendar className="w-4 h-4" />
+                              <span>عضو از: {formatDate(user.createdAt)}</span>
+                            </div>
+                            {user.lastActive && (
+                              <div className="flex items-center space-x-2 space-x-reverse text-white/60 text-sm mt-2">
+                                <Zap className="w-4 h-4" />
+                                <span>آخرین بازدید: {formatDate(user.lastActive)}</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Game Stats */}
+                          <div className="p-4 border-b border-glass-border/50">
+                            <h4 className="text-white/80 font-semibold mb-3 flex items-center space-x-2 space-x-reverse">
+                              <Award className="w-4 h-4" />
+                              <span>آمار بازی</span>
+                            </h4>
+                            <div className="grid grid-cols-2 gap-3">
+                              {/* Total Score */}
+                              <div className="bg-glass-hover/50 rounded-lg p-3 border border-primary-500/20">
+                                <div className="text-white/60 text-xs mb-1">کل امتیاز</div>
+                                <div className="text-white font-bold text-lg">
+                                  {user.totalScore?.toLocaleString() || 0}
+                                </div>
+                              </div>
+
+                              {/* Levels Cleared */}
+                              <div className="bg-glass-hover/50 rounded-lg p-3 border border-secondary-500/20">
+                                <div className="text-white/60 text-xs mb-1">مراحل تکمیل‌شده</div>
+                                <div className="text-white font-bold text-lg">
+                                  {user.levelsCleared || 0}
+                                </div>
+                              </div>
+
+                              {/* Words Found */}
+                              <div className="bg-glass-hover/50 rounded-lg p-3 border border-accent-500/20">
+                                <div className="text-white/60 text-xs mb-1">کلمات پیداشده</div>
+                                <div className="text-white font-bold text-lg">
+                                  {user.wordsFound || 0}
+                                </div>
+                              </div>
+
+                              {/* Best Streak */}
+                              <div className="bg-glass-hover/50 rounded-lg p-3 border border-orange-500/20">
+                                <div className="text-white/60 text-xs mb-1">بهترین رکورد</div>
+                                <div className="text-white font-bold text-lg">
+                                  {user.bestStreak || 0}
+                                </div>
+                              </div>
+
+                              {/* Current Streak */}
+                              <div className="bg-glass-hover/50 rounded-lg p-3 border border-green-500/20">
+                                <div className="text-white/60 text-xs mb-1">رکورد فعلی</div>
+                                <div className="text-white font-bold text-lg">
+                                  {user.currentStreak || 0}
+                                </div>
+                              </div>
+
+                              {/* Coins */}
+                              <div className="bg-glass-hover/50 rounded-lg p-3 border border-accent-500/20">
+                                <div className="text-white/60 text-xs mb-1">سکه‌ها</div>
+                                <div className="text-white font-bold text-lg flex items-center space-x-1 space-x-reverse">
+                                  <Coins className="w-4 h-4 text-accent-400" />
+                                  <span>{user.coins?.toLocaleString() || 0}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Progress History */}
+                          {user.completedLevels && user.completedLevels.length > 0 && (
+                            <div className="p-4 border-b border-glass-border/50">
+                              <h4 className="text-white/80 font-semibold mb-2 flex items-center space-x-2 space-x-reverse">
+                                <Target className="w-4 h-4" />
+                                <span>مراحل تکمیل‌شده</span>
+                              </h4>
+                              <div className="text-white/60 text-sm">
+                                {Array.isArray(user.completedLevels)
+                                  ? user.completedLevels.map((level, idx) => (
+                                      <span key={idx} className="inline-block bg-primary-500/20 px-2 py-1 rounded-md ml-1 mb-1">
+                                        {level.name || `مرحله ${level.order || idx + 1}`}
+                                      </span>
+                                    ))
+                                  : `${user.completedLevels} مرحله`
+                                }
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Actions */}
+                          <div className="p-3">
+                            <button
+                              onClick={() => {
+                                setIsProfileOpen(false);
+                                navigate('/settings');
+                              }}
+                              className="w-full flex items-center justify-center space-x-2 space-x-reverse px-4 py-2 mb-2 rounded-xl bg-primary-500/20 hover:bg-primary-500/30 text-white border border-primary-500/30 hover:border-primary-500/50 transition-all"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                              <span>ویرایش پروفایل</span>
+                            </button>
+
+                            <button
+                              onClick={handleLogout}
+                              className="w-full flex items-center justify-center space-x-2 space-x-reverse px-4 py-2 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-400 hover:text-red-300 border border-red-500/30 hover:border-red-500/50 transition-all"
+                            >
+                              <LogOut className="w-4 h-4" />
+                              <span>خروج</span>
+                            </button>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 </>
               ) : (
