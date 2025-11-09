@@ -10,7 +10,6 @@ import {
   Trophy,
   Coins,
   Shuffle,
-  Target,
   Lock,
   LogIn,
   UserPlus,
@@ -415,34 +414,9 @@ const Game = () => {
             transition={{ delay: 0.3 }}
             className="bg-glass backdrop-blur-lg rounded-2xl border border-glass-border p-6"
           >
-            <h3 className="font-semibold mb-4 flex items-center space-x-2 space-x-reverse bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-              <Target className="w-5 h-5 text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]" />
-              <span>کلمه الان</span>
-            </h3>
+            <div className="mb-4 h-px bg-gradient-to-r from-transparent via-purple-400/40 to-transparent" />
 
-            <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20 rounded-lg p-4 mb-4 min-h-[60px] flex items-center justify-center shadow-[inset_0_0_20px_rgba(168,85,247,0.1)]">
-              <AnimatePresence mode="wait">
-                {gameState.currentWord ? (
-                  <motion.span
-                    key={gameState.currentWord}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 1.2 }}
-                    className="text-2xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent tracking-widest drop-shadow-[0_0_10px_rgba(168,85,247,0.3)]"
-                  >
-                    {gameState.currentWord}
-                  </motion.span>
-                ) : (
-                  <span className="text-white/40">حروف رو وصل کن</span>
-                )}
-              </AnimatePresence>
-            </div>
-
-            <div className="text-sm text-white/60">
-              طول: {(gameState.currentWord || '').length} حرف
-            </div>
-
-            <div className="mt-6">
+            <div className="mt-4">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="text-sm font-semibold text-white/70">کلمات این مرحله</h4>
                 <span className="text-xs text-white/50">با هر کشف، حروف کامل می‌شن</span>
