@@ -1,23 +1,22 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { 
-  Home, 
-  Gamepad2, 
-  ShoppingCart, 
-  Trophy, 
-  Settings, 
-  Menu, 
-  X, 
+import {
+  Home,
+  Gamepad2,
+  ShoppingCart,
+  Trophy,
+  Settings,
+  Menu,
+  X,
   User,
-  Coins,
-  LogOut
+  Coins
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Layout = ({ children }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const location = useLocation();
 
   const navigation = [
@@ -106,14 +105,6 @@ const Layout = ({ children }) => {
                       <span className="hidden sm:block font-medium">{user.username}</span>
                     </button>
                   </div>
-
-                  {/* Logout Button */}
-                  <button
-                    onClick={logout}
-                    className="flex items-center space-x-2 space-x-reverse text-white/80 hover:text-white hover:bg-danger/30 px-3 py-2 rounded-xl transition-all border border-transparent hover:border-danger/50 hover:shadow-[0_0_15px_rgba(244,63,94,0.3)]"
-                  >
-                    <LogOut className="w-5 h-5" />
-                  </button>
                 </>
               ) : (
                 <div className="flex items-center space-x-4 space-x-reverse">
