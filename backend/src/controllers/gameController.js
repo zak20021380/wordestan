@@ -169,10 +169,10 @@ const completeWord = async (req, res) => {
     ).length;
 
     const isLevelCompleted = completedWordsCount === level.words.length;
+    const levelReward = parseInt(process.env.LEVEL_COMPLETE_REWARD) || 100;
 
     if (isLevelCompleted && !user.completedLevels.includes(level._id)) {
       // Award level completion bonus
-      const levelReward = parseInt(process.env.LEVEL_COMPLETE_REWARD) || 100;
       await user.addCoins(levelReward);
       await user.completeLevel(level._id);
     }
