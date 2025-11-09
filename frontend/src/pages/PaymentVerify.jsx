@@ -1,9 +1,7 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useMutation, useQueryClient } from 'react-query';
-import { motion } from 'framer-motion';
-import { Loader2, CheckCircle, XCircle, ArrowRight } from 'lucide-react';
-import { toast } from 'react-hot-toast';
+import { useQueryClient } from 'react-query';
+import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { storeService } from '../services/storeService';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -12,148 +10,204 @@ const PaymentVerify = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { updateUser } = useAuth();
-  const timeoutRef = useRef();
+
+  const [status, setStatus] = useState('loading');
+  const [message, setMessage] = useState('در حال بررسی پرداخت...');
+  const [details, setDetails] = useState(null);
+  const timeoutRef = useRef(null);
 
   const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
-  const authority = searchParams.get('Authority');
-  const status = searchParams.get('Status');
 
-  const verificationMutation = useMutation(
-    () => storeService.verifyPayment({ authority, status }),
-    {
-      onSuccess: (response) => {
-        if (response?.success) {
-          const userCoins = response?.data?.user?.coins;
-          if (typeof userCoins === 'number') {
-            updateUser({ coins: userCoins });
-          }
-          queryClient.invalidateQueries(['purchaseHistory']);
-          queryClient.invalidateQueries(['coinPacks']);
-          toast.success(response.message || 'پرداخت با موفقیت تایید شد');
-          timeoutRef.current = setTimeout(() => {
-            navigate('/store', { replace: true });
-          }, 3000);
-        } else {
-          toast.error(response?.message || 'تایید پرداخت ناموفق بود');
-          timeoutRef.current = setTimeout(() => {
-            navigate('/store', { replace: true });
-          }, 4000);
-        }
-      },
-      onError: (error) => {
-        toast.error(error.message || 'خطا در تایید پرداخت');
-        timeoutRef.current = setTimeout(() => {
-          navigate('/store', { replace: true });
-        }, 4000);
-      }
+  const scheduleRedirect = useCallback((path) => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
     }
-  );
+
+    timeoutRef.current = setTimeout(() => {
+      navigate(path, { replace: true });
+    }, 3000);
+  }, [navigate]);
 
   useEffect(() => {
+    const authority = searchParams.get('Authority');
+    const statusParam = searchParams.get('Status');
+
     if (!authority) {
-      toast.error('شناسه تراکنش یافت نشد');
-      navigate('/store', { replace: true });
-      return () => {};
+      setStatus('failed');
+      setMessage('شناسه تراکنش یافت نشد.');
+      setDetails(null);
+      scheduleRedirect('/store');
+      return () => {
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+        }
+      };
     }
 
-    verificationMutation.mutate();
+    if (statusParam !== 'OK') {
+      setStatus('failed');
+      setMessage('پرداخت توسط کاربر لغو شد.');
+      setDetails(null);
+      scheduleRedirect('/store');
+      return () => {
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+        }
+      };
+    }
+
+    const verifyPayment = async () => {
+      try {
+        setStatus('loading');
+        setMessage('در حال بررسی پرداخت...');
+
+        const response = await storeService.verifyPayment({ authority, status: statusParam });
+        const { success, message: responseMessage, data } = response || {};
+
+        if (success) {
+          const coinsAwarded = data?.coins ?? data?.coinsAwarded ?? data?.amount ?? 0;
+          const newBalance = data?.newBalance ?? data?.user?.coins;
+          const refId = data?.refId ?? data?.transactionId;
+
+          const successMessage = responseMessage
+            || (coinsAwarded
+              ? `پرداخت موفق بود! ${Number(coinsAwarded).toLocaleString()} سکه به حساب شما اضافه شد.`
+              : 'پرداخت با موفقیت تایید شد.');
+
+          setStatus('success');
+          setMessage(successMessage);
+          setDetails({
+            coins: coinsAwarded,
+            newBalance,
+            refId,
+          });
+
+          if (typeof newBalance === 'number') {
+            updateUser({ coins: newBalance });
+          } else if (typeof data?.user?.coins === 'number') {
+            updateUser({ coins: data.user.coins });
+          }
+
+          queryClient.invalidateQueries(['purchaseHistory']);
+          queryClient.invalidateQueries(['coinPacks']);
+
+          scheduleRedirect('/');
+        } else {
+          setStatus('failed');
+          setMessage(responseMessage || 'تایید پرداخت ناموفق بود.');
+          setDetails(null);
+          scheduleRedirect('/store');
+        }
+      } catch (error) {
+        setStatus('failed');
+        setMessage(error.message || 'خطا در تایید پرداخت');
+        setDetails(null);
+        scheduleRedirect('/store');
+      }
+    };
+
+    verifyPayment();
 
     return () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authority, status]);
+  }, [queryClient, scheduleRedirect, searchParams, updateUser]);
 
-  const renderStatusIcon = () => {
-    if (verificationMutation.isLoading) {
-      return <Loader2 className="w-14 h-14 text-primary-400 animate-spin" />;
+  const renderIcon = () => {
+    if (status === 'loading') {
+      return <Loader2 className="w-20 h-20 text-purple-300 animate-spin" />;
     }
 
-    if (verificationMutation.data?.success) {
-      return <CheckCircle className="w-16 h-16 text-green-400" />;
+    if (status === 'success') {
+      return <CheckCircle className="w-20 h-20 text-emerald-300 drop-shadow-[0_0_20px_rgba(110,231,183,0.6)]" />;
     }
 
-    return <XCircle className="w-16 h-16 text-red-400" />;
+    return <XCircle className="w-20 h-20 text-rose-300 drop-shadow-[0_0_20px_rgba(248,113,113,0.5)]" />;
   };
 
-  const renderMessage = () => {
-    if (verificationMutation.isLoading) {
-      return {
-        title: 'در حال تایید پرداخت...',
-        description: 'چند لحظه صبر کنید، در حال بررسی وضعیت تراکنش هستیم.'
-      };
+  const renderSubtitle = () => {
+    if (status === 'loading') {
+      return 'لطفا چند لحظه صبر کنید تا وضعیت تراکنش مشخص شود.';
     }
 
-    if (verificationMutation.data?.success) {
-      return {
-        title: verificationMutation.data.message || 'پرداخت تایید شد',
-        description: `با موفقیت ${verificationMutation.data?.data?.coinsAwarded || 0} سکه به حساب شما افزوده شد.`
-      };
+    if (status === 'success') {
+      return 'پرداخت با موفقیت انجام شد و به زودی به صفحه اصلی هدایت می‌شوید.';
     }
 
-    if (verificationMutation.isError) {
-      return {
-        title: verificationMutation.error?.message || 'پرداخت ناموفق بود',
-        description: 'در صورت کسر وجه، لطفا با پشتیبانی تماس بگیرید یا مجددا تلاش کنید.'
-      };
-    }
-
-    return {
-      title: verificationMutation.data?.message || 'پرداخت ناموفق بود',
-      description: 'در صورت کسر وجه، لطفا با پشتیبانی تماس بگیرید یا مجددا تلاش کنید.'
-    };
+    return 'در صورت کسر وجه، با پشتیبانی تماس بگیرید یا مجددا تلاش کنید.';
   };
-
-  const message = renderMessage();
-  const coinsAwarded = verificationMutation.data?.data?.coinsAwarded;
-  const newBalance = verificationMutation.data?.data?.newBalance;
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-glass backdrop-blur-lg rounded-3xl border border-glass-border p-10 text-center text-white"
-      >
-        <div className="flex flex-col items-center space-y-4">
-          {renderStatusIcon()}
-          <h1 className="text-3xl font-bold">{message.title}</h1>
-          <p className="text-white/70 max-w-xl">{message.description}</p>
+    <div className="relative">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900 p-[1px] shadow-[0_25px_70px_rgba(76,29,149,0.45)]">
+        <div className="relative rounded-[calc(1.5rem-1px)] bg-gradient-to-br from-purple-950/95 via-purple-900/90 to-indigo-950/90 p-6 sm:p-10">
+          <div className="absolute inset-0 opacity-40">
+            <div className="absolute -top-20 -left-24 h-56 w-56 rounded-full bg-fuchsia-500/40 blur-3xl" />
+            <div className="absolute -bottom-24 -right-10 h-60 w-60 rounded-full bg-indigo-500/40 blur-3xl" />
+          </div>
 
-          {verificationMutation.data?.success && (
-            <div className="w-full mt-6 grid md:grid-cols-2 gap-4">
-              <div className="bg-black/30 rounded-2xl border border-white/10 p-4">
-                <div className="text-sm text-white/60">سکه‌های دریافت‌شده</div>
-                <div className="text-2xl font-semibold text-accent-300">
-                  +{(coinsAwarded ?? 0).toLocaleString()}
+          <div className="relative z-10 flex flex-col items-center text-center space-y-5">
+            <div className="animate-fade-in">{renderIcon()}</div>
+
+            <div className="space-y-3">
+              <h1 className="text-2xl sm:text-3xl font-bold text-white drop-shadow-[0_10px_30px_rgba(168,85,247,0.35)]">
+                {status === 'success'
+                  ? 'پرداخت با موفقیت تایید شد 🎉'
+                  : status === 'failed'
+                    ? 'پرداخت ناموفق بود'
+                    : 'در حال بررسی پرداخت...'}
+              </h1>
+              <p className="text-white/80 text-base sm:text-lg leading-relaxed">
+                {message}
+              </p>
+              <p className="text-white/60 text-sm sm:text-base">
+                {renderSubtitle()}
+              </p>
+            </div>
+
+            {status === 'success' && details && (
+              <div className="w-full grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mt-4">
+                <div className="bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-left sm:text-center backdrop-blur-xl">
+                  <p className="text-xs sm:text-sm text-white/60 mb-1">سکه‌های دریافت‌شده</p>
+                  <p className="text-xl sm:text-2xl font-semibold text-emerald-300">
+                    +{Number(details.coins ?? 0).toLocaleString()}
+                  </p>
+                </div>
+                <div className="bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-left sm:text-center backdrop-blur-xl">
+                  <p className="text-xs sm:text-sm text-white/60 mb-1">موجودی جدید</p>
+                  <p className="text-xl sm:text-2xl font-semibold text-primary-200">
+                    {typeof details.newBalance === 'number'
+                      ? `${Number(details.newBalance).toLocaleString()} سکه`
+                      : '---'}
+                  </p>
+                </div>
+                <div className="bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-left sm:text-center backdrop-blur-xl">
+                  <p className="text-xs sm:text-sm text-white/60 mb-1">شماره پیگیری</p>
+                  <p className="text-base sm:text-lg font-semibold text-white/80 truncate">
+                    {details.refId || 'ثبت نشده'}
+                  </p>
                 </div>
               </div>
-              <div className="bg-black/30 rounded-2xl border border-white/10 p-4">
-                <div className="text-sm text-white/60">موجودی جدید شما</div>
-                <div className="text-2xl font-semibold text-primary-300">
-                  {(newBalance ?? 0).toLocaleString()} سکه
-                </div>
-              </div>
-            </div>
-          )}
+            )}
 
-          {verificationMutation.isError && (
-            <div className="text-sm text-red-300">
-              {verificationMutation.error?.message}
-            </div>
-          )}
+            {status === 'failed' && (
+              <button
+                type="button"
+                onClick={() => navigate('/store', { replace: true })}
+                className="mt-4 inline-flex items-center justify-center rounded-2xl bg-white/10 px-6 py-3 text-sm sm:text-base font-semibold text-white transition-all hover:bg-white/20 hover:shadow-[0_0_25px_rgba(168,85,247,0.45)] focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-300"
+              >
+                تلاش مجدد یا بازگشت به فروشگاه
+              </button>
+            )}
 
-          <button
-            onClick={() => navigate('/store')}
-            className="mt-8 inline-flex items-center justify-center space-x-2 bg-gradient-to-r from-primary-500 via-secondary-500 to-primary-500 hover:from-primary-600 hover:via-secondary-600 hover:to-primary-600 text-white font-semibold py-3 px-6 rounded-xl shadow-lg shadow-primary-500/40 transition-all"
-          >
-            <span>بازگشت به فروشگاه</span>
-            <ArrowRight className="w-5 h-5" />
-          </button>
+            <p className="text-xs text-white/50 sm:text-sm pt-2">
+              {status === 'success' ? 'در حال انتقال به صفحه اصلی...' : status === 'failed' ? 'به زودی به فروشگاه بازمی‌گردید.' : 'لطفا صفحه را نبندید.'}
+            </p>
+          </div>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 };
