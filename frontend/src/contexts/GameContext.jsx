@@ -23,8 +23,6 @@ export const GameProvider = ({ children }) => {
     currentWord: '',
     completedWords: [],
     isConnecting: false,
-    showHint: false,
-    hintLetter: null,
   });
 
   // Fetch next level
@@ -92,30 +90,6 @@ export const GameProvider = ({ children }) => {
         // Invalidate queries to refetch and get updated completed words
         queryClient.invalidateQueries(['nextLevel', user?.id]);
         queryClient.invalidateQueries(['leaderboard']);
-      },
-    }
-  );
-
-  // Get hint mutation
-  const getHintMutation = useMutation(
-    ({ levelId }) => gameService.getHint(levelId),
-    {
-      onSuccess: (data) => {
-        // Update user coins
-        if (user) {
-          user.coins = data.data.remainingCoins;
-        }
-        
-        setGameState(prev => ({
-          ...prev,
-          showHint: true,
-          hintLetter: data.data.hintLetter,
-        }));
-
-        // Hide hint after 3 seconds
-        setTimeout(() => {
-          setGameState(prev => ({ ...prev, showHint: false, hintLetter: null }));
-        }, 3000);
       },
     }
   );
@@ -230,14 +204,6 @@ export const GameProvider = ({ children }) => {
     }
   };
 
-  const getHint = async () => {
-    if (!currentLevel) return;
-    
-    await getHintMutation.mutateAsync({
-      levelId: currentLevel._id,
-    });
-  };
-
   const autoSolve = async () => {
     if (!currentLevel) return;
     
@@ -251,7 +217,6 @@ export const GameProvider = ({ children }) => {
     gameState,
     levelLoading,
     isCompletingWord: completeWordMutation.isLoading,
-    isGettingHint: getHintMutation.isLoading,
     isAutoSolving: autoSolveMutation.isLoading,
 
     // Actions
@@ -261,12 +226,10 @@ export const GameProvider = ({ children }) => {
     setCurrentWord,
     finalizeWordSelection,
     submitWord,
-    getHint,
     autoSolve,
 
     // Mutations
     completeWordMutation,
-    getHintMutation,
     autoSolveMutation,
   };
 

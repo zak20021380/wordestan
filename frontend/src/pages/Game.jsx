@@ -3,10 +3,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useGame } from '../contexts/GameContext';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-hot-toast';
-import { 
-  Lightbulb, 
-  Sparkles, 
-  CheckCircle, 
+import {
+  Sparkles,
+  CheckCircle,
   XCircle,
   Trophy,
   Coins,
@@ -20,10 +19,8 @@ const Game = () => {
     currentLevel,
     gameState,
     submitWord,
-    getHint,
     autoSolve,
     isCompletingWord,
-    isGettingHint,
     isAutoSolving,
     levelLoading
   } = useGame();
@@ -68,19 +65,6 @@ const Game = () => {
     setErrorMessage(message);
     setShowError(true);
     setTimeout(() => setShowError(false), 2000);
-  };
-
-  const handleGetHint = async () => {
-    if (user.coins < 10) {
-      toast.error('سکه کافی نداری برای راهنما!');
-      return;
-    }
-
-    try {
-      await getHint();
-    } catch (error) {
-      toast.error(error.message || 'یه مشکلی پیش اومد!');
-    }
   };
 
   const handleAutoSolve = async () => {
@@ -306,37 +290,20 @@ const Game = () => {
           >
             <h3 className="font-semibold mb-4 bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">پاور آپ‌ها</h3>
 
-            <div className="space-y-3">
-              <button
-                onClick={handleGetHint}
-                disabled={isGettingHint || user?.coins < 10}
-                className="w-full bg-gradient-to-r from-pink-500/20 to-pink-600/20 hover:from-pink-500/30 hover:to-pink-600/30 disabled:opacity-50 disabled:cursor-not-allowed border border-pink-500/30 text-white py-3 px-4 rounded-lg transition-all shadow-[0_0_15px_rgba(217,70,239,0.2)] hover:shadow-[0_0_25px_rgba(217,70,239,0.4)] flex items-center justify-between"
-              >
-                <div className="flex items-center space-x-2 space-x-reverse">
-                  <Lightbulb className="w-5 h-5 text-pink-400 drop-shadow-[0_0_8px_rgba(217,70,239,0.5)]" />
-                  <span>راهنما</span>
-                </div>
-                <div className="flex items-center space-x-1 space-x-reverse text-yellow-400">
-                  <Coins className="w-4 h-4" />
-                  <span>10</span>
-                </div>
-              </button>
-
-              <button
-                onClick={handleAutoSolve}
-                disabled={isAutoSolving || user?.coins < 50}
-                className="w-full bg-gradient-to-r from-purple-500/20 to-cyan-500/20 hover:from-purple-500/30 hover:to-cyan-500/30 disabled:opacity-50 disabled:cursor-not-allowed border border-purple-500/30 text-white py-3 px-4 rounded-lg transition-all shadow-[0_0_15px_rgba(168,85,247,0.2)] hover:shadow-[0_0_25px_rgba(168,85,247,0.4)] flex items-center justify-between"
-              >
-                <div className="flex items-center space-x-2 space-x-reverse">
-                  <Sparkles className="w-5 h-5 text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]" />
-                  <span>حل خودکار</span>
-                </div>
-                <div className="flex items-center space-x-1 space-x-reverse text-yellow-400">
-                  <Coins className="w-4 h-4" />
-                  <span>50</span>
-                </div>
-              </button>
-            </div>
+            <button
+              onClick={handleAutoSolve}
+              disabled={isAutoSolving || user?.coins < 50}
+              className="w-full bg-gradient-to-r from-purple-500/20 to-cyan-500/20 hover:from-purple-500/30 hover:to-cyan-500/30 disabled:opacity-50 disabled:cursor-not-allowed border border-purple-500/30 text-white py-3 px-4 rounded-lg transition-all shadow-[0_0_15px_rgba(168,85,247,0.2)] hover:shadow-[0_0_25px_rgba(168,85,247,0.4)] flex items-center justify-between"
+            >
+              <div className="flex items-center space-x-2 space-x-reverse">
+                <Sparkles className="w-5 h-5 text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]" />
+                <span>حل خودکار</span>
+              </div>
+              <div className="flex items-center space-x-1 space-x-reverse text-yellow-400">
+                <Coins className="w-4 h-4" />
+                <span>50</span>
+              </div>
+            </button>
           </motion.div>
 
           {/* Completed Words */}

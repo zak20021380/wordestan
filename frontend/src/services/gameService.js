@@ -62,16 +62,6 @@ export const gameService = {
     }
   },
 
-  // Get hint for current level
-  async getHint(levelId) {
-    try {
-      const response = await api.post('/game/hint', { levelId });
-      return response.data;
-    } catch (error) {
-      throw new Error(error.response?.data?.message || 'Failed to get hint');
-    }
-  },
-
   // Auto solve word
   async autoSolve(levelId) {
     try {
