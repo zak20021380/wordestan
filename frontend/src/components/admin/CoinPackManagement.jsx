@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Search, Edit, Trash2, Coins, Star, Crown, ShieldAlert } from 'lucide-react';
 import { adminService } from '../../services/adminService';
+import { formatToman } from '../../utils/currency';
 
 const initialFormState = {
   name: '',
@@ -10,7 +11,6 @@ const initialFormState = {
   price: '',
   bonusCoins: '',
   order: '',
-  currency: 'USD',
   imageUrl: '',
   featured: false,
   popular: false,
@@ -64,10 +64,9 @@ const CoinPackManagement = () => {
       name: pack.name || '',
       description: pack.description || '',
       coins: pack.coins != null ? String(pack.coins) : '',
-      price: pack.price != null ? String(pack.price) : '',
+      price: pack.price != null ? String(Math.round(pack.price)) : '',
       bonusCoins: pack.bonusCoins != null ? String(pack.bonusCoins) : '',
       order: pack.order != null ? String(pack.order) : '',
-      currency: pack.currency || 'USD',
       imageUrl: pack.imageUrl || '',
       featured: Boolean(pack.featured),
       popular: Boolean(pack.popular),
@@ -114,7 +113,7 @@ const CoinPackManagement = () => {
     event.preventDefault();
 
     const coins = Number(formData.coins);
-    const price = Number(formData.price);
+    const rawPrice = Number(formData.price);
     const bonusCoins = Number(formData.bonusCoins || 0);
     const order = formData.order === '' ? 0 : Number(formData.order);
 
@@ -128,10 +127,12 @@ const CoinPackManagement = () => {
       return;
     }
 
-    if (!Number.isFinite(price) || price <= 0) {
+    if (!Number.isFinite(rawPrice) || rawPrice <= 0) {
       setFormError('قیمت باید یک عدد معتبر باشد.');
       return;
     }
+
+    const price = Math.round(rawPrice);
 
     if (!Number.isFinite(bonusCoins) || bonusCoins < 0) {
       setFormError('تعداد سکه هدیه معتبر نیست.');
@@ -148,7 +149,7 @@ const CoinPackManagement = () => {
       bonusCoins,
       totalCoins: coins + bonusCoins,
       order,
-      currency: formData.currency || 'USD',
+      currency: 'TOMAN',
       imageUrl: formData.imageUrl.trim() || undefined,
       featured: formData.featured,
       popular: formData.popular,
@@ -196,23 +197,6 @@ const CoinPackManagement = () => {
     () => new Intl.NumberFormat('fa-IR'),
     []
   );
-
-  const formatPrice = (price, currency) => {
-    if (price == null) {
-      return '—';
-    }
-
-    try {
-      return new Intl.NumberFormat('fa-IR', {
-        style: 'currency',
-        currency: currency || 'USD',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      }).format(price);
-    } catch (e) {
-      return `${numberFormatter.format(price)} ${currency || ''}`;
-    }
-  };
 
   return (
     <div className="space-y-6" dir="rtl">
@@ -315,11 +299,9 @@ const CoinPackManagement = () => {
                 {/* Price */}
                 <div className="text-center mb-6">
                   <div className="text-2xl font-bold text-white">
-                    {formatPrice(pack.price, pack.currency)}
+                    {formatToman(pack.price)}
                   </div>
-                  <div className="text-white/60 text-sm">
-                    {pack.currency || 'USD'}
-                  </div>
+                  <div className="text-white/60 text-sm">قیمت به تومان</div>
                 </div>
 
                 {/* Stats */}
@@ -328,7 +310,7 @@ const CoinPackManagement = () => {
                     {numberFormatter.format(pack.timesPurchased || 0)} بار خریداری شده
                   </div>
                   <div>
-                    درآمد ثبت‌شده: {formatPrice(pack.revenueGenerated || 0, pack.currency)}
+                    درآمد ثبت‌شده: {formatToman(pack.revenueGenerated || 0)}
                   </div>
                 </div>
 
@@ -417,30 +399,21 @@ const CoinPackManagement = () => {
                 </div>
 
                 <div>
-                  <label className="block text-white font-medium mb-2">قیمت</label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={formData.price}
-                    onChange={(e) => handleFormChange('price', e.target.value)}
-                    placeholder="مثلاً 0.99"
-                    className="w-full px-4 py-3 bg-glass-hover border border-glass-border rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-primary-400"
-                    disabled={formLoading}
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-white font-medium mb-2">واحد پول</label>
-                  <input
-                    type="text"
-                    value={formData.currency}
-                    onChange={(e) => handleFormChange('currency', e.target.value.toUpperCase())}
-                    placeholder="USD"
-                    className="w-full px-4 py-3 bg-glass-hover border border-glass-border rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-primary-400 uppercase"
-                    disabled={formLoading}
-                  />
+                  <label className="block text-white font-medium mb-2">قیمت (تومان)</label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={formData.price}
+                      onChange={(e) => handleFormChange('price', e.target.value)}
+                      placeholder="مثلاً 10000"
+                      className="w-full px-4 py-3 bg-glass-hover border border-glass-border rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-primary-400 pr-20"
+                      disabled={formLoading}
+                      required
+                    />
+                    <span className="absolute inset-y-0 left-4 flex items-center text-white/60 text-sm">تومان</span>
+                  </div>
                 </div>
 
                 <div>
