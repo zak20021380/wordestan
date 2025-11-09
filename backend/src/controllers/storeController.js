@@ -90,8 +90,8 @@ const mockPurchase = async (req, res) => {
         coinsAwarded: coinPack.totalCoins,
         newBalance: user.coins,
         pack: {
-          title: coinPack.title,
-          amount: coinPack.amount,
+          name: coinPack.name,
+          coins: coinPack.coins,
           bonusCoins: coinPack.bonusCoins
         }
       }
@@ -115,7 +115,7 @@ const getPurchaseHistory = async (req, res) => {
     const limitNum = parseInt(limit);
 
     const purchases = await Purchase.find({ userId: req.user._id })
-      .populate('packId', 'title amount bonusCoins')
+      .populate('packId', 'name coins bonusCoins')
       .sort({ createdAt: -1 })
       .skip((pageNum - 1) * limitNum)
       .limit(limitNum);

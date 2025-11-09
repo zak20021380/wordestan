@@ -62,12 +62,13 @@ const levelValidation = [
 ];
 
 const coinPackValidation = [
-  body('title')
+  body('name')
+    .isString()
     .isLength({ min: 1, max: 50 })
-    .withMessage('Title must be between 1 and 50 characters'),
-  body('amount')
+    .withMessage('Name must be between 1 and 50 characters'),
+  body('coins')
     .isInt({ min: 10, max: 10000 })
-    .withMessage('Amount must be between 10 and 10000'),
+    .withMessage('Coins must be between 10 and 10000'),
   body('price')
     .isFloat({ min: 0.99, max: 99.99 })
     .withMessage('Price must be between 0.99 and 99.99'),
@@ -75,10 +76,38 @@ const coinPackValidation = [
     .optional()
     .isInt({ min: 0 })
     .withMessage('Bonus coins must be non-negative'),
+  body('order')
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage('Order must be zero or greater'),
   body('description')
     .optional()
     .isLength({ max: 200 })
-    .withMessage('Description must be less than 200 characters')
+    .withMessage('Description must be less than 200 characters'),
+  body('currency')
+    .optional()
+    .isLength({ min: 1, max: 10 })
+    .withMessage('Currency must be between 1 and 10 characters'),
+  body('imageUrl')
+    .optional()
+    .isString()
+    .isLength({ max: 300 })
+    .withMessage('Image URL must be less than 300 characters'),
+  body('featured')
+    .optional()
+    .isBoolean()
+    .toBoolean()
+    .withMessage('Featured must be a boolean value'),
+  body('popular')
+    .optional()
+    .isBoolean()
+    .toBoolean()
+    .withMessage('Popular must be a boolean value'),
+  body('isActive')
+    .optional()
+    .isBoolean()
+    .toBoolean()
+    .withMessage('isActive must be a boolean value')
 ];
 
 // Word management routes

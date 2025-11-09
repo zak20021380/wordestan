@@ -5,6 +5,22 @@ const User = require('../models/User');
 const Purchase = require('../models/Purchase');
 const { validationResult } = require('express-validator');
 
+const parseBoolean = (value, defaultValue = false) => {
+  if (value === undefined || value === null) {
+    return defaultValue;
+  }
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === 'true' || normalized === '1') {
+      return true;
+    }
+    if (normalized === 'false' || normalized === '0') {
+      return false;
+    }
+  }
+  return Boolean(value);
+};
+
 // Word Management
 // @desc    Get all words
 // @route   GET /api/admin/words
@@ -462,8 +478,11 @@ const getCoinPacks = async (req, res) => {
 // @access  Admin
 const createCoinPack = async (req, res) => {
   try {
+    console.log('Create coin pack request body:', req.body);
+
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.warn('Create coin pack validation failed:', errors.array());
       return res.status(400).json({
         success: false,
         message: 'Validation failed',
@@ -471,17 +490,35 @@ const createCoinPack = async (req, res) => {
       });
     }
 
-    const amount = Number(req.body.amount);
+    const name = typeof req.body.name === 'string' ? req.body.name.trim() : req.body.name;
+    const coins = Number(req.body.coins);
+    const price = Number(req.body.price);
     const bonusCoins = req.body.bonusCoins !== undefined
       ? Number(req.body.bonusCoins)
       : 0;
+    const isActive = parseBoolean(req.body.isActive, true);
+    const description = typeof req.body.description === 'string' ? req.body.description.trim() : undefined;
+    const imageUrl = typeof req.body.imageUrl === 'string' ? req.body.imageUrl.trim() : undefined;
+    const currency = typeof req.body.currency === 'string' && req.body.currency.trim()
+      ? req.body.currency.trim().toUpperCase()
+      : undefined;
 
     const coinPackData = {
-      ...req.body,
-      amount,
+      name,
+      description,
+      coins,
+      price,
       bonusCoins,
-      totalCoins: amount + bonusCoins
+      totalCoins: coins + bonusCoins,
+      order: req.body.order !== undefined ? Number(req.body.order) : 0,
+      currency,
+      imageUrl,
+      featured: parseBoolean(req.body.featured, false),
+      popular: parseBoolean(req.body.popular, false),
+      isActive
     };
+
+    console.log('Sanitized coin pack data before save:', coinPackData);
 
     const coinPack = new CoinPack(coinPackData);
     await coinPack.save();
@@ -492,7 +529,8 @@ const createCoinPack = async (req, res) => {
       data: coinPack
     });
   } catch (error) {
-    console.error('Create coin pack error:', error);
+    console.error('Create coin pack error message:', error.message);
+    console.error('Create coin pack error stack:', error.stack);
     res.status(500).json({
       success: false,
       message: 'Server error creating coin pack'
@@ -526,17 +564,53 @@ const updateCoinPack = async (req, res) => {
 
     const updateData = { ...req.body };
 
-    if (updateData.amount !== undefined) {
-      updateData.amount = Number(updateData.amount);
+    if (updateData.name !== undefined && typeof updateData.name === 'string') {
+      updateData.name = updateData.name.trim();
+    }
+    if (updateData.coins !== undefined) {
+      updateData.coins = Number(updateData.coins);
+    }
+    if (updateData.price !== undefined) {
+      updateData.price = Number(updateData.price);
     }
     if (updateData.bonusCoins !== undefined) {
       updateData.bonusCoins = Number(updateData.bonusCoins);
     }
+    if (updateData.order !== undefined) {
+      updateData.order = Number(updateData.order);
+    }
+    if (updateData.isActive !== undefined) {
+      updateData.isActive = parseBoolean(updateData.isActive, true);
+    }
+    if (updateData.featured !== undefined) {
+      updateData.featured = parseBoolean(updateData.featured, false);
+    }
+    if (updateData.popular !== undefined) {
+      updateData.popular = parseBoolean(updateData.popular, false);
+    }
+    if (updateData.description !== undefined && typeof updateData.description === 'string') {
+      updateData.description = updateData.description.trim();
+      if (updateData.description === '') {
+        updateData.description = undefined;
+      }
+    }
+    if (updateData.imageUrl !== undefined && typeof updateData.imageUrl === 'string') {
+      updateData.imageUrl = updateData.imageUrl.trim();
+      if (updateData.imageUrl === '') {
+        updateData.imageUrl = undefined;
+      }
+    }
+    if (updateData.currency !== undefined && typeof updateData.currency === 'string') {
+      updateData.currency = updateData.currency.trim().toUpperCase();
+      if (updateData.currency === '') {
+        updateData.currency = undefined;
+      }
+    }
 
     Object.assign(coinPack, updateData);
-    const amount = Number(coinPack.amount) || 0;
+    const coins = Number(coinPack.coins) || 0;
     const bonusCoins = Number(coinPack.bonusCoins) || 0;
-    coinPack.totalCoins = amount + bonusCoins;
+    coinPack.totalCoins = coins + bonusCoins;
 
     await coinPack.save();
 

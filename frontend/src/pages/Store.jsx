@@ -65,7 +65,7 @@ const Store = () => {
   const getPackIcon = (pack) => {
     if (pack.featured) return <Crown className="w-6 h-6 text-primary-400" />;
     if (pack.popular) return <Zap className="w-6 h-6 text-secondary-400" />;
-    if (pack.amount >= 500) return <Gem className="w-6 h-6 text-primary-500" />;
+    if ((pack.coins ?? 0) >= 500) return <Gem className="w-6 h-6 text-primary-500" />;
     return <Coins className="w-6 h-6 text-accent-400" />;
   };
 
@@ -134,7 +134,7 @@ const Store = () => {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-2">
                 {getPackIcon(pack)}
-                <h3 className="text-xl font-bold text-white">{pack.title}</h3>
+                <h3 className="text-xl font-bold text-white">{pack.name}</h3>
               </div>
               
               {pack.featured && (
@@ -160,7 +160,7 @@ const Store = () => {
               <div className="flex items-center justify-center space-x-2 mb-2">
                 <Coins className="w-8 h-8 text-accent-400" />
                 <span className="text-3xl font-bold bg-gradient-to-r from-primary-400 to-secondary-400 bg-clip-text text-transparent">
-                  {pack.amount.toLocaleString()}
+                  {(pack.coins ?? 0).toLocaleString()}
                 </span>
               </div>
               
@@ -172,7 +172,7 @@ const Store = () => {
               )}
 
               <div className="text-white/60 text-sm mt-1">
-                جمع: {pack.totalCoins.toLocaleString()} سکه
+                جمع: {(pack.totalCoins ?? ((pack.coins ?? 0) + (pack.bonusCoins ?? 0))).toLocaleString()} سکه
               </div>
             </div>
 
