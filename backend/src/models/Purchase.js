@@ -34,6 +34,17 @@ const purchaseSchema = new mongoose.Schema({
     type: String,
     default: 'mock'
   },
+  gateway: {
+    type: String,
+    default: 'mock'
+  },
+  gatewayAuthority: {
+    type: String,
+    index: true
+  },
+  gatewayRefId: {
+    type: String
+  },
   transactionId: {
     type: String,
     unique: true,
@@ -59,5 +70,6 @@ const purchaseSchema = new mongoose.Schema({
 purchaseSchema.index({ userId: 1, createdAt: -1 });
 purchaseSchema.index({ status: 1 });
 purchaseSchema.index({ transactionId: 1 });
+purchaseSchema.index({ gatewayAuthority: 1 });
 
 module.exports = mongoose.model('Purchase', purchaseSchema);

@@ -58,6 +58,31 @@ export const storeService = {
     }
   },
 
+  // Request ZarinPal payment URL
+  async requestPayment(packId) {
+    try {
+      const response = await api.post('/payment/request', { packId });
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'خطا در ایجاد تراکنش پرداخت');
+    }
+  },
+
+  // Verify payment status with ZarinPal
+  async verifyPayment({ authority, status }) {
+    try {
+      const response = await api.get('/payment/verify', {
+        params: {
+          Authority: authority,
+          Status: status,
+        },
+      });
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'خطا در تایید پرداخت');
+    }
+  },
+
   // Get purchase history
   async getPurchaseHistory(page = 1, limit = 10) {
     try {

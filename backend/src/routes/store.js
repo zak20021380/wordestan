@@ -18,7 +18,7 @@ const purchaseValidation = [
     .withMessage('Valid pack ID is required'),
   body('paymentMethod')
     .optional()
-    .isIn(['mock', 'stripe', 'paypal'])
+    .isIn(['mock', 'stripe', 'paypal', 'zarinpal'])
     .withMessage('Invalid payment method')
 ];
 

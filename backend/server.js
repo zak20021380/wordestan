@@ -11,6 +11,7 @@ const gameRoutes = require('./src/routes/game');
 const leaderboardRoutes = require('./src/routes/leaderboard');
 const adminRoutes = require('./src/routes/admin');
 const storeRoutes = require('./src/routes/store');
+const paymentRoutes = require('./src/routes/payment');
 
 // Initialize Express app
 const app = express();
@@ -67,6 +68,7 @@ app.use('/api/game', gameRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/store', storeRoutes);
+app.use('/api/payment', paymentRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -89,6 +91,7 @@ app.get('/', (req, res) => {
       game: '/api/game',
       leaderboard: '/api/leaderboard',
       admin: '/api/admin',
+      payment: '/api/payment',
       store: '/api/store',
       health: '/api/health'
     }
