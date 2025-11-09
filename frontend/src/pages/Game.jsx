@@ -19,7 +19,8 @@ const Game = () => {
     gameState,
     autoSolve,
     isAutoSolving,
-    levelLoading
+    levelLoading,
+    levelMeta
   } = useGame();
   const { user } = useAuth();
 
@@ -48,8 +49,37 @@ const Game = () => {
     );
   }
 
+  const userLevelsCleared = user?.levelsCleared ?? 0;
+  const emptyStateStatus = levelMeta?.status;
+  const isNewUser = userLevelsCleared === 0;
+  const noLevelsForNewUser =
+    emptyStateStatus === 'no_published_levels' ||
+    emptyStateStatus === 'no_levels_for_new_user' ||
+    emptyStateStatus === 'all_levels_completed' ||
+    (!emptyStateStatus && isNewUser);
+
   // No more levels available
   if (!currentLevel) {
+    if (isNewUser && noLevelsForNewUser) {
+      return (
+        <div className="flex items-center justify-center h-96">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center bg-glass backdrop-blur-lg rounded-2xl border border-glass-border p-12"
+          >
+            <Sparkles className="w-20 h-20 text-purple-400 mx-auto mb-4 drop-shadow-[0_0_20px_rgba(168,85,247,0.6)]" />
+            <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent mb-4">
+              هنوز مرحله‌ای اضافه نشده! زودی میاد! ✨
+            </h2>
+            <p className="text-white/60 text-lg">
+              بازی در حال آماده‌سازیه، صبر کن تا اولین مرحله منتشر بشه.
+            </p>
+          </motion.div>
+        </div>
+      );
+    }
+
     return (
       <div className="flex items-center justify-center h-96">
         <motion.div
