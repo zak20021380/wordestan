@@ -1,6 +1,7 @@
 const axios = require('axios');
 const CoinPack = require('../models/CoinPack');
 const Purchase = require('../models/Purchase');
+const User = require('../models/User');
 
 const MERCHANT_ID = 'd97f7648-614f-4025-bee2-5f3cda6d8fcd';
 const API_URL = 'https://api.zarinpal.com/pg/v4/payment';
@@ -166,7 +167,29 @@ const verifyPayment = async (req, res) => {
       purchase.failureReason = null;
       await purchase.save();
 
-      const updatedUser = await req.user.addCoins(purchase.amount);
+      const updatedUser = await User.findByIdAndUpdate(
+        purchase.userId,
+        { $inc: { coins: purchase.amount } },
+        { new: true, runValidators: true }
+      );
+
+      if (!updatedUser) {
+        purchase.status = 'failed';
+        purchase.failureReason = 'User not found while crediting coins';
+        await purchase.save();
+
+        return res.status(404).json({
+          success: false,
+          message: 'کاربر مربوط به این تراکنش یافت نشد.',
+          data: {
+            authority: purchase.gatewayAuthority
+          }
+        });
+      }
+
+      if (req.user && String(req.user._id) === String(updatedUser._id)) {
+        req.user.coins = updatedUser.coins;
+      }
 
       const coinPackDoc = purchase.packId && purchase.packId._id
         ? purchase.packId
