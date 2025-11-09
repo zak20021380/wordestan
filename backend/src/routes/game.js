@@ -6,6 +6,7 @@ const {
   getNextLevel,
   completeWord,
   getHint,
+  purchaseShuffle,
   autoSolve,
   getGameStats
 } = require('../controllers/gameController');
@@ -41,6 +42,7 @@ router.get('/level/1', getFirstLevel);
 router.get('/next-level', auth, getNextLevel);
 router.post('/complete-word', auth, completeWordValidation, completeWord);
 router.post('/hint', auth, hintValidation, getHint);
+router.post('/shuffle', auth, purchaseShuffle);
 router.post('/auto-solve', auth, autoSolveValidation, autoSolve);
 router.get('/stats', auth, getGameStats);
 

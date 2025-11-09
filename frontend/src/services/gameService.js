@@ -78,6 +78,16 @@ export const gameService = {
     }
   },
 
+  // Purchase shuffle
+  async purchaseShuffle(levelId) {
+    try {
+      const response = await api.post('/game/shuffle', { levelId });
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to purchase shuffle');
+    }
+  },
+
   // Get game statistics
   async getGameStats() {
     try {

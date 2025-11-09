@@ -262,6 +262,40 @@ const getHint = async (req, res) => {
   }
 };
 
+// @desc    Purchase an additional shuffle for the current level
+// @route   POST /api/game/shuffle
+// @access  Private
+const purchaseShuffle = async (req, res) => {
+  try {
+    const user = req.user;
+    const shuffleCost = parseInt(process.env.SHUFFLE_COST, 10) || 15;
+
+    if (user.coins < shuffleCost) {
+      return res.status(400).json({
+        success: false,
+        message: 'Not enough coins for shuffle'
+      });
+    }
+
+    await user.spendCoins(shuffleCost);
+
+    return res.json({
+      success: true,
+      message: 'Shuffle purchased',
+      data: {
+        coinsSpent: shuffleCost,
+        remainingCoins: user.coins,
+      }
+    });
+  } catch (error) {
+    console.error('Purchase shuffle error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Server error purchasing shuffle'
+    });
+  }
+};
+
 // @desc    Auto-solve a word
 // @route   POST /api/game/auto-solve
 // @access  Private
@@ -381,6 +415,7 @@ module.exports = {
   getNextLevel,
   completeWord,
   getHint,
+  purchaseShuffle,
   autoSolve,
   getGameStats
 };
