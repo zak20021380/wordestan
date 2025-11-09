@@ -42,7 +42,7 @@ const getNextLevel = async (req, res) => {
       order: { $gte: user.currentLevel },
       isPublished: true
     })
-      .populate('words', 'text length difficulty points')
+      .populate('words', 'text length difficulty points meaning')
       .sort({ order: 1 });
 
     const userProgress = {

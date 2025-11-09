@@ -276,6 +276,20 @@ export const GameProvider = ({ children }) => {
         throw new Error('این کلمه توی این مرحله نیست');
       }
 
+      let meaning;
+      if (Array.isArray(currentLevel.words)) {
+        const match = currentLevel.words.find(item => {
+          if (typeof item === 'string') {
+            return item.toUpperCase() === normalizedWord;
+          }
+          return (item?.text || '').toUpperCase() === normalizedWord;
+        });
+
+        if (match && typeof match !== 'string') {
+          meaning = match.meaning;
+        }
+      }
+
       let updatedCompletedWords = [];
 
       setGameState(prev => {
@@ -308,7 +322,7 @@ export const GameProvider = ({ children }) => {
       return {
         success: true,
         data: {
-          word: { text: normalizedWord },
+          word: { text: normalizedWord, meaning },
           levelCompleted: completedAll,
         },
         meta: { guest: true },

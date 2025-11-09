@@ -37,6 +37,11 @@ const wordSchema = new mongoose.Schema({
     trim: true,
     maxlength: 200
   },
+  meaning: {
+    type: String,
+    trim: true,
+    maxlength: 200
+  },
   isActive: {
     type: Boolean,
     default: true

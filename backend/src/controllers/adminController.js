@@ -21,6 +21,67 @@ const parseBoolean = (value, defaultValue = false) => {
   return Boolean(value);
 };
 
+const parseWordsWithMeanings = (input) => {
+  if (!input) {
+    return [];
+  }
+
+  const entries = Array.isArray(input)
+    ? input
+    : input
+        .replace(/\|/g, '\n')
+        .split(/[\n,]+/);
+
+  const wordMap = new Map();
+
+  entries
+    .map(entry => entry.trim())
+    .filter(Boolean)
+    .forEach(entry => {
+      const [wordPart, ...meaningParts] = entry.split(':');
+      const text = (wordPart || '').trim().toUpperCase();
+
+      if (!text) {
+        return;
+      }
+
+      const meaning = meaningParts.join(':').trim();
+      const existing = wordMap.get(text) || { text };
+
+      if (meaning) {
+        existing.meaning = meaning;
+      }
+
+      wordMap.set(text, existing);
+    });
+
+  return Array.from(wordMap.values());
+};
+
+const ensureWordWithMeaning = async ({ text, meaning }) => {
+  if (!text) {
+    return null;
+  }
+
+  let word = await Word.findOne({ text });
+
+  if (!word) {
+    word = new Word({
+      text,
+      length: text.length,
+      difficulty: 'medium',
+      points: text.length * 10,
+      meaning,
+    });
+    await word.save();
+  } else if (meaning && meaning !== word.meaning) {
+    word.meaning = meaning;
+    await word.save();
+  }
+
+  return word;
+};
+
 // Word Management
 // @desc    Get all words
 // @route   GET /api/admin/words
@@ -85,7 +146,7 @@ const createWord = async (req, res) => {
       });
     }
 
-    const { text, difficulty, points, category, description } = req.body;
+    const { text, difficulty, points, category, description, meaning } = req.body;
 
     // Check if word already exists
     const existingWord = await Word.findOne({ text: text.toUpperCase() });
@@ -101,7 +162,8 @@ const createWord = async (req, res) => {
       difficulty,
       points,
       category,
-      description
+      description,
+      meaning
     });
 
     await word.save();
@@ -135,11 +197,11 @@ const updateWord = async (req, res) => {
     }
 
     const { id } = req.params;
-    const { text, difficulty, points, category, description, isActive } = req.body;
+    const { text, difficulty, points, category, description, meaning, isActive } = req.body;
 
     const word = await Word.findByIdAndUpdate(
       id,
-      { text, difficulty, points, category, description, isActive },
+      { text, difficulty, points, category, description, meaning, isActive },
       { new: true, runValidators: true }
     );
 
@@ -218,7 +280,7 @@ const getLevels = async (req, res) => {
     }
 
     const levels = await Level.find(query)
-      .populate('words', 'text length difficulty')
+      .populate('words', 'text length difficulty meaning')
       .sort({ order: 1 })
       .skip((pageNum - 1) * limitNum)
       .limit(limitNum);
@@ -270,18 +332,9 @@ const createLevel = async (req, res) => {
       });
     }
 
-    // Parse words input (comma or newline separated)
-    let wordList = [];
-    if (typeof words === 'string') {
-      wordList = words
-        .split(/[,\n]+/)
-        .map(w => w.trim().toUpperCase())
-        .filter(w => w.length > 0);
-    } else if (Array.isArray(words)) {
-      wordList = words.map(w => w.trim().toUpperCase());
-    }
+    const parsedWords = parseWordsWithMeanings(words);
 
-    if (wordList.length === 0) {
+    if (parsedWords.length === 0) {
       return res.status(400).json({
         success: false,
         message: 'At least one word is required'
@@ -294,21 +347,11 @@ const createLevel = async (req, res) => {
 
     // Auto-create Word documents if they don't exist
     const wordIds = [];
-    for (const wordText of wordList) {
-      let word = await Word.findOne({ text: wordText });
-
-      if (!word) {
-        // Create new word with default values
-        word = new Word({
-          text: wordText,
-          length: wordText.length,
-          difficulty: 'medium',
-          points: wordText.length * 10
-        });
-        await word.save();
+    for (const entry of parsedWords) {
+      const word = await ensureWordWithMeaning(entry);
+      if (word) {
+        wordIds.push(word._id);
       }
-
-      wordIds.push(word._id);
     }
 
     // Create level
@@ -320,7 +363,7 @@ const createLevel = async (req, res) => {
     });
 
     await level.save();
-    await level.populate('words', 'text length difficulty');
+    await level.populate('words', 'text length difficulty meaning');
 
     res.status(201).json({
       success: true,
@@ -364,33 +407,21 @@ const updateLevel = async (req, res) => {
     }
 
     if (words) {
-      // Parse words input (comma or newline separated)
-      let wordList = [];
-      if (typeof words === 'string') {
-        wordList = words
-          .split(/[,\n]+/)
-          .map(w => w.trim().toUpperCase())
-          .filter(w => w.length > 0);
-      } else if (Array.isArray(words)) {
-        wordList = words.map(w => w.trim().toUpperCase());
+      const parsedWords = parseWordsWithMeanings(words);
+
+      if (parsedWords.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'At least one word is required'
+        });
       }
 
-      // Auto-create Word documents if they don't exist
       const wordIds = [];
-      for (const wordText of wordList) {
-        let word = await Word.findOne({ text: wordText });
-
-        if (!word) {
-          word = new Word({
-            text: wordText,
-            length: wordText.length,
-            difficulty: 'medium',
-            points: wordText.length * 10
-          });
-          await word.save();
+      for (const entry of parsedWords) {
+        const word = await ensureWordWithMeaning(entry);
+        if (word) {
+          wordIds.push(word._id);
         }
-
-        wordIds.push(word._id);
       }
 
       updateData.words = wordIds;
@@ -400,7 +431,7 @@ const updateLevel = async (req, res) => {
       id,
       updateData,
       { new: true, runValidators: true }
-    ).populate('words', 'text length difficulty');
+    ).populate('words', 'text length difficulty meaning');
 
     if (!level) {
       return res.status(404).json({

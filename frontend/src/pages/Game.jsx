@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGame } from '../contexts/GameContext';
@@ -14,7 +14,11 @@ import {
   Lock,
   LogIn,
   UserPlus,
-  ArrowRight
+  ArrowRight,
+  Lightbulb,
+  ChevronDown,
+  ChevronUp,
+  BookOpen
 } from 'lucide-react';
 import GameCanvas from '../components/GameCanvas';
 
@@ -31,6 +35,80 @@ const Game = () => {
     isGuestMode
   } = useGame();
   const { user, isAuthenticated } = useAuth();
+
+  const [showMeanings, setShowMeanings] = useState(false);
+  const [activeMeaning, setActiveMeaning] = useState(null);
+
+  const levelWordDetails = useMemo(() => {
+    if (!Array.isArray(currentLevel?.words)) {
+      return new Map();
+    }
+
+    const details = new Map();
+
+    currentLevel.words.forEach((entry) => {
+      if (!entry) {
+        return;
+      }
+
+      const text = (typeof entry === 'string' ? entry : entry.text || '').toUpperCase();
+
+      if (!text) {
+        return;
+      }
+
+      details.set(text, {
+        text,
+        meaning: typeof entry === 'string' ? undefined : entry.meaning,
+      });
+    });
+
+    return details;
+  }, [currentLevel?.words]);
+
+  const completedWordDetails = useMemo(() => {
+    if (!Array.isArray(gameState.completedWords) || gameState.completedWords.length === 0) {
+      return [];
+    }
+
+    return gameState.completedWords.map((word) => {
+      const text = (word || '').toUpperCase();
+      const detail = levelWordDetails.get(text);
+
+      return {
+        text,
+        meaning: detail?.meaning,
+      };
+    });
+  }, [gameState.completedWords, levelWordDetails]);
+
+  const completedMeaningDetails = useMemo(
+    () => completedWordDetails.filter((detail) => detail.meaning),
+    [completedWordDetails]
+  );
+
+  const hasMeaningWords = completedMeaningDetails.length > 0;
+
+  useEffect(() => {
+    setShowMeanings(false);
+    setActiveMeaning(null);
+  }, [currentLevel?._id]);
+
+  useEffect(() => {
+    if (!activeMeaning) {
+      return;
+    }
+
+    if (!completedMeaningDetails.some((detail) => detail.text === activeMeaning.text)) {
+      setActiveMeaning(null);
+    }
+  }, [completedMeaningDetails, activeMeaning]);
+
+  useEffect(() => {
+    if (completedMeaningDetails.length === 0) {
+      setShowMeanings(false);
+    }
+  }, [completedMeaningDetails.length]);
 
   const handleAutoSolve = async () => {
     if (!isAuthenticated) {
@@ -376,24 +454,155 @@ const Game = () => {
           >
             <h3 className="font-semibold mb-4 bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">کلماتی که پیدا کردی</h3>
 
-            <div className="space-y-2 max-h-48 overflow-y-auto">
-              {gameState.completedWords.length > 0 ? (
-                gameState.completedWords.map((word, index) => (
-                  <motion.div
-                    key={word}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    className="flex items-center justify-between bg-success/20 border border-success/30 rounded-lg px-3 py-2"
-                  >
-                    <span className="text-success font-medium">{word}</span>
-                    <CheckCircle className="w-4 h-4 text-success" />
-                  </motion.div>
-                ))
+            <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+              {completedWordDetails.length > 0 ? (
+                completedWordDetails.map((detail, index) => {
+                  const hasMeaning = Boolean(detail.meaning);
+                  const isActiveMeaning = activeMeaning?.text === detail.text;
+
+                  return (
+                    <motion.button
+                      key={detail.text}
+                      type="button"
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      onClick={() => {
+                        if (!hasMeaning) {
+                          return;
+                        }
+                        setActiveMeaning(detail);
+                        setShowMeanings(true);
+                      }}
+                      disabled={!hasMeaning}
+                      title={hasMeaning ? `معنی: ${detail.meaning}` : undefined}
+                      className={`w-full flex items-center justify-between rounded-lg px-3 py-2 border text-success transition-colors ${
+                        isActiveMeaning
+                          ? 'bg-primary-500/20 border-primary-400/60'
+                          : 'bg-success/20 border-success/30'
+                      } ${
+                        hasMeaning
+                          ? 'cursor-pointer hover:bg-primary-500/10 hover:border-primary-400/60 focus:outline-none focus:ring-2 focus:ring-primary-400/40'
+                          : 'cursor-default focus:outline-none opacity-80'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3 space-x-reverse">
+                        <span className="text-success font-medium">{detail.text}</span>
+                        {hasMeaning && (
+                          <span className="flex items-center space-x-1 space-x-reverse text-primary-200 text-xs bg-primary-500/10 border border-primary-500/20 rounded-md px-2 py-0.5">
+                            <Lightbulb className="w-3 h-3" />
+                            <span>معنی</span>
+                          </span>
+                        )}
+                      </div>
+                      <CheckCircle
+                        className={`w-4 h-4 ${
+                          isActiveMeaning
+                            ? 'text-primary-200 drop-shadow-[0_0_6px_rgba(168,85,247,0.6)]'
+                            : 'text-success'
+                        }`}
+                      />
+                    </motion.button>
+                  );
+                })
               ) : (
                 <div className="text-center text-white/40 py-8">
                   هنوز کلمه‌ای پیدا نکردی
                 </div>
+              )}
+            </div>
+            <AnimatePresence>
+              {activeMeaning?.meaning && (
+                <motion.div
+                  key={`meaning-${activeMeaning.text}`}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  transition={{ duration: 0.25 }}
+                  className="mt-4 bg-primary-500/10 border border-primary-400/30 rounded-xl p-4"
+                >
+                  <div className="flex items-start space-x-3 space-x-reverse">
+                    <div className="p-2 rounded-lg bg-primary-500/20 border border-primary-400/40">
+                      <Lightbulb className="w-5 h-5 text-primary-200" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-sm text-white/70 mb-1">
+                        معنی {activeMeaning.text}
+                      </div>
+                      <div className="text-primary-100 font-semibold text-lg leading-relaxed">
+                        {activeMeaning.meaning}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setActiveMeaning(null)}
+                      className="text-xs text-white/50 hover:text-white transition-colors"
+                    >
+                      بستن
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+            <div className="mt-5 pt-4 border-t border-white/10">
+              <button
+                type="button"
+                onClick={() => setShowMeanings((prev) => !prev)}
+                disabled={!hasMeaningWords}
+                className={`w-full inline-flex items-center justify-between rounded-lg px-4 py-2 transition-colors ${
+                  hasMeaningWords
+                    ? 'bg-white/5 hover:bg-white/10 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-primary-400/50'
+                    : 'bg-white/5 border border-white/10 text-white/40 cursor-not-allowed focus:outline-none'
+                }`}
+              >
+                <div className="flex items-center space-x-2 space-x-reverse">
+                  <Lightbulb className="w-4 h-4 text-primary-200" />
+                  <span className="font-medium">معانی کلمات</span>
+                </div>
+                {showMeanings && hasMeaningWords ? (
+                  <ChevronUp className="w-4 h-4 text-white/70" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-white/70" />
+                )}
+              </button>
+              <AnimatePresence initial={false}>
+                {showMeanings && hasMeaningWords && (
+                  <motion.div
+                    key="meanings-list"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="mt-3 space-y-2 overflow-hidden"
+                  >
+                    {completedMeaningDetails.map((detail) => {
+                      const isHighlighted = activeMeaning?.text === detail.text;
+                      return (
+                        <div
+                          key={detail.text}
+                          className={`flex items-start space-x-3 space-x-reverse rounded-xl border px-3 py-2 ${
+                            isHighlighted
+                              ? 'border-primary-400/60 bg-primary-500/15'
+                              : 'border-white/10 bg-white/5'
+                          }`}
+                        >
+                          <div className="p-2 rounded-lg bg-primary-500/20 border border-primary-400/30">
+                            <BookOpen className="w-4 h-4 text-primary-200" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-sm font-semibold text-white">{detail.text}</div>
+                            <p className="text-white/80 text-sm leading-relaxed mt-1">{detail.meaning}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              {!hasMeaningWords && (
+                <p className="text-white/40 text-xs text-center mt-3">
+                  برای دیدن معانی، کلماتی با معنی ذخیره کن.
+                </p>
               )}
             </div>
           </motion.div>
