@@ -4,11 +4,11 @@ import { useForm } from 'react-hook-form';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 import { motion } from 'framer-motion';
-import { 
-  Mail, 
-  Lock, 
-  Eye, 
-  EyeOff, 
+import {
+  User,
+  Lock,
+  Eye,
+  EyeOff,
   Gamepad2,
   Loader2
 } from 'lucide-react';
@@ -29,7 +29,7 @@ const Login = () => {
   const onSubmit = async (data) => {
     setIsLoading(true);
     try {
-      await login(data.email, data.password);
+      await login(data.username, data.password);
 
       // Redirect to original page or home
       const from = location.state?.from?.pathname || '/';
@@ -65,28 +65,28 @@ const Login = () => {
         {/* Login Form */}
         <div className="bg-glass backdrop-blur-lg rounded-2xl border border-glass-border p-8">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            {/* Email */}
+            {/* Username */}
             <div>
               <label className="block text-white font-medium mb-2">
-                ایمیل تو
+                اسم کاربری تو
               </label>
               <div className="relative">
-                <Mail className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/40" />
+                <User className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/40" />
                 <input
-                  type="email"
-                  placeholder="ایمیلت رو بنویس"
+                  type="text"
+                  placeholder="اسم کاربریت رو بنویس"
                   className="w-full pr-12 pl-4 py-3 bg-glass-hover border-2 border-primary-500/30 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-primary-400 focus:shadow-lg focus:shadow-primary-500/50 transition-all"
-                  {...register('email', {
-                    required: 'ایمیل رو فراموش نکن!',
-                    pattern: {
-                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                      message: 'این ایمیل درست نیست!'
+                  {...register('username', {
+                    required: 'اسم کاربری رو فراموش نکن!',
+                    minLength: {
+                      value: 3,
+                      message: 'اسم کاربری باید حداقل ۳ کاراکتر باشه'
                     }
                   })}
                 />
               </div>
-              {errors.email && (
-                <p className="mt-2 text-sm text-danger">{errors.email.message}</p>
+              {errors.username && (
+                <p className="mt-2 text-sm text-danger">{errors.username.message}</p>
               )}
             </div>
 
@@ -153,7 +153,7 @@ const Login = () => {
           <div className="text-center">
             <p className="text-white/60 mb-4">با اکانت آزمایشی امتحان کن:</p>
             <div className="bg-glass-hover rounded-lg p-4 text-sm text-white/80">
-              <p><strong>ایمیل:</strong> admin@wordconnect.com</p>
+              <p><strong>اسم کاربری:</strong> admin</p>
               <p><strong>رمز:</strong> admin123</p>
             </div>
           </div>

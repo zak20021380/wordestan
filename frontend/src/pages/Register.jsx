@@ -4,12 +4,11 @@ import { useForm } from 'react-hook-form';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 import { motion } from 'framer-motion';
-import { 
-  User, 
-  Mail, 
-  Lock, 
-  Eye, 
-  EyeOff, 
+import {
+  User,
+  Lock,
+  Eye,
+  EyeOff,
   Gamepad2,
   Loader2
 } from 'lucide-react';
@@ -40,7 +39,6 @@ const Register = () => {
     try {
       await registerUser({
         username: data.username,
-        email: data.email,
         password: data.password,
       });
 
@@ -105,31 +103,6 @@ const Register = () => {
               </div>
               {errors.username && (
                 <p className="mt-2 text-sm text-danger">{errors.username.message}</p>
-              )}
-            </div>
-
-            {/* Email */}
-            <div>
-              <label className="block text-white font-medium mb-2">
-                ایمیل تو
-              </label>
-              <div className="relative">
-                <Mail className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/40" />
-                <input
-                  type="email"
-                  placeholder="ایمیلت رو بنویس"
-                  className="w-full pr-12 pl-4 py-3 bg-glass-hover border-2 border-primary-500/30 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-primary-400 focus:shadow-lg focus:shadow-primary-500/50 transition-all"
-                  {...register('email', {
-                    required: 'ایمیل رو فراموش نکن!',
-                    pattern: {
-                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                      message: 'این ایمیل درست نیست! 🤔'
-                    }
-                  })}
-                />
-              </div>
-              {errors.email && (
-                <p className="mt-2 text-sm text-danger">{errors.email.message}</p>
               )}
             </div>
 
@@ -225,7 +198,7 @@ const Register = () => {
           <div className="text-center">
             <p className="text-white/60 mb-4">اطلاعات اکانت آزمایشی:</p>
             <div className="bg-glass-hover rounded-lg p-4 text-sm text-white/80">
-              <p><strong>ایمیل:</strong> admin@wordconnect.com</p>
+              <p><strong>اسم کاربری:</strong> admin</p>
               <p><strong>رمز:</strong> admin123</p>
             </div>
           </div>
