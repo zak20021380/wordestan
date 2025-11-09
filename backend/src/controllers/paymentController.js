@@ -3,7 +3,7 @@ const CoinPack = require('../models/CoinPack');
 const Purchase = require('../models/Purchase');
 
 const MERCHANT_ID = 'd97f7648-614f-4025-bee2-5f3cda6d8fcd';
-const SANDBOX_URL = 'https://sandbox.zarinpal.com/pg/v4/payment';
+const API_URL = 'https://api.zarinpal.com/pg/v4/payment';
 
 // Request payment URL from ZarinPal and create a pending purchase record
 const requestPayment = async (req, res) => {
@@ -38,7 +38,7 @@ const requestPayment = async (req, res) => {
 
     const amountInRial = Math.round(price * 10);
 
-    const { data } = await axios.post(`${SANDBOX_URL}/request.json`, {
+    const { data } = await axios.post(`${API_URL}/request.json`, {
       merchant_id: MERCHANT_ID,
       amount: amountInRial,
       callback_url: 'http://localhost:5173/payment/verify',
@@ -68,7 +68,7 @@ const requestPayment = async (req, res) => {
       gatewayAuthority: responseData.authority
     });
 
-    const paymentUrl = `https://sandbox.zarinpal.com/pg/StartPay/${responseData.authority}`;
+    const paymentUrl = `https://www.zarinpal.com/pg/StartPay/${responseData.authority}`;
 
     return res.json({
       success: true,
@@ -150,7 +150,7 @@ const verifyPayment = async (req, res) => {
 
     const amountInRial = Math.round(Number(purchase.price) * 10);
 
-    const { data: verifyData } = await axios.post(`${SANDBOX_URL}/verify.json`, {
+    const { data: verifyData } = await axios.post(`${API_URL}/verify.json`, {
       merchant_id: MERCHANT_ID,
       amount: amountInRial,
       authority: Authority
