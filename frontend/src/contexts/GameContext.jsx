@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { gameService } from '../services/gameService';
 import { useAuth } from './AuthContext';
@@ -25,6 +25,10 @@ export const GameProvider = ({ children }) => {
     completedWords: [],
     isConnecting: false,
   });
+  const [levelTransition, setLevelTransition] = useState(null);
+  const previousLevelOrderRef = useRef(null);
+  const pendingTransitionRef = useRef(null);
+  const hasInitializedLevelRef = useRef(false);
 
   useEffect(() => {
     if (authLoading) {
@@ -40,6 +44,10 @@ export const GameProvider = ({ children }) => {
       completedWords: [],
       isConnecting: false,
     });
+    previousLevelOrderRef.current = null;
+    pendingTransitionRef.current = null;
+    hasInitializedLevelRef.current = false;
+    setLevelTransition(null);
   }, [isAuthenticated, authLoading]);
 
   // Fetch next level
@@ -51,11 +59,12 @@ export const GameProvider = ({ children }) => {
       onSuccess: (response) => {
         const payload = response?.data ?? null;
         const meta = response?.meta ?? null;
+        const nextLevel = payload?.level ?? null;
 
         setLevelMeta(meta);
 
         // Handle null when no more levels are available
-        if (!payload || !payload.level) {
+        if (!nextLevel) {
           setCurrentLevel(null);
           setGameState(prev => ({
             ...prev,
@@ -64,18 +73,71 @@ export const GameProvider = ({ children }) => {
             currentWord: '',
             completedWords: [],
           }));
-        } else {
-          setCurrentLevel(payload.level);
-          setGameState(prev => ({
-            ...prev,
-            selectedNodes: [],
-            selectionPreview: '',
-            currentWord: '',
-            completedWords: Array.from(
-              new Set((payload.completedWords ?? []).filter(Boolean))
-            ),
-          }));
+          previousLevelOrderRef.current = null;
+          pendingTransitionRef.current = null;
+          hasInitializedLevelRef.current = false;
+          return;
         }
+
+        const parseOrder = (value) => {
+          if (value === null || value === undefined) {
+            return null;
+          }
+          const numeric = Number(value);
+          return Number.isNaN(numeric) ? null : numeric;
+        };
+
+        const newOrder = parseOrder(nextLevel.order);
+        const previousOrder = parseOrder(previousLevelOrderRef.current);
+        const hasPrevious = hasInitializedLevelRef.current && previousOrder !== null;
+
+        if (
+          hasPrevious &&
+          newOrder !== null &&
+          newOrder !== previousOrder
+        ) {
+          const pending = pendingTransitionRef.current;
+          let transitionType = pending?.type;
+          const difference = newOrder - previousOrder;
+
+          if (!transitionType) {
+            if (difference > 1) {
+              transitionType = 'skipped';
+            } else if (difference === 1) {
+              transitionType = 'advanced';
+            } else if (difference < 0) {
+              transitionType = 'revisit';
+            } else {
+              transitionType = 'advanced';
+            }
+          }
+
+          setLevelTransition({
+            type: transitionType,
+            from: previousOrder,
+            to: newOrder,
+            difference,
+            userProgress: payload?.userProgress ?? null,
+            meta,
+            cause: pending ?? null,
+            timestamp: Date.now(),
+          });
+        }
+
+        previousLevelOrderRef.current = newOrder;
+        hasInitializedLevelRef.current = true;
+        pendingTransitionRef.current = null;
+
+        setCurrentLevel(nextLevel);
+        setGameState(prev => ({
+          ...prev,
+          selectedNodes: [],
+          selectionPreview: '',
+          currentWord: '',
+          completedWords: Array.from(
+            new Set((payload.completedWords ?? []).filter(Boolean))
+          ),
+        }));
       },
     }
   );
@@ -101,8 +163,21 @@ export const GameProvider = ({ children }) => {
             currentWord: '',
             completedWords: [],
           }));
+          previousLevelOrderRef.current = null;
+          pendingTransitionRef.current = null;
+          hasInitializedLevelRef.current = false;
           return;
         }
+
+        const parseOrder = (value) => {
+          if (value === null || value === undefined) {
+            return null;
+          }
+          const numeric = Number(value);
+          return Number.isNaN(numeric) ? null : numeric;
+        };
+
+        const guestOrder = parseOrder(level.order);
 
         setCurrentLevel(level);
         setLevelMeta({
@@ -117,6 +192,9 @@ export const GameProvider = ({ children }) => {
           currentWord: '',
           completedWords: [],
         }));
+        previousLevelOrderRef.current = guestOrder;
+        hasInitializedLevelRef.current = true;
+        pendingTransitionRef.current = null;
       },
       onError: () => {
         setCurrentLevel(null);
@@ -124,6 +202,9 @@ export const GameProvider = ({ children }) => {
           status: 'guest_level_error',
           guest: true,
         });
+        previousLevelOrderRef.current = null;
+        pendingTransitionRef.current = null;
+        hasInitializedLevelRef.current = false;
       },
     }
   );
@@ -335,6 +416,21 @@ export const GameProvider = ({ children }) => {
         levelId: currentLevel._id,
       });
 
+      if (result?.data?.levelCompleted) {
+        const parseOrder = (value) => {
+          if (value === null || value === undefined) {
+            return null;
+          }
+          const numeric = Number(value);
+          return Number.isNaN(numeric) ? null : numeric;
+        };
+
+        pendingTransitionRef.current = {
+          type: 'completed',
+          from: parseOrder(currentLevel?.order),
+        };
+      }
+
       return result;
     } catch (error) {
       clearSelection();
@@ -353,6 +449,10 @@ export const GameProvider = ({ children }) => {
       levelId: currentLevel._id,
     });
   };
+
+  const clearLevelTransition = useCallback(() => {
+    setLevelTransition(null);
+  }, []);
 
   const value = {
     currentLevel,
@@ -375,6 +475,10 @@ export const GameProvider = ({ children }) => {
     // Mutations
     completeWordMutation,
     autoSolveMutation,
+
+    // Level transitions
+    levelTransition,
+    clearLevelTransition,
   };
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
