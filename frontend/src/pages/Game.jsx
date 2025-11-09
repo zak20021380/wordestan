@@ -1337,7 +1337,7 @@ const Game = () => {
               exit={{ scale: 0.92, opacity: 0 }}
               transition={{ type: 'spring', stiffness: 260, damping: 22 }}
               onClick={(event) => event.stopPropagation()}
-              className="relative w-full max-w-lg bg-gradient-to-br from-slate-900/95 via-purple-900/90 to-slate-900/95 border border-white/10 rounded-3xl px-6 py-7 sm:px-8 shadow-[0_40px_140px_rgba(12,10,45,0.7)] text-right"
+              className="relative w-full max-w-sm rounded-3xl bg-slate-900/95 border border-white/10 px-6 py-8 text-center text-white shadow-[0_40px_120px_rgba(12,10,45,0.6)]"
             >
               <button
                 type="button"
@@ -1347,53 +1347,30 @@ const Game = () => {
               >
                 <X className="w-5 h-5" />
               </button>
-              <div className="flex flex-col gap-4">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 rounded-2xl bg-primary-500/20 border border-primary-400/30 text-primary-100">
-                    <Sparkles className="w-7 h-7" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-white">حل خودکار انجام شد ✨</h3>
-                    <p className="text-sm text-white/70 mt-1">یکی از کلمات مرحله برایت باز شد. از این فرصت برای ادامه استفاده کن!</p>
-                  </div>
+              <div className="flex flex-col items-center gap-6">
+                <div className="p-3 rounded-2xl bg-primary-500/20 border border-primary-400/30 text-primary-100">
+                  <Sparkles className="w-7 h-7" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-xl font-bold">کلمه‌ای پیدا شد ✨</h3>
+                  <p className="text-sm text-white/70">یکی از کلمات با موفقیت پیدا شد.</p>
                 </div>
                 {autoSolveResult?.word?.text && (
-                  <div className="rounded-2xl border border-primary-400/30 bg-primary-500/10 p-4">
+                  <div className="w-full rounded-2xl border border-primary-400/30 bg-primary-500/10 p-4">
                     <p className="text-xs text-primary-200 mb-2">کلمه حل‌شده</p>
-                    <p className="text-2xl font-extrabold text-white tracking-wide" dir="ltr">
+                    <p className="text-2xl font-extrabold tracking-wide" dir="ltr">
                       {autoSolveResult.word.text}
                     </p>
-                    {autoSolveResult.word.meaning && (
-                      <p className="text-sm text-white/70 mt-3 leading-relaxed">{autoSolveResult.word.meaning}</p>
-                    )}
                   </div>
                 )}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white/70 flex items-center justify-between">
-                    <span className="font-medium">سکه مصرف‌شده</span>
-                    <span className="inline-flex items-center gap-1 text-amber-300">
-                      <Coins className="w-4 h-4" />
-                      {autoSolveResult?.coinsSpent ?? 50}
-                    </span>
-                  </div>
-                  <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white/70 flex items-center justify-between">
-                    <span className="font-medium">سکه باقی‌مانده</span>
-                    <span className="inline-flex items-center gap-1 text-emerald-300">
-                      <Coins className="w-4 h-4" />
-                      {autoSolveResult?.remainingCoins ?? Math.max((user?.coins ?? 0), 0)}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    onClick={handleCloseAutoSolveModal}
-                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-400 hover:to-secondary-400 text-white text-sm font-semibold transition-all"
-                  >
-                    <Sparkles className="w-4 h-4" />
-                    <span>ادامه می‌دهم</span>
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={handleCloseAutoSolveModal}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-400 transition-colors"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>باشه</span>
+                </button>
               </div>
             </motion.div>
           </motion.div>
