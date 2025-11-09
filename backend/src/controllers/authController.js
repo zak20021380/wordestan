@@ -103,7 +103,7 @@ const register = async (req, res) => {
           currentStreak: user.currentStreak,
           currentLevel: user.currentLevel,
           completedLevels: user.completedLevels,
-          completedWords: user.completedWords,
+          levelProgress: user.levelProgress,
           lastActive: user.lastActive,
           createdAt: user.createdAt,
           isAdmin: user.isAdmin
@@ -178,7 +178,7 @@ const login = async (req, res) => {
           currentStreak: user.currentStreak,
           currentLevel: user.currentLevel,
           completedLevels: user.completedLevels,
-          completedWords: user.completedWords,
+          levelProgress: user.levelProgress,
           lastActive: user.lastActive,
           createdAt: user.createdAt,
           isAdmin: user.isAdmin
@@ -201,7 +201,8 @@ const getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user.id)
       .select('-password')
-      .populate('completedWords', 'text length')
+      .populate('levelProgress.levelId', 'order letters')
+      .populate('levelProgress.completedWords', 'text length')
       .populate('completedLevels', 'order letters');
 
     res.json({

@@ -86,9 +86,7 @@ const getNextLevel = async (req, res) => {
     const levelObject = nextLevel.toObject({ getters: true });
 
     const completedWords = levelObject.words
-      .filter(word =>
-        user.completedWords.some(completedId => completedId.equals(word._id))
-      )
+      .filter(word => user.hasCompletedWordInLevel(nextLevel._id, word._id))
       .map(word => word.text);
 
     res.json({
@@ -147,7 +145,7 @@ const completeWord = async (req, res) => {
     }
 
     // Check if user has already completed this word
-    if (user.completedWords.includes(targetWord._id)) {
+    if (user.hasCompletedWordInLevel(level._id, targetWord._id)) {
       return res.status(400).json({
         success: false,
         message: 'Word already completed'
@@ -157,21 +155,20 @@ const completeWord = async (req, res) => {
     // Award coins and update progress
     const wordReward = parseInt(process.env.WORD_COMPLETE_REWARD) || 20;
     await user.addCoins(wordReward);
-    await user.completeWord(targetWord._id);
-    
+    await user.completeWord(level._id, targetWord._id);
+
     // Update word completion stats
     targetWord.timesCompleted += 1;
     await targetWord.save();
 
     // Check if level is completed
-    const completedWordsCount = user.completedWords.filter(wordId => 
-      level.words.some(levelWord => levelWord._id.equals(wordId))
-    ).length;
+    const levelProgress = user.getLevelProgress(level._id);
+    const completedWordsCount = levelProgress?.completedWords?.length || 0;
 
     const isLevelCompleted = completedWordsCount === level.words.length;
     const levelReward = parseInt(process.env.LEVEL_COMPLETE_REWARD) || 100;
 
-    if (isLevelCompleted && !user.completedLevels.includes(level._id)) {
+    if (isLevelCompleted && !levelProgress?.isComplete) {
       // Award level completion bonus
       await user.addCoins(levelReward);
       await user.completeLevel(level._id);
@@ -225,8 +222,8 @@ const getHint = async (req, res) => {
     }
 
     // Find incomplete words in this level
-    const incompleteWords = level.words.filter(word => 
-      !user.completedWords.includes(word._id)
+    const incompleteWords = level.words.filter(word =>
+      !user.hasCompletedWordInLevel(level._id, word._id)
     );
 
     if (incompleteWords.length === 0) {
@@ -323,8 +320,8 @@ const autoSolve = async (req, res) => {
     }
 
     // Find incomplete words in this level
-    const incompleteWords = level.words.filter(word => 
-      !user.completedWords.includes(word._id)
+    const incompleteWords = level.words.filter(word =>
+      !user.hasCompletedWordInLevel(level._id, word._id)
     );
 
     if (incompleteWords.length === 0) {
@@ -341,7 +338,7 @@ const autoSolve = async (req, res) => {
     await user.spendCoins(autoSolveCost);
 
     // Complete the word (without coin reward)
-    await user.completeWord(randomWord._id);
+    await user.completeWord(level._id, randomWord._id);
     
     // Update word stats
     randomWord.timesCompleted += 1;
@@ -392,9 +389,8 @@ const getGameStats = async (req, res) => {
 
     if (currentLevel) {
       stats.totalWordsInCurrentLevel = currentLevel.words.length;
-      stats.completedWordsInCurrentLevel = user.completedWords.filter(wordId =>
-        currentLevel.words.some(levelWord => levelWord._id.equals(wordId))
-      ).length;
+      const levelProgress = user.getLevelProgress(currentLevel._id);
+      stats.completedWordsInCurrentLevel = levelProgress?.completedWords?.length || 0;
     }
 
     res.json({
