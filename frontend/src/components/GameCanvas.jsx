@@ -9,7 +9,8 @@ const GameCanvas = () => {
     selectLetter,
     clearSelection,
     setCurrentWord,
-    finalizeWordSelection,
+    submitWord,
+    isCompletingWord,
   } = useGame();
   const canvasRef = useRef(null);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -18,6 +19,7 @@ const GameCanvas = () => {
   const [canvasSize, setCanvasSize] = useState({ width: 400, height: 400 });
   const [feedback, setFeedback] = useState(null);
   const feedbackTimeoutRef = useRef(null);
+  const isSubmittingRef = useRef(false);
 
   const showFeedback = useCallback((type, message) => {
     if (feedbackTimeoutRef.current) {
@@ -174,7 +176,7 @@ const GameCanvas = () => {
     gameState.selectedNodes,
   ]);
 
-  const handleEnd = useCallback((event) => {
+  const handleEnd = useCallback(async (event) => {
     event.preventDefault();
     const svg = canvasRef.current;
     if (svg && 'pointerId' in event) {
@@ -185,6 +187,11 @@ const GameCanvas = () => {
       }
     }
     setIsConnecting(false);
+
+    // Prevent double submissions
+    if (isSubmittingRef.current || isCompletingWord) {
+      return;
+    }
 
     if (gameState.selectedNodes.length > 0) {
       const formedWord = gameState.selectionPreview;
@@ -212,8 +219,19 @@ const GameCanvas = () => {
         return;
       }
 
-      finalizeWordSelection(formedWord);
-      showFeedback('success', 'هورا! کلمهٔ درست رو پیدا کردی! 🎉');
+      // Auto-submit the word
+      isSubmittingRef.current = true;
+      setCurrentWord(formedWord);
+
+      try {
+        await submitWord();
+        showFeedback('success', 'هورا! کلمهٔ درست رو پیدا کردی! 🎉');
+      } catch (error) {
+        showFeedback('error', error.message || 'این کلمه رو نداریم!');
+        clearSelection();
+      } finally {
+        isSubmittingRef.current = false;
+      }
     }
   }, [
     clearSelection,
@@ -221,8 +239,10 @@ const GameCanvas = () => {
     gameState.selectedNodes.length,
     gameState.selectionPreview,
     levelWords,
-    finalizeWordSelection,
+    submitWord,
+    setCurrentWord,
     showFeedback,
+    isCompletingWord,
   ]);
 
   const handleCancel = useCallback((event) => {
