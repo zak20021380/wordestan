@@ -15,6 +15,7 @@ const PaymentVerify = () => {
   const [message, setMessage] = useState('در حال بررسی پرداخت...');
   const [details, setDetails] = useState(null);
   const timeoutRef = useRef(null);
+  const lastVerificationRef = useRef(null);
 
   const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
 
@@ -31,17 +32,26 @@ const PaymentVerify = () => {
   useEffect(() => {
     const authority = searchParams.get('Authority');
     const statusParam = searchParams.get('Status');
+    const verificationKey = `${authority ?? ''}-${statusParam ?? ''}`;
+
+    if (lastVerificationRef.current === verificationKey) {
+      return undefined;
+    }
+
+    lastVerificationRef.current = verificationKey;
+
+    const cleanup = () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
 
     if (!authority) {
       setStatus('failed');
       setMessage('شناسه تراکنش یافت نشد.');
       setDetails(null);
       scheduleRedirect('/store');
-      return () => {
-        if (timeoutRef.current) {
-          clearTimeout(timeoutRef.current);
-        }
-      };
+      return cleanup;
     }
 
     if (statusParam !== 'OK') {
@@ -49,11 +59,7 @@ const PaymentVerify = () => {
       setMessage('پرداخت توسط کاربر لغو شد.');
       setDetails(null);
       scheduleRedirect('/store');
-      return () => {
-        if (timeoutRef.current) {
-          clearTimeout(timeoutRef.current);
-        }
-      };
+      return cleanup;
     }
 
     const verifyPayment = async () => {
@@ -108,11 +114,7 @@ const PaymentVerify = () => {
 
     verifyPayment();
 
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
+    return cleanup;
   }, [queryClient, scheduleRedirect, searchParams, updateUser]);
 
   const renderIcon = () => {
