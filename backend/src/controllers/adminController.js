@@ -21,63 +21,71 @@ const parseBoolean = (value, defaultValue = false) => {
   return Boolean(value);
 };
 
-const parseWordsWithMeanings = (input) => {
+const parseWordEntries = (input) => {
   if (!input) {
     return [];
   }
 
-  const entries = Array.isArray(input)
-    ? input
-    : input
-        .replace(/\|/g, '\n')
-        .split(/[\n,]+/);
+  const rawInput = Array.isArray(input) ? input.join('|') : String(input);
+
+  const normalizedInput = rawInput
+    .replace(/\r?\n/g, '|')
+    .replace(/,/g, '|');
+
+  const entries = normalizedInput
+    .split('|')
+    .map(entry => entry.trim())
+    .filter(Boolean);
 
   const wordMap = new Map();
 
-  entries
-    .map(entry => entry.trim())
-    .filter(Boolean)
-    .forEach(entry => {
-      const [wordPart, ...meaningParts] = entry.split(':');
-      const text = (wordPart || '').trim().toUpperCase();
+  for (const entry of entries) {
+    const [wordPart, ...meaningParts] = entry.split(':');
+    const text = (wordPart || '').trim().toUpperCase();
 
-      if (!text) {
-        return;
-      }
+    if (!text) {
+      continue;
+    }
 
-      const meaning = meaningParts.join(':').trim();
-      const existing = wordMap.get(text) || { text };
-
-      if (meaning) {
-        existing.meaning = meaning;
-      }
-
-      wordMap.set(text, existing);
+    const meaning = meaningParts.join(':').trim();
+    wordMap.set(text, {
+      text,
+      meaning
     });
+  }
 
   return Array.from(wordMap.values());
 };
 
-const ensureWordWithMeaning = async ({ text, meaning }) => {
+const upsertWordWithMeaning = async ({ text, meaning }) => {
   if (!text) {
     return null;
   }
 
-  let word = await Word.findOne({ text });
+  const normalizedText = text.trim().toUpperCase();
+  const normalizedMeaning = (meaning || '').trim();
+  const wordLength = normalizedText.length;
 
-  if (!word) {
-    word = new Word({
-      text,
-      length: text.length,
-      difficulty: 'medium',
-      points: text.length * 10,
-      meaning,
-    });
-    await word.save();
-  } else if (meaning && meaning !== word.meaning) {
-    word.meaning = meaning;
-    await word.save();
-  }
+  const word = await Word.findOneAndUpdate(
+    { text: normalizedText },
+    {
+      $set: {
+        text: normalizedText,
+        meaning: normalizedMeaning,
+        length: wordLength
+      },
+      $setOnInsert: {
+        difficulty: 'medium',
+        points: wordLength * 10
+      }
+    },
+    {
+      new: true,
+      upsert: true,
+      runValidators: true,
+      setDefaultsOnInsert: true
+    }
+  );
 
   return word;
 };
@@ -332,7 +340,7 @@ const createLevel = async (req, res) => {
       });
     }
 
-    const parsedWords = parseWordsWithMeanings(words);
+    const parsedWords = parseWordEntries(words);
 
     if (parsedWords.length === 0) {
       return res.status(400).json({
@@ -347,17 +355,31 @@ const createLevel = async (req, res) => {
 
     // Auto-create Word documents if they don't exist
     const wordIds = [];
+    const seenWordIds = new Set();
     for (const entry of parsedWords) {
-      const word = await ensureWordWithMeaning(entry);
+      const word = await upsertWordWithMeaning(entry);
       if (word) {
-        wordIds.push(word._id);
+        const wordIdString = word._id.toString();
+        if (!seenWordIds.has(wordIdString)) {
+          seenWordIds.add(wordIdString);
+          wordIds.push(word._id);
+        }
       }
+    }
+
+    if (wordIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No valid words were provided'
+      });
     }
 
     // Create level
     const level = new Level({
       order: nextOrder,
-      letters: letters.toUpperCase(),
+      letters: Array.isArray(letters)
+        ? letters.join('').toUpperCase()
+        : String(letters).replace(/\s+/g, '').toUpperCase(),
       words: wordIds,
       isPublished: true
     });
@@ -399,7 +421,9 @@ const updateLevel = async (req, res) => {
     const updateData = {};
 
     if (letters) {
-      updateData.letters = letters.toUpperCase();
+      updateData.letters = Array.isArray(letters)
+        ? letters.join('').toUpperCase()
+        : String(letters).replace(/\s+/g, '').toUpperCase();
     }
 
     if (isPublished !== undefined) {
@@ -407,7 +431,7 @@ const updateLevel = async (req, res) => {
     }
 
     if (words) {
-      const parsedWords = parseWordsWithMeanings(words);
+      const parsedWords = parseWordEntries(words);
 
       if (parsedWords.length === 0) {
         return res.status(400).json({
@@ -417,11 +441,23 @@ const updateLevel = async (req, res) => {
       }
 
       const wordIds = [];
+      const seenWordIds = new Set();
       for (const entry of parsedWords) {
-        const word = await ensureWordWithMeaning(entry);
+        const word = await upsertWordWithMeaning(entry);
         if (word) {
-          wordIds.push(word._id);
+          const wordIdString = word._id.toString();
+          if (!seenWordIds.has(wordIdString)) {
+            seenWordIds.add(wordIdString);
+            wordIds.push(word._id);
+          }
         }
+      }
+
+      if (wordIds.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'No valid words were provided'
+        });
       }
 
       updateData.words = wordIds;
