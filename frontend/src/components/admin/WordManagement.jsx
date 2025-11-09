@@ -128,6 +128,11 @@ const WordManagement = () => {
                       <span className="mx-2">•</span>
                       {word.length} letters
                     </div>
+                    {word.meaning && (
+                      <div className="text-primary-200 text-sm mt-1">
+                        <span className="font-semibold">💡 معنی:</span> {word.meaning}
+                      </div>
+                    )}
                     {word.description && (
                       <div className="text-white/40 text-xs mt-1">{word.description}</div>
                     )}

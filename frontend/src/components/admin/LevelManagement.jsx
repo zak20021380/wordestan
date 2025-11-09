@@ -200,10 +200,10 @@ const LevelManagement = () => {
               {/* Words Input */}
               <div>
                 <label className="block text-white font-medium mb-2">
-                  کلمات (هر کدوم تو یه خط یا با کاما جدا کن)
+                  کلمات به همراه معنی (با «:» جدا کن)
                 </label>
                 <textarea
-                  placeholder="WET, TEA, ATE یا هر کدوم تو یه خط"
+                  placeholder="WET:خیس | TEA:چای | ATE:خورد"
                   value={words}
                   onChange={(e) => setWords(e.target.value)}
                   rows={6}
@@ -211,8 +211,12 @@ const LevelManagement = () => {
                   disabled={loading}
                 />
                 <p className="text-white/40 text-sm mt-1">
-                  کلماتی که باید پیدا بشن - سیستم خودکار اونا رو ایجاد می‌کنه!
+                  هر کلمه و معنی‌ش رو با «:» بنویس و با «|» یا خط جدید جدا کن. فقط کلمات وارد شده به همراه معنی ذخیره می‌شن.
                 </p>
+                <div className="mt-2 inline-flex items-center space-x-2 space-x-reverse text-xs text-primary-200 bg-primary-500/10 border border-primary-500/20 rounded-lg px-3 py-1.5">
+                  <span className="font-semibold">مثال:</span>
+                  <span className="font-mono">WET:خیس | TEA:چای | ATE:خورد</span>
+                </div>
               </div>
 
               <div className="flex space-x-4 space-x-reverse mt-8">

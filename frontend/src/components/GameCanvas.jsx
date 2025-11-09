@@ -263,13 +263,37 @@ const GameCanvas = forwardRef((_, ref) => {
       isSubmittingRef.current = true;
 
       try {
-        await submitWord(formedWord);
+        const result = await submitWord(formedWord);
         const totalWords = levelWords.length;
         const newlyCompletedCount = gameState.completedWords.length + 1;
-        const successMessage = `آفرین! ${
-          formedWord.toUpperCase()
-        } رو پیدا کردی! ${newlyCompletedCount} از ${totalWords} کلمه`;
-        showFeedback('success', successMessage);
+        const normalizedWord = formedWord.toUpperCase();
+
+        const responseMeaning = result?.data?.word?.meaning;
+        let meaningText = responseMeaning;
+
+        if (!meaningText && Array.isArray(currentLevel?.words)) {
+          const match = currentLevel.words.find(entry => {
+            if (typeof entry === 'string') {
+              return entry.toUpperCase() === normalizedWord;
+            }
+            return (entry?.text || '').toUpperCase() === normalizedWord;
+          });
+
+          if (match && typeof match !== 'string') {
+            meaningText = match.meaning;
+          }
+        }
+
+        const messageLines = [
+          `آفرین! ${normalizedWord} رو پیدا کردی!`,
+          `${newlyCompletedCount} از ${totalWords} کلمه`,
+        ];
+
+        if (meaningText) {
+          messageLines.push(`💡 معنی: ${meaningText}`);
+        }
+
+        showFeedback('success', messageLines.join('\n'));
       } catch (error) {
         showFeedback('error', error.message || 'این کلمه رو نداریم!');
         clearSelection();
@@ -279,6 +303,7 @@ const GameCanvas = forwardRef((_, ref) => {
     }
   }, [
     clearSelection,
+    currentLevel,
     gameState.completedWords,
     gameState.selectedNodes.length,
     gameState.selectionPreview,
@@ -360,7 +385,7 @@ const GameCanvas = forwardRef((_, ref) => {
                   : 'bg-rose-500/20 border-rose-400/40 text-rose-50'
               }`}
             >
-              <p className="text-lg font-semibold leading-relaxed drop-shadow-sm">
+              <p className="text-lg font-semibold leading-relaxed drop-shadow-sm whitespace-pre-line">
                 {feedback.message}
               </p>
             </div>
