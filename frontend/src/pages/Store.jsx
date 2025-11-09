@@ -88,95 +88,187 @@ const Store = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md px-4"
             onClick={handleCloseModal}
           >
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-              className="relative w-full max-w-lg bg-gradient-to-br from-glass via-wood-900/90 to-glass/90 border border-glass-border rounded-2xl shadow-2xl p-6 text-white"
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+              className="relative w-full max-w-md bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-2 border-primary-500/30 rounded-3xl shadow-2xl shadow-primary-500/20 overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
+              {/* Decorative gradient overlay */}
+              <div className="absolute inset-0 bg-gradient-to-br from-primary-500/10 via-transparent to-secondary-500/10 pointer-events-none" />
+
+              {/* Animated background pattern */}
+              <div className="absolute inset-0 opacity-5">
+                <div className="absolute inset-0" style={{
+                  backgroundImage: 'radial-gradient(circle at 2px 2px, currentColor 1px, transparent 0)',
+                  backgroundSize: '40px 40px'
+                }} />
+              </div>
+
+              {/* Close button */}
               <button
                 onClick={handleCloseModal}
-                className="absolute top-4 left-4 text-white/60 hover:text-white"
+                disabled={paymentMutation.isLoading}
+                className="absolute top-4 left-4 z-10 w-10 h-10 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-white/60 hover:text-white border border-white/10 hover:border-white/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label="بستن"
               >
                 <X className="w-5 h-5" />
               </button>
 
-              <div className="flex items-center justify-center space-x-2 mb-6">
-                <ShoppingCart className="w-6 h-6 text-primary-400" />
-                <h2 className="text-2xl font-bold">تایید خرید</h2>
-              </div>
+              <div className="relative p-8">
+                {/* Header with icon */}
+                <div className="text-center mb-8">
+                  <motion.div
+                    initial={{ scale: 0, rotate: -180 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
+                    className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center shadow-lg shadow-primary-500/50"
+                  >
+                    <ShoppingCart className="w-8 h-8 text-white" />
+                  </motion.div>
+                  <h2 className="text-3xl font-bold text-white mb-2">تایید خرید</h2>
+                  <p className="text-white/60 text-sm">مشخصات بسته خریداری شده را بررسی کنید</p>
+                </div>
 
-              <div className="bg-glass-hover rounded-xl border border-glass-border/60 p-5 mb-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="text-xl font-semibold">{selectedPack.name}</h3>
-                    {selectedPack.description && (
-                      <p className="text-white/60 text-sm mt-1">{selectedPack.description}</p>
+                {/* Pack Details Card */}
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl rounded-2xl border border-white/10 p-6 mb-6 shadow-xl"
+                >
+                  {/* Pack header with badge */}
+                  <div className="flex items-start justify-between mb-5 pb-4 border-b border-white/10">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="text-2xl font-bold text-white">{selectedPack.name}</h3>
+                        {selectedPack.featured && (
+                          <span className="bg-gradient-to-r from-primary-500 to-secondary-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                            ویژه
+                          </span>
+                        )}
+                      </div>
+                      {selectedPack.description && (
+                        <p className="text-white/70 text-sm leading-relaxed">{selectedPack.description}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Coins breakdown */}
+                  <div className="space-y-3 mb-5">
+                    <div className="flex items-center justify-between p-3 rounded-xl bg-accent-500/10 border border-accent-500/20">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-accent-500/20 flex items-center justify-center">
+                          <Coins className="w-5 h-5 text-accent-400" />
+                        </div>
+                        <div>
+                          <div className="text-white/80 text-xs font-medium">سکه اصلی</div>
+                          <div className="text-white font-bold text-lg">{(selectedPack.coins ?? 0).toLocaleString()}</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {(selectedPack.bonusCoins ?? 0) > 0 && (
+                      <div className="flex items-center justify-between p-3 rounded-xl bg-green-500/10 border border-green-500/20">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
+                            <Sparkles className="w-5 h-5 text-green-400" />
+                          </div>
+                          <div>
+                            <div className="text-white/80 text-xs font-medium">سکه جایزه</div>
+                            <div className="text-green-400 font-bold text-lg">+{(selectedPack.bonusCoins ?? 0).toLocaleString()}</div>
+                          </div>
+                        </div>
+                      </div>
                     )}
                   </div>
-                  <div className="text-right">
-                    <div className="text-lg font-semibold text-accent-300">{formatToman(selectedPack.price)}</div>
-                    <div className="text-white/50 text-xs">قیمت به تومان</div>
-                  </div>
-                </div>
 
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div className="flex items-center space-x-2">
-                    <Coins className="w-5 h-5 text-accent-400" />
-                    <div>
-                      <div className="text-white/80">سکه اصلی</div>
-                      <div className="text-white font-semibold">{(selectedPack.coins ?? 0).toLocaleString()}</div>
+                  {/* Total coins highlight */}
+                  <div className="bg-gradient-to-r from-primary-500/20 via-secondary-500/20 to-primary-500/20 rounded-xl p-4 border border-primary-500/30">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center shadow-lg">
+                          <CheckCircle className="w-6 h-6 text-white" />
+                        </div>
+                        <div>
+                          <div className="text-white/90 text-sm font-medium">جمع کل دریافتی</div>
+                          <div className="text-white font-bold text-2xl">
+                            {(selectedPack.totalCoins ?? ((selectedPack.coins ?? 0) + (selectedPack.bonusCoins ?? 0))).toLocaleString()}
+                            <span className="text-base text-white/80 mr-1">سکه</span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Plus className="w-5 h-5 text-green-400" />
-                    <div>
-                      <div className="text-white/80">سکه جایزه</div>
-                      <div className="text-white font-semibold">{(selectedPack.bonusCoins ?? 0).toLocaleString()}</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2 col-span-2">
-                    <CheckCircle className="w-5 h-5 text-primary-400" />
-                    <div>
-                      <div className="text-white/80">جمع کل سکه دریافتی</div>
-                      <div className="text-white font-semibold">{(selectedPack.totalCoins ?? ((selectedPack.coins ?? 0) + (selectedPack.bonusCoins ?? 0))).toLocaleString()} سکه</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
 
-              <div className="space-y-3">
-                <button
-                  onClick={handleConfirmPurchase}
-                  disabled={paymentMutation.isLoading}
-                  className="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-primary-500 via-secondary-500 to-primary-500 hover:from-primary-600 hover:via-secondary-600 hover:to-primary-600 disabled:bg-glass-hover disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-xl shadow-lg shadow-primary-500/40 transition-all"
+                  {/* Price section */}
+                  <div className="mt-5 pt-5 border-t border-white/10">
+                    <div className="flex items-center justify-between">
+                      <span className="text-white/80 font-medium">مبلغ قابل پرداخت:</span>
+                      <div className="text-left">
+                        <div className="text-2xl font-bold bg-gradient-to-r from-accent-400 to-accent-300 bg-clip-text text-transparent">
+                          {formatToman(selectedPack.price)}
+                        </div>
+                        <div className="text-white/50 text-xs">تومان</div>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+
+                {/* Action buttons */}
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                  className="space-y-3"
                 >
-                  {paymentMutation.isLoading ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      <span>در حال اتصال به درگاه...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>ادامه خرید</span>
-                      <ArrowRight className="w-5 h-5" />
-                    </>
-                  )}
-                </button>
+                  <button
+                    onClick={handleConfirmPurchase}
+                    disabled={paymentMutation.isLoading}
+                    className="group w-full relative overflow-hidden flex items-center justify-center gap-2 bg-gradient-to-r from-primary-500 via-secondary-500 to-primary-500 hover:from-primary-600 hover:via-secondary-600 hover:to-primary-600 disabled:from-gray-600 disabled:via-gray-700 disabled:to-gray-600 disabled:cursor-not-allowed text-white font-bold py-4 px-6 rounded-xl shadow-lg shadow-primary-500/40 hover:shadow-xl hover:shadow-primary-500/60 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] disabled:transform-none disabled:shadow-none"
+                  >
+                    {/* Button shine effect */}
+                    <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
 
-                <button
-                  onClick={handleCloseModal}
-                  disabled={paymentMutation.isLoading}
-                  className="w-full py-3 px-6 rounded-xl border border-white/20 text-white/80 hover:text-white hover:border-white/40 transition-colors"
+                    {paymentMutation.isLoading ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span>در حال اتصال به درگاه پرداخت...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-lg">تایید و پرداخت</span>
+                        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    onClick={handleCloseModal}
+                    disabled={paymentMutation.isLoading}
+                    className="w-full py-3.5 px-6 rounded-xl border-2 border-white/20 hover:border-white/40 bg-white/5 hover:bg-white/10 text-white/90 hover:text-white font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    انصراف
+                  </button>
+                </motion.div>
+
+                {/* Security notice */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.5 }}
+                  className="mt-5 text-center text-white/50 text-xs"
                 >
-                  انصراف
-                </button>
+                  <div className="flex items-center justify-center gap-2">
+                    <CheckCircle className="w-4 h-4" />
+                    <span>پرداخت از طریق درگاه امن زرین‌پال</span>
+                  </div>
+                </motion.div>
               </div>
             </motion.div>
           </motion.div>
