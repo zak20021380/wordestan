@@ -58,10 +58,18 @@ const register = async (req, res) => {
         user: {
           id: user._id,
           username: user.username,
+          email: user.email,
           coins: user.coins,
           levelsCleared: user.levelsCleared,
           totalScore: user.totalScore,
+          wordsFound: user.wordsFound,
+          bestStreak: user.bestStreak,
+          currentStreak: user.currentStreak,
           currentLevel: user.currentLevel,
+          completedLevels: user.completedLevels,
+          completedWords: user.completedWords,
+          lastActive: user.lastActive,
+          createdAt: user.createdAt,
           isAdmin: user.isAdmin
         }
       }
@@ -123,10 +131,18 @@ const login = async (req, res) => {
         user: {
           id: user._id,
           username: user.username,
+          email: user.email,
           coins: user.coins,
           levelsCleared: user.levelsCleared,
           totalScore: user.totalScore,
+          wordsFound: user.wordsFound,
+          bestStreak: user.bestStreak,
+          currentStreak: user.currentStreak,
           currentLevel: user.currentLevel,
+          completedLevels: user.completedLevels,
+          completedWords: user.completedWords,
+          lastActive: user.lastActive,
+          createdAt: user.createdAt,
           isAdmin: user.isAdmin
         }
       }
@@ -148,7 +164,7 @@ const getMe = async (req, res) => {
     const user = await User.findById(req.user.id)
       .select('-password')
       .populate('completedWords', 'text length')
-      .populate('completedLevels', 'name order');
+      .populate('completedLevels', 'order letters');
 
     res.json({
       success: true,
@@ -177,25 +193,66 @@ const updateProfile = async (req, res) => {
       });
     }
 
-    const { username } = req.body;
+    const { username, email } = req.body;
     const userId = req.user.id;
 
-    // Check if username already exists for other users
-    const existingUser = await User.findOne({
-      _id: { $ne: userId },
-      username
-    });
+    const updateFields = {};
 
-    if (existingUser) {
-      return res.status(400).json({
-        success: false,
-        message: 'Username already taken'
+    if (typeof username !== 'undefined') {
+      const trimmedUsername = username.trim();
+      if (trimmedUsername.length > 0) {
+        // Check if username already exists for other users
+        const existingUser = await User.findOne({
+          _id: { $ne: userId },
+          username: trimmedUsername
+        });
+
+        if (existingUser) {
+          return res.status(400).json({
+            success: false,
+            message: 'Username already taken'
+          });
+        }
+
+        updateFields.username = trimmedUsername;
+      }
+    }
+
+    if (typeof email !== 'undefined') {
+      const normalizedEmail = email ? email.trim().toLowerCase() : null;
+
+      if (normalizedEmail) {
+        // Check if email already exists for other users
+        const existingEmailUser = await User.findOne({
+          _id: { $ne: userId },
+          email: normalizedEmail
+        });
+
+        if (existingEmailUser) {
+          return res.status(400).json({
+            success: false,
+            message: 'Email already in use'
+          });
+        }
+
+        updateFields.email = normalizedEmail;
+      } else {
+        updateFields.email = null;
+      }
+    }
+
+    if (Object.keys(updateFields).length === 0) {
+      const currentUser = await User.findById(userId).select('-password');
+      return res.json({
+        success: true,
+        message: 'Profile updated successfully',
+        data: currentUser
       });
     }
 
     const user = await User.findByIdAndUpdate(
       userId,
-      { username },
+      updateFields,
       { new: true, runValidators: true }
     ).select('-password');
 
