@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { storeService } from '../services/storeService';
+import { formatToman } from '../utils/currency';
 import {
   ShoppingCart,
   Coins,
@@ -179,11 +180,9 @@ const Store = () => {
             {/* Price */}
             <div className="text-center mb-6">
               <div className="text-2xl font-bold text-white">
-                ${pack.price.toFixed(2)}
+                {formatToman(pack.price)}
               </div>
-              <div className="text-white/60 text-sm">
-                {pack.currency}
-              </div>
+              <div className="text-white/60 text-sm">قیمت به تومان</div>
             </div>
 
             {/* Purchase Button */}
@@ -294,7 +293,7 @@ const PurchaseHistory = () => {
                   <span>+{purchase.amount}</span>
                 </div>
                 <div className="text-white/60 text-sm">
-                  ${purchase.price}
+                  {formatToman(purchase.price)}
                 </div>
               </div>
             </div>

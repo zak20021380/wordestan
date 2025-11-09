@@ -1,6 +1,7 @@
 import { useQuery } from 'react-query';
 import { motion } from 'framer-motion';
 import { adminService } from '../../services/adminService';
+import { formatToman } from '../../utils/currency';
 import {
   Users,
   Layers,
@@ -84,7 +85,7 @@ const AdminDashboard = () => {
     },
     {
       title: 'Total Revenue',
-      value: `$${(stats?.activity?.totalRevenue || 0).toFixed(2)}`,
+      value: formatToman(stats?.activity?.totalRevenue || 0),
       icon: Award,
       color: 'text-yellow-400'
     }
