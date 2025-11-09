@@ -14,13 +14,41 @@ const getNextLevel = async (req, res) => {
       order: { $gte: user.currentLevel },
       isPublished: true
     })
-    .populate('words', 'text length difficulty points')
-    .sort({ order: 1 });
+      .populate('words', 'text length difficulty points')
+      .sort({ order: 1 });
+
+    const userProgress = {
+      currentLevel: user.currentLevel,
+      levelsCleared: user.levelsCleared,
+      coins: user.coins,
+      totalScore: user.totalScore
+    };
 
     if (!nextLevel) {
-      return res.status(404).json({
-        success: false,
-        message: 'No more levels available'
+      const hasPublishedLevels = await Level.exists({ isPublished: true });
+      const firstPublishedLevel = hasPublishedLevels
+        ? await Level.findOne({ isPublished: true }).sort({ order: 1 }).select('order')
+        : null;
+
+      // Update user's last active even if there's no level to return
+      await user.updateLastActive();
+
+      let status = 'all_levels_completed';
+
+      if (!hasPublishedLevels) {
+        status = 'no_published_levels';
+      } else if (user.levelsCleared === 0) {
+        status = 'no_levels_for_new_user';
+      }
+
+      return res.json({
+        success: true,
+        data: null,
+        meta: {
+          status,
+          firstLevelOrder: firstPublishedLevel?.order ?? null,
+          userProgress
+        }
       });
     }
 
@@ -40,12 +68,10 @@ const getNextLevel = async (req, res) => {
       data: {
         level: levelObject,
         completedWords,
-        userProgress: {
-          currentLevel: user.currentLevel,
-          levelsCleared: user.levelsCleared,
-          coins: user.coins,
-          totalScore: user.totalScore
-        }
+        userProgress
+      },
+      meta: {
+        status: 'level_available'
       }
     });
   } catch (error) {

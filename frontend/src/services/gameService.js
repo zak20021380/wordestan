@@ -42,12 +42,8 @@ export const gameService = {
   async getNextLevel() {
     try {
       const response = await api.get('/game/next-level');
-      return response.data.data;
+      return response.data;
     } catch (error) {
-      // Handle "No more levels available" as a valid end state, not an error
-      if (error.response?.data?.message === 'No more levels available') {
-        return null;
-      }
       throw new Error(error.response?.data?.message || 'Failed to get next level');
     }
   },

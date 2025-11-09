@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { gameService } from '../services/gameService';
 import { useAuth } from './AuthContext';
@@ -17,6 +17,7 @@ export const GameProvider = ({ children }) => {
   const { user, isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
   const [currentLevel, setCurrentLevel] = useState(null);
+  const [levelMeta, setLevelMeta] = useState(null);
   const [gameState, setGameState] = useState({
     selectedNodes: [],
     selectionPreview: '',
@@ -26,14 +27,19 @@ export const GameProvider = ({ children }) => {
   });
 
   // Fetch next level
-  const { data: levelData, isLoading: levelLoading } = useQuery(
+  const { isLoading: levelLoading } = useQuery(
     ['nextLevel', user?.id],
     () => gameService.getNextLevel(),
     {
       enabled: isAuthenticated,
-      onSuccess: (data) => {
+      onSuccess: (response) => {
+        const payload = response?.data ?? null;
+        const meta = response?.meta ?? null;
+
+        setLevelMeta(meta);
+
         // Handle null when no more levels are available
-        if (data === null) {
+        if (!payload || !payload.level) {
           setCurrentLevel(null);
           setGameState(prev => ({
             ...prev,
@@ -43,14 +49,14 @@ export const GameProvider = ({ children }) => {
             completedWords: [],
           }));
         } else {
-          setCurrentLevel(data.level);
+          setCurrentLevel(payload.level);
           setGameState(prev => ({
             ...prev,
             selectedNodes: [],
             selectionPreview: '',
             currentWord: '',
             completedWords: Array.from(
-              new Set((data.completedWords ?? []).filter(Boolean))
+              new Set((payload.completedWords ?? []).filter(Boolean))
             ),
           }));
         }
@@ -216,6 +222,7 @@ export const GameProvider = ({ children }) => {
   const value = {
     currentLevel,
     gameState,
+    levelMeta,
     levelLoading,
     isCompletingWord: completeWordMutation.isLoading,
     isAutoSolving: autoSolveMutation.isLoading,
