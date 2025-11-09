@@ -38,6 +38,16 @@ api.interceptors.response.use(
 );
 
 export const gameService = {
+  // Get the first level (public)
+  async getFirstLevel() {
+    try {
+      const response = await api.get('/game/level/1');
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to load the first level');
+    }
+  },
+
   // Get next level for user
   async getNextLevel() {
     try {

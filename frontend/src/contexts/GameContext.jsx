@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { gameService } from '../services/gameService';
 import { useAuth } from './AuthContext';
@@ -14,7 +14,7 @@ export const useGame = () => {
 };
 
 export const GameProvider = ({ children }) => {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
   const queryClient = useQueryClient();
   const [currentLevel, setCurrentLevel] = useState(null);
   const [levelMeta, setLevelMeta] = useState(null);
@@ -26,12 +26,28 @@ export const GameProvider = ({ children }) => {
     isConnecting: false,
   });
 
+  useEffect(() => {
+    if (authLoading) {
+      return;
+    }
+
+    setCurrentLevel(null);
+    setLevelMeta(null);
+    setGameState({
+      selectedNodes: [],
+      selectionPreview: '',
+      currentWord: '',
+      completedWords: [],
+      isConnecting: false,
+    });
+  }, [isAuthenticated, authLoading]);
+
   // Fetch next level
   const { isLoading: levelLoading } = useQuery(
     ['nextLevel', user?.id],
     () => gameService.getNextLevel(),
     {
-      enabled: isAuthenticated,
+      enabled: !authLoading && isAuthenticated,
       onSuccess: (response) => {
         const payload = response?.data ?? null;
         const meta = response?.meta ?? null;
@@ -63,6 +79,56 @@ export const GameProvider = ({ children }) => {
       },
     }
   );
+
+  const { isLoading: guestLevelLoading } = useQuery(
+    ['guestLevel'],
+    () => gameService.getFirstLevel(),
+    {
+      enabled: !authLoading && !isAuthenticated,
+      onSuccess: (response) => {
+        const level = response?.data ?? null;
+
+        if (!level) {
+          setCurrentLevel(null);
+          setLevelMeta({
+            status: 'guest_level_unavailable',
+            guest: true,
+          });
+          setGameState(prev => ({
+            ...prev,
+            selectedNodes: [],
+            selectionPreview: '',
+            currentWord: '',
+            completedWords: [],
+          }));
+          return;
+        }
+
+        setCurrentLevel(level);
+        setLevelMeta({
+          status: 'guest_level',
+          guest: true,
+          guestCompleted: false,
+        });
+        setGameState(prev => ({
+          ...prev,
+          selectedNodes: [],
+          selectionPreview: '',
+          currentWord: '',
+          completedWords: [],
+        }));
+      },
+      onError: () => {
+        setCurrentLevel(null);
+        setLevelMeta({
+          status: 'guest_level_error',
+          guest: true,
+        });
+      },
+    }
+  );
+
+  const combinedLevelLoading = authLoading || (isAuthenticated ? levelLoading : guestLevelLoading);
 
   // Complete word mutation
   const completeWordMutation = useMutation(
@@ -198,6 +264,57 @@ export const GameProvider = ({ children }) => {
     const wordToSubmit = word || gameState.currentWord;
     if (!wordToSubmit || !currentLevel) return null;
 
+    const normalizedWord = wordToSubmit.toUpperCase();
+
+    if (!isAuthenticated) {
+      const availableWords = (currentLevel.words || []).map(item =>
+        (typeof item === 'string' ? item : item?.text || '').toUpperCase()
+      );
+
+      if (!availableWords.includes(normalizedWord)) {
+        clearSelection();
+        throw new Error('این کلمه توی این مرحله نیست');
+      }
+
+      let updatedCompletedWords = [];
+
+      setGameState(prev => {
+        const updated = Array.from(new Set([...prev.completedWords, normalizedWord]));
+        updatedCompletedWords = updated;
+
+        return {
+          ...prev,
+          selectedNodes: [],
+          selectionPreview: '',
+          currentWord: '',
+          completedWords: updated,
+        };
+      });
+
+      const totalWords = currentLevel.words?.length ?? 0;
+      const completedAll = totalWords > 0 && updatedCompletedWords.length >= totalWords;
+
+      setLevelMeta(prev => {
+        const baseMeta = prev && prev.guest
+          ? prev
+          : { status: 'guest_level', guest: true };
+
+        return {
+          ...baseMeta,
+          guestCompleted: completedAll,
+        };
+      });
+
+      return {
+        success: true,
+        data: {
+          word: { text: normalizedWord },
+          levelCompleted: completedAll,
+        },
+        meta: { guest: true },
+      };
+    }
+
     try {
       const result = await completeWordMutation.mutateAsync({
         word: wordToSubmit,
@@ -213,7 +330,11 @@ export const GameProvider = ({ children }) => {
 
   const autoSolve = async () => {
     if (!currentLevel) return;
-    
+
+    if (!isAuthenticated) {
+      throw new Error('برای استفاده از پاور آپ‌ها باید وارد حساب کاربری شوی');
+    }
+
     await autoSolveMutation.mutateAsync({
       levelId: currentLevel._id,
     });
@@ -223,9 +344,10 @@ export const GameProvider = ({ children }) => {
     currentLevel,
     gameState,
     levelMeta,
-    levelLoading,
+    levelLoading: combinedLevelLoading,
     isCompletingWord: completeWordMutation.isLoading,
     isAutoSolving: autoSolveMutation.isLoading,
+    isGuestMode: !isAuthenticated,
 
     // Actions
     selectLetter,
