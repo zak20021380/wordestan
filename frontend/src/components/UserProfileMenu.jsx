@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   User as UserIcon,
   Loader2,
-  LogOut,
   Pencil,
   Mail,
   CalendarDays,
@@ -53,7 +52,7 @@ const formatDate = (value, withTime = false) => {
 };
 
 const UserProfileMenu = () => {
-  const { user, updateUser, logout } = useAuth();
+  const { user, updateUser } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -224,19 +223,13 @@ const UserProfileMenu = () => {
     }
   };
 
-  const handleLogout = () => {
-    logout();
-    setIsOpen(false);
-    setIsEditing(false);
-  };
-
   const activeProfile = profile || user;
 
   return (
     <div className="relative" ref={containerRef}>
       <button
         onClick={handleToggle}
-        className="flex items-center space-x-2 space-x-reverse text-white hover:bg-glass-hover px-4 py-2 rounded-xl transition-all hover:shadow-[0_0_15px_rgba(168,85,247,0.2)] border border-transparent hover:border-primary-500/30"
+        className="flex items-center space-x-2 space-x-reverse text-white px-4 py-2 rounded-xl transition-colors bg-slate-800/80 hover:bg-slate-700 border border-slate-700"
         type="button"
       >
         <UserIcon className="w-5 h-5" />
@@ -250,32 +243,31 @@ const UserProfileMenu = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.2 }}
-            className="fixed sm:absolute left-0 sm:left-auto sm:right-0 top-16 sm:top-auto mt-0 sm:mt-3 w-full sm:w-[360px] md:w-[420px] max-w-[95vw] bg-gradient-to-br from-gray-900/95 via-purple-900/90 to-gray-900/95 backdrop-blur-xl border border-primary-500/30 rounded-none sm:rounded-2xl shadow-[0_20px_60px_rgba(168,85,247,0.4),0_0_100px_rgba(217,70,239,0.2)] overflow-hidden z-50"
+            className="fixed sm:absolute left-0 sm:left-auto sm:right-0 top-16 sm:top-auto mt-0 sm:mt-3 w-full sm:w-[360px] md:w-[420px] max-w-[95vw] bg-slate-900 border border-slate-700 rounded-none sm:rounded-2xl shadow-xl overflow-hidden z-50"
           >
-            <div className="px-5 py-5 border-b border-primary-500/20 bg-gradient-to-br from-primary-500/20 via-secondary-500/15 to-accent-500/10 relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-r from-primary-500/10 to-secondary-500/10 animate-pulse-glow-purple"></div>
-              <div className="relative flex items-start justify-between gap-3">
+            <div className="px-5 py-5 border-b border-slate-700 bg-slate-800">
+              <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-xl font-bold text-white drop-shadow-[0_0_10px_rgba(168,85,247,0.5)]">{activeProfile?.username || 'کاربر'}</p>
+                  <p className="text-xl font-bold text-white">{activeProfile?.username || 'کاربر'}</p>
                   <p className="text-sm text-white/70 flex items-center gap-2 mt-2">
-                    <Mail className="w-4 h-4 text-accent-400 drop-shadow-[0_0_8px_rgba(6,182,212,0.5)]" />
+                    <Mail className="w-4 h-4 text-accent-400" />
                     {activeProfile?.email || 'ایمیل ثبت نشده'}
                   </p>
                 </div>
                 <div className="text-right">
                   <p className="text-xs text-white/70 flex items-center gap-1 justify-end">
-                    <CalendarDays className="w-4 h-4 text-secondary-400 drop-shadow-[0_0_8px_rgba(217,70,239,0.5)]" />
+                    <CalendarDays className="w-4 h-4 text-secondary-400" />
                     عضو از {formatDate(activeProfile?.createdAt)}
                   </p>
                   <p className="text-xs text-white/70 flex items-center gap-1 justify-end mt-1">
-                    <History className="w-4 h-4 text-secondary-400 drop-shadow-[0_0_8px_rgba(217,70,239,0.5)]" />
+                    <History className="w-4 h-4 text-secondary-400" />
                     آخرین فعالیت: {formatDate(activeProfile?.lastActive, true)}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="px-5 py-4 space-y-4 max-h-[calc(100vh-200px)] sm:max-h-[600px] overflow-y-auto">
+            <div className="px-5 py-4 space-y-4 max-h-[calc(100vh-200px)] sm:max-h-[600px] overflow-y-auto bg-slate-900">
               <div>
                 <h4 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
                   <Trophy className="w-5 h-5 text-primary-400" />
@@ -285,13 +277,13 @@ const UserProfileMenu = () => {
                   {stats.map(({ label, value, icon: IconComponent }) => (
                     <div
                       key={label}
-                      className="bg-gradient-to-br from-primary-500/10 via-secondary-500/5 to-accent-500/10 border border-primary-500/20 rounded-xl px-3 py-3 flex items-center gap-2 hover:border-primary-500/40 hover:shadow-[0_0_20px_rgba(168,85,247,0.3)] transition-all group"
+                      className="bg-slate-800 border border-slate-700 rounded-xl px-3 py-3 flex items-center gap-2 hover:border-primary-500/40 transition-colors"
                     >
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500/20 to-secondary-500/20 border border-primary-400/30 flex items-center justify-center group-hover:shadow-[0_0_15px_rgba(168,85,247,0.5)] transition-all">
-                        <IconComponent className="w-5 h-5 text-primary-300 drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]" />
+                      <div className="w-10 h-10 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center">
+                        <IconComponent className="w-5 h-5 text-primary-300" />
                       </div>
                       <div>
-                        <p className="text-lg font-bold text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]">{value}</p>
+                        <p className="text-lg font-bold text-white">{value}</p>
                         <p className="text-xs text-white/70">{label}</p>
                       </div>
                     </div>
@@ -310,13 +302,13 @@ const UserProfileMenu = () => {
 
                 {isLoading ? (
                   <div className="flex items-center justify-center py-6">
-                    <Loader2 className="w-8 h-8 text-primary-400 animate-spin drop-shadow-[0_0_15px_rgba(168,85,247,0.8)]" />
+                    <Loader2 className="w-8 h-8 text-primary-400 animate-spin" />
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    <div className="bg-gradient-to-r from-secondary-500/10 to-accent-500/10 border border-secondary-500/20 rounded-xl px-4 py-3 flex items-center gap-3 hover:border-secondary-500/40 hover:shadow-[0_0_20px_rgba(217,70,239,0.3)] transition-all">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-secondary-500/20 to-accent-500/20 border border-secondary-400/30 flex items-center justify-center">
-                        <History className="w-5 h-5 text-secondary-300 drop-shadow-[0_0_8px_rgba(217,70,239,0.5)]" />
+                    <div className="bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center">
+                        <History className="w-5 h-5 text-secondary-300" />
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-white">آخرین بازی</p>
@@ -324,9 +316,9 @@ const UserProfileMenu = () => {
                       </div>
                     </div>
 
-                    <div className="bg-gradient-to-br from-accent-500/10 to-primary-500/10 border border-accent-500/20 rounded-xl px-4 py-3">
+                    <div className="bg-slate-800 border border-slate-700 rounded-xl px-4 py-3">
                       <p className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-                        <ListChecks className="w-5 h-5 text-accent-300 drop-shadow-[0_0_8px_rgba(6,182,212,0.5)]" />
+                        <ListChecks className="w-5 h-5 text-accent-300" />
                         لیست مراحل تکمیل‌شده
                       </p>
                       {completedLevels.length > 0 ? (
@@ -334,7 +326,7 @@ const UserProfileMenu = () => {
                           {completedLevels.map((level, index) => (
                             <li
                               key={level.id}
-                              className="flex items-center justify-between text-xs text-white/80 bg-gradient-to-r from-primary-500/10 to-secondary-500/10 border border-primary-400/20 rounded-lg px-3 py-2 hover:border-primary-400/40 hover:shadow-[0_0_15px_rgba(168,85,247,0.3)] transition-all"
+                              className="flex items-center justify-between text-xs text-white/80 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2"
                             >
                               <span className="font-bold">مرحله {level.order ?? index + 1}</span>
                               {level.letters ? (
@@ -364,7 +356,7 @@ const UserProfileMenu = () => {
                         type="text"
                         value={formState.username}
                         onChange={handleChange}
-                        className="w-full bg-gradient-to-r from-primary-500/10 to-secondary-500/10 border border-primary-400/30 rounded-lg px-4 py-2.5 text-sm text-white placeholder-white/40 focus:outline-none focus:border-primary-400/60 focus:shadow-[0_0_20px_rgba(168,85,247,0.4)] transition-all"
+                        className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white placeholder-white/40 focus:outline-none focus:border-primary-400/60 focus:ring-1 focus:ring-primary-400/60"
                       />
                     </div>
 
@@ -378,7 +370,7 @@ const UserProfileMenu = () => {
                         type="email"
                         value={formState.email}
                         onChange={handleChange}
-                        className="w-full bg-gradient-to-r from-secondary-500/10 to-accent-500/10 border border-secondary-400/30 rounded-lg px-4 py-2.5 text-sm text-white placeholder-white/40 focus:outline-none focus:border-secondary-400/60 focus:shadow-[0_0_20px_rgba(217,70,239,0.4)] transition-all"
+                        className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white placeholder-white/40 focus:outline-none focus:border-secondary-400/60 focus:ring-1 focus:ring-secondary-400/60"
                       />
                     </div>
 
@@ -392,14 +384,14 @@ const UserProfileMenu = () => {
                             email: activeProfile?.email || ''
                           });
                         }}
-                        className="px-5 py-2.5 rounded-lg text-sm font-semibold text-white/80 hover:text-white hover:bg-white/10 border border-white/20 hover:border-white/30 transition-all"
+                        className="px-5 py-2.5 rounded-lg text-sm font-semibold text-white/80 hover:text-white hover:bg-slate-800 border border-slate-700"
                       >
                         انصراف
                       </button>
                       <button
                         type="submit"
                         disabled={isSaving}
-                        className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-primary-500 to-secondary-500 text-sm font-bold text-white shadow-[0_0_20px_rgba(168,85,247,0.5)] hover:shadow-[0_0_30px_rgba(168,85,247,0.7)] hover:scale-105 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all"
+                        className="px-5 py-2.5 rounded-lg bg-primary-600 text-sm font-bold text-white hover:bg-primary-500 disabled:opacity-60 disabled:cursor-not-allowed"
                       >
                         {isSaving ? 'در حال ذخیره...' : 'ذخیره تغییرات'}
                       </button>
@@ -410,18 +402,10 @@ const UserProfileMenu = () => {
                     <button
                       type="button"
                       onClick={() => setIsEditing(true)}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-primary-500/20 to-secondary-500/20 border border-primary-400/30 text-sm font-bold text-white hover:border-primary-400/50 hover:shadow-[0_0_20px_rgba(168,85,247,0.4)] hover:scale-105 transition-all"
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-sm font-bold text-white hover:border-primary-400/40 hover:bg-slate-700"
                     >
                       <Pencil className="w-4 h-4" />
                       ویرایش پروفایل
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleLogout}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-red-500/20 to-pink-500/20 border border-red-400/40 text-sm font-bold text-red-200 hover:border-red-400/60 hover:shadow-[0_0_20px_rgba(239,68,68,0.4)] hover:scale-105 transition-all"
-                    >
-                      <LogOut className="w-4 h-4" />
-                      خروج
                     </button>
                   </div>
                 )}
