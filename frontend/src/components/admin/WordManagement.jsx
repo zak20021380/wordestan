@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Plus, Search, Edit, Trash2, Type } from 'lucide-react';
 import { adminService } from '../../services/adminService';
 
 const WordManagement = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [words, setWords] = useState([]);
@@ -38,6 +41,13 @@ const WordManagement = () => {
       isMounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (location.state?.openCreate) {
+      setShowModal(true);
+      navigate(location.pathname, { replace: true });
+    }
+  }, [location, navigate]);
 
   const filteredWords = useMemo(() => {
     if (!searchTerm.trim()) {

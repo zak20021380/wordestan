@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Plus, Trash2, Layers, CheckCircle } from 'lucide-react';
 import { adminService } from '../../services/adminService';
 
 const LevelManagement = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [levels, setLevels] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -17,6 +20,13 @@ const LevelManagement = () => {
   useEffect(() => {
     fetchLevels();
   }, []);
+
+  useEffect(() => {
+    if (location.state?.openCreate) {
+      setShowModal(true);
+      navigate(location.pathname, { replace: true });
+    }
+  }, [location, navigate]);
 
   const fetchLevels = async () => {
     try {

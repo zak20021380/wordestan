@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { Routes, Route, Link, useLocation } from 'react-router-dom';
+import { Link, Outlet, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -8,16 +7,10 @@ import {
   Layers,
   ShoppingCart,
   Settings,
-  BarChart3,
-  Users,
-  Gamepad2
+  Users
 } from 'lucide-react';
 
 // Admin Components
-import AdminDashboard from '../components/admin/AdminDashboard';
-import WordManagement from '../components/admin/WordManagement';
-import LevelManagement from '../components/admin/LevelManagement';
-import CoinPackManagement from '../components/admin/CoinPackManagement';
 
 const Admin = () => {
   const location = useLocation();
@@ -27,32 +20,31 @@ const Admin = () => {
     {
       name: 'Dashboard',
       href: '/admin',
-      icon: LayoutDashboard,
-      component: AdminDashboard
+      icon: LayoutDashboard
     },
     {
       name: 'Words',
       href: '/admin/words',
-      icon: BookOpen,
-      component: WordManagement
+      icon: BookOpen
     },
     {
       name: 'Levels',
       href: '/admin/levels',
-      icon: Layers,
-      component: LevelManagement
+      icon: Layers
     },
     {
       name: 'Coin Packs',
       href: '/admin/coin-packs',
-      icon: ShoppingCart,
-      component: CoinPackManagement
+      icon: ShoppingCart
+    },
+    {
+      name: 'Users',
+      href: '/admin/users',
+      icon: Users
     }
   ];
 
   const isActive = (path) => location.pathname === path;
-
-  const CurrentComponent = adminNav.find(nav => nav.href === location.pathname)?.component || AdminDashboard;
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -112,7 +104,7 @@ const Admin = () => {
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3 }}
           >
-            <CurrentComponent />
+            <Outlet />
           </motion.div>
         </div>
       </div>
