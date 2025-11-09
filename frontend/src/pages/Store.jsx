@@ -96,7 +96,7 @@ const Store = () => {
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
               transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-              className="relative w-full max-w-md bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-2 border-primary-500/30 rounded-3xl shadow-2xl shadow-primary-500/20 overflow-hidden"
+              className="relative w-full max-w-md mx-4 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-2 border-primary-500/30 rounded-2xl sm:rounded-3xl shadow-2xl shadow-primary-500/20 overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Decorative gradient overlay */}
@@ -114,25 +114,25 @@ const Store = () => {
               <button
                 onClick={handleCloseModal}
                 disabled={paymentMutation.isLoading}
-                className="absolute top-4 left-4 z-10 w-10 h-10 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-white/60 hover:text-white border border-white/10 hover:border-white/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="absolute top-3 left-3 sm:top-4 sm:left-4 z-10 w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-white/60 hover:text-white border border-white/10 hover:border-white/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label="بستن"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
 
-              <div className="relative p-8">
+              <div className="relative p-4 sm:p-6 md:p-8">
                 {/* Header with icon */}
-                <div className="text-center mb-8">
+                <div className="text-center mb-4 sm:mb-6 md:mb-8">
                   <motion.div
                     initial={{ scale: 0, rotate: -180 }}
                     animate={{ scale: 1, rotate: 0 }}
                     transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-                    className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center shadow-lg shadow-primary-500/50"
+                    className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 mx-auto mb-3 sm:mb-4 rounded-full bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center shadow-lg shadow-primary-500/50"
                   >
-                    <ShoppingCart className="w-8 h-8 text-white" />
+                    <ShoppingCart className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-white" />
                   </motion.div>
-                  <h2 className="text-3xl font-bold text-white mb-2">تایید خرید</h2>
-                  <p className="text-white/60 text-sm">مشخصات بسته خریداری شده را بررسی کنید</p>
+                  <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-1 sm:mb-2">تایید خرید</h2>
+                  <p className="text-white/60 text-xs sm:text-sm">مشخصات بسته خریداری شده را بررسی کنید</p>
                 </div>
 
                 {/* Pack Details Card */}
@@ -140,48 +140,48 @@ const Store = () => {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 }}
-                  className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl rounded-2xl border border-white/10 p-6 mb-6 shadow-xl"
+                  className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl rounded-xl sm:rounded-2xl border border-white/10 p-3 sm:p-4 md:p-6 mb-4 sm:mb-5 md:mb-6 shadow-xl"
                 >
                   {/* Pack header with badge */}
-                  <div className="flex items-start justify-between mb-5 pb-4 border-b border-white/10">
+                  <div className="flex items-start justify-between mb-3 sm:mb-4 md:mb-5 pb-3 sm:pb-4 border-b border-white/10">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="text-2xl font-bold text-white">{selectedPack.name}</h3>
+                      <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
+                        <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-white">{selectedPack.name}</h3>
                         {selectedPack.featured && (
-                          <span className="bg-gradient-to-r from-primary-500 to-secondary-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                          <span className="bg-gradient-to-r from-primary-500 to-secondary-500 text-white text-xs font-bold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full whitespace-nowrap">
                             ویژه
                           </span>
                         )}
                       </div>
                       {selectedPack.description && (
-                        <p className="text-white/70 text-sm leading-relaxed">{selectedPack.description}</p>
+                        <p className="text-white/70 text-xs sm:text-sm leading-relaxed">{selectedPack.description}</p>
                       )}
                     </div>
                   </div>
 
                   {/* Coins breakdown */}
-                  <div className="space-y-3 mb-5">
-                    <div className="flex items-center justify-between p-3 rounded-xl bg-accent-500/10 border border-accent-500/20">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-accent-500/20 flex items-center justify-center">
-                          <Coins className="w-5 h-5 text-accent-400" />
+                  <div className="space-y-2 sm:space-y-3 mb-3 sm:mb-4 md:mb-5">
+                    <div className="flex items-center justify-between p-2 sm:p-2.5 md:p-3 rounded-lg sm:rounded-xl bg-accent-500/10 border border-accent-500/20">
+                      <div className="flex items-center gap-2 sm:gap-2.5 md:gap-3">
+                        <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full bg-accent-500/20 flex items-center justify-center shrink-0">
+                          <Coins className="w-4 h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5 text-accent-400" />
                         </div>
                         <div>
                           <div className="text-white/80 text-xs font-medium">سکه اصلی</div>
-                          <div className="text-white font-bold text-lg">{(selectedPack.coins ?? 0).toLocaleString()}</div>
+                          <div className="text-white font-bold text-base sm:text-lg">{(selectedPack.coins ?? 0).toLocaleString()}</div>
                         </div>
                       </div>
                     </div>
 
                     {(selectedPack.bonusCoins ?? 0) > 0 && (
-                      <div className="flex items-center justify-between p-3 rounded-xl bg-green-500/10 border border-green-500/20">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
-                            <Sparkles className="w-5 h-5 text-green-400" />
+                      <div className="flex items-center justify-between p-2 sm:p-2.5 md:p-3 rounded-lg sm:rounded-xl bg-green-500/10 border border-green-500/20">
+                        <div className="flex items-center gap-2 sm:gap-2.5 md:gap-3">
+                          <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full bg-green-500/20 flex items-center justify-center shrink-0">
+                            <Sparkles className="w-4 h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5 text-green-400" />
                           </div>
                           <div>
                             <div className="text-white/80 text-xs font-medium">سکه جایزه</div>
-                            <div className="text-green-400 font-bold text-lg">+{(selectedPack.bonusCoins ?? 0).toLocaleString()}</div>
+                            <div className="text-green-400 font-bold text-base sm:text-lg">+{(selectedPack.bonusCoins ?? 0).toLocaleString()}</div>
                           </div>
                         </div>
                       </div>
@@ -189,17 +189,17 @@ const Store = () => {
                   </div>
 
                   {/* Total coins highlight */}
-                  <div className="bg-gradient-to-r from-primary-500/20 via-secondary-500/20 to-primary-500/20 rounded-xl p-4 border border-primary-500/30">
+                  <div className="bg-gradient-to-r from-primary-500/20 via-secondary-500/20 to-primary-500/20 rounded-lg sm:rounded-xl p-3 sm:p-3.5 md:p-4 border border-primary-500/30">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center shadow-lg">
-                          <CheckCircle className="w-6 h-6 text-white" />
+                      <div className="flex items-center gap-2 sm:gap-2.5 md:gap-3">
+                        <div className="w-10 h-10 sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center shadow-lg shrink-0">
+                          <CheckCircle className="w-5 h-5 sm:w-5.5 sm:h-5.5 md:w-6 md:h-6 text-white" />
                         </div>
                         <div>
-                          <div className="text-white/90 text-sm font-medium">جمع کل دریافتی</div>
-                          <div className="text-white font-bold text-2xl">
+                          <div className="text-white/90 text-xs sm:text-sm font-medium">جمع کل دریافتی</div>
+                          <div className="text-white font-bold text-lg sm:text-xl md:text-2xl">
                             {(selectedPack.totalCoins ?? ((selectedPack.coins ?? 0) + (selectedPack.bonusCoins ?? 0))).toLocaleString()}
-                            <span className="text-base text-white/80 mr-1">سکه</span>
+                            <span className="text-sm sm:text-base text-white/80 mr-1">سکه</span>
                           </div>
                         </div>
                       </div>
@@ -207,11 +207,11 @@ const Store = () => {
                   </div>
 
                   {/* Price section */}
-                  <div className="mt-5 pt-5 border-t border-white/10">
+                  <div className="mt-3 sm:mt-4 md:mt-5 pt-3 sm:pt-4 md:pt-5 border-t border-white/10">
                     <div className="flex items-center justify-between">
-                      <span className="text-white/80 font-medium">مبلغ قابل پرداخت:</span>
+                      <span className="text-white/80 font-medium text-sm sm:text-base">مبلغ قابل پرداخت:</span>
                       <div className="text-left">
-                        <div className="text-2xl font-bold bg-gradient-to-r from-accent-400 to-accent-300 bg-clip-text text-transparent">
+                        <div className="text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-accent-400 to-accent-300 bg-clip-text text-transparent">
                           {formatToman(selectedPack.price)}
                         </div>
                         <div className="text-white/50 text-xs">تومان</div>
@@ -225,25 +225,25 @@ const Store = () => {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4 }}
-                  className="space-y-3"
+                  className="space-y-2 sm:space-y-2.5 md:space-y-3"
                 >
                   <button
                     onClick={handleConfirmPurchase}
                     disabled={paymentMutation.isLoading}
-                    className="group w-full relative overflow-hidden flex items-center justify-center gap-2 bg-gradient-to-r from-primary-500 via-secondary-500 to-primary-500 hover:from-primary-600 hover:via-secondary-600 hover:to-primary-600 disabled:from-gray-600 disabled:via-gray-700 disabled:to-gray-600 disabled:cursor-not-allowed text-white font-bold py-4 px-6 rounded-xl shadow-lg shadow-primary-500/40 hover:shadow-xl hover:shadow-primary-500/60 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] disabled:transform-none disabled:shadow-none"
+                    className="group w-full relative overflow-hidden flex items-center justify-center gap-1.5 sm:gap-2 bg-gradient-to-r from-primary-500 via-secondary-500 to-primary-500 hover:from-primary-600 hover:via-secondary-600 hover:to-primary-600 disabled:from-gray-600 disabled:via-gray-700 disabled:to-gray-600 disabled:cursor-not-allowed text-white font-bold py-3 sm:py-3.5 md:py-4 px-4 sm:px-5 md:px-6 rounded-lg sm:rounded-xl shadow-lg shadow-primary-500/40 hover:shadow-xl hover:shadow-primary-500/60 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] disabled:transform-none disabled:shadow-none"
                   >
                     {/* Button shine effect */}
                     <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
 
                     {paymentMutation.isLoading ? (
                       <>
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        <span>در حال اتصال به درگاه پرداخت...</span>
+                        <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
+                        <span className="text-sm sm:text-base">در حال اتصال به درگاه پرداخت...</span>
                       </>
                     ) : (
                       <>
-                        <span className="text-lg">تایید و پرداخت</span>
-                        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                        <span className="text-base sm:text-lg">تایید و پرداخت</span>
+                        <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform" />
                       </>
                     )}
                   </button>
@@ -251,7 +251,7 @@ const Store = () => {
                   <button
                     onClick={handleCloseModal}
                     disabled={paymentMutation.isLoading}
-                    className="w-full py-3.5 px-6 rounded-xl border-2 border-white/20 hover:border-white/40 bg-white/5 hover:bg-white/10 text-white/90 hover:text-white font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full py-2.5 sm:py-3 md:py-3.5 px-4 sm:px-5 md:px-6 rounded-lg sm:rounded-xl border-2 border-white/20 hover:border-white/40 bg-white/5 hover:bg-white/10 text-white/90 hover:text-white font-semibold text-sm sm:text-base transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     انصراف
                   </button>
@@ -262,10 +262,10 @@ const Store = () => {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.5 }}
-                  className="mt-5 text-center text-white/50 text-xs"
+                  className="mt-3 sm:mt-4 md:mt-5 text-center text-white/50 text-xs"
                 >
-                  <div className="flex items-center justify-center gap-2">
-                    <CheckCircle className="w-4 h-4" />
+                  <div className="flex items-center justify-center gap-1.5 sm:gap-2">
+                    <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
                     <span>پرداخت از طریق درگاه امن زرین‌پال</span>
                   </div>
                 </motion.div>
