@@ -188,12 +188,13 @@ export const GameProvider = ({ children }) => {
     }));
   };
 
-  const submitWord = async () => {
-    if (!gameState.currentWord || !currentLevel) return null;
+  const submitWord = async (wordToSubmit) => {
+    const word = wordToSubmit || gameState.currentWord;
+    if (!word || !currentLevel) return null;
 
     try {
       const result = await completeWordMutation.mutateAsync({
-        word: gameState.currentWord,
+        word,
         levelId: currentLevel._id,
       });
 

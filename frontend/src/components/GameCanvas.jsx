@@ -10,6 +10,8 @@ const GameCanvas = () => {
     clearSelection,
     setCurrentWord,
     finalizeWordSelection,
+    submitWord,
+    isCompletingWord,
   } = useGame();
   const canvasRef = useRef(null);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -18,6 +20,10 @@ const GameCanvas = () => {
   const [canvasSize, setCanvasSize] = useState({ width: 400, height: 400 });
   const [feedback, setFeedback] = useState(null);
   const feedbackTimeoutRef = useRef(null);
+  const [isShaking, setIsShaking] = useState(false);
+  const shakeTimeoutRef = useRef(null);
+  const submissionLockRef = useRef(false);
+  const submissionUnlockTimeoutRef = useRef(null);
 
   const showFeedback = useCallback((type, message) => {
     if (feedbackTimeoutRef.current) {
@@ -34,9 +40,27 @@ const GameCanvas = () => {
     feedbackTimeoutRef.current = timeout;
   }, []);
 
+  const triggerShake = useCallback(() => {
+    if (shakeTimeoutRef.current) {
+      clearTimeout(shakeTimeoutRef.current);
+    }
+
+    setIsShaking(true);
+    shakeTimeoutRef.current = setTimeout(() => {
+      setIsShaking(false);
+      shakeTimeoutRef.current = null;
+    }, 450);
+  }, []);
+
   useEffect(() => () => {
     if (feedbackTimeoutRef.current) {
       clearTimeout(feedbackTimeoutRef.current);
+    }
+    if (shakeTimeoutRef.current) {
+      clearTimeout(shakeTimeoutRef.current);
+    }
+    if (submissionUnlockTimeoutRef.current) {
+      clearTimeout(submissionUnlockTimeoutRef.current);
     }
   }, []);
 
@@ -174,12 +198,13 @@ const GameCanvas = () => {
     gameState.selectedNodes,
   ]);
 
-  const handleEnd = useCallback((event) => {
-    event.preventDefault();
-    const svg = canvasRef.current;
-    if (svg && 'pointerId' in event) {
-      try {
-        svg.releasePointerCapture(event.pointerId);
+  const handleEnd = useCallback(
+    async (event) => {
+      event.preventDefault();
+      const svg = canvasRef.current;
+      if (svg && 'pointerId' in event) {
+        try {
+          svg.releasePointerCapture(event.pointerId);
       } catch (err) {
         // Ignore release errors when pointer wasn't captured
       }
@@ -190,7 +215,13 @@ const GameCanvas = () => {
       const formedWord = gameState.selectionPreview;
 
       if (formedWord.length < 3) {
+        triggerShake();
         showFeedback('error', 'هوووم... کلمه باید حداقل سه حرف داشته باشه! 😅');
+        clearSelection();
+        return;
+      }
+
+      if (submissionLockRef.current || isCompletingWord) {
         clearSelection();
         return;
       }
@@ -201,28 +232,53 @@ const GameCanvas = () => {
       );
 
       if (alreadyCompleted) {
+        triggerShake();
         showFeedback('error', 'این یکی رو قبلاً شکار کردی! یک سراغ جدید پیدا کن ✨');
         clearSelection();
         return;
       }
 
       if (!levelWords.includes(normalized)) {
+        triggerShake();
         showFeedback('error', 'نه بابا! این کلمه تو لیست مرحله نیست، دوباره امتحان کن 🙈');
         clearSelection();
         return;
       }
 
-      finalizeWordSelection(formedWord);
-      showFeedback('success', 'هورا! کلمهٔ درست رو پیدا کردی! 🎉');
+      submissionLockRef.current = true;
+      finalizeWordSelection(normalized);
+
+      try {
+        const result = await submitWord(normalized);
+        showFeedback(
+          'success',
+          result?.message || 'هورا! کلمهٔ درست رو پیدا کردی! 🎉'
+        );
+      } catch (error) {
+        triggerShake();
+        showFeedback(
+          'error',
+          error?.message || 'اوه! یه مشکلی پیش اومد، دوباره امتحان کن 🙈'
+        );
+        clearSelection();
+      } finally {
+        submissionUnlockTimeoutRef.current = setTimeout(() => {
+          submissionLockRef.current = false;
+          submissionUnlockTimeoutRef.current = null;
+        }, 400);
+      }
     }
   }, [
     clearSelection,
+    finalizeWordSelection,
     gameState.completedWords,
     gameState.selectedNodes.length,
     gameState.selectionPreview,
+    isCompletingWord,
     levelWords,
-    finalizeWordSelection,
     showFeedback,
+    submitWord,
+    triggerShake,
   ]);
 
   const handleCancel = useCallback((event) => {
@@ -280,7 +336,16 @@ const GameCanvas = () => {
   }
 
   return (
-    <div className="relative w-full max-w-lg mx-auto">
+    <motion.div
+      className="relative w-full max-w-lg mx-auto"
+      animate={
+        isShaking
+          ? { x: [0, -10, 10, -6, 6, -3, 3, 0] }
+          : { x: 0 }
+      }
+      transition={{ duration: 0.45, ease: 'easeInOut' }}
+      initial={false}
+    >
       <AnimatePresence>
         {feedback && (
           <motion.div
@@ -460,7 +525,7 @@ const GameCanvas = () => {
           Clear
         </button>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
