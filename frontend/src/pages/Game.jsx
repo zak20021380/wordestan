@@ -1381,7 +1381,57 @@ const Game = () => {
               </button>
 
               <div className="flex flex-col gap-5 sm:gap-6">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+                <div className="sm:hidden space-y-4 text-right">
+                  <div className="flex items-start gap-3">
+                    <div className="shrink-0 p-3 rounded-xl bg-white/10 border border-white/15">
+                      <Milestone className={`w-7 h-7 ${transitionAccent?.icon ?? 'text-primary-200'}`} />
+                    </div>
+                    <div className="space-y-2">
+                      <div
+                        className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold ${
+                          transitionAccent
+                            ? `bg-gradient-to-r ${transitionAccent.chip} ${transitionAccent.chipText} ${transitionAccent.chipBorder}`
+                            : 'bg-white/10 border-white/20 text-primary-100'
+                        }`}
+                      >
+                        <Sparkles className="w-4 h-4" />
+                        <span>{transitionCopy.badge}</span>
+                      </div>
+                      <div className="space-y-1.5">
+                        <h3 className="text-lg font-bold text-white leading-snug">{transitionCopy.title}</h3>
+                        <p className="text-sm text-white/75 leading-relaxed">{transitionCopy.description}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    {transitionCopy.from !== null && (
+                      <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-right space-y-1">
+                        <p className="text-[11px] text-white/60">مرحله قبلی</p>
+                        <p className="text-base font-semibold text-white">{formatNumber(transitionCopy.from)}</p>
+                      </div>
+                    )}
+                    {transitionCopy.to !== null && (
+                      <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-right space-y-1">
+                        <p className="text-[11px] text-white/60">مرحله جدید</p>
+                        <p className="text-base font-semibold text-white">{formatNumber(transitionCopy.to)}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {transitionCopy.differenceSummary && (
+                    <div className="flex items-center justify-between rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-[11px] text-white/70">
+                      <span>{transitionCopy.differenceSummary}</span>
+                      {transitionCopy.isForward ? (
+                        <ArrowUpRight className="w-4 h-4 text-emerald-200" />
+                      ) : (
+                        <ArrowDownLeft className="w-4 h-4 text-cyan-200" />
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div className="hidden sm:flex sm:flex-row sm:items-start sm:gap-4">
                   <div className="flex items-start gap-3 sm:gap-4">
                     <div className="shrink-0 p-3 rounded-xl bg-white/10 border border-white/15">
                       <Milestone className={`w-8 h-8 sm:w-9 sm:h-9 ${transitionAccent?.icon ?? 'text-primary-200'}`} />
@@ -1431,7 +1481,7 @@ const Game = () => {
                 </div>
 
                 {(transitionCopy.from !== null || transitionCopy.to !== null || transitionCopy.differenceLabel) && (
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="hidden sm:grid sm:grid-cols-3 gap-3">
                     {transitionCopy.from !== null && (
                       <div className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-right space-y-1">
                         <p className="text-xs text-white/60">مرحله قبلی</p>
@@ -1460,7 +1510,7 @@ const Game = () => {
                 )}
 
                 {transitionCopy.userProgress && (
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="hidden sm:grid sm:grid-cols-3 gap-3">
                     <div className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-right space-y-1">
                       <p className="text-xs text-white/60">مرحله فعلی بازیکن</p>
                       <p className="text-lg font-semibold text-white">
@@ -1485,7 +1535,7 @@ const Game = () => {
                 )}
 
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-white/70">
-                  <p className="leading-relaxed text-white/70">
+                  <p className="leading-relaxed text-white/70 text-center sm:text-right">
                     {transitionCopy.type === 'completed'
                       ? 'امتیاز مرحله قبل برات ذخیره شد. برای مرحله جدید آماده‌ای؟'
                       : 'تغییر مرحله ذخیره شد. وقتشه ادامه بدی!'}
