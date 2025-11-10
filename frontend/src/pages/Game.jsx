@@ -1360,7 +1360,7 @@ const Game = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm px-3 py-6 sm:px-4 sm:py-10"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm px-3 py-5 sm:px-4 sm:py-10"
             onClick={clearLevelTransition}
           >
             <motion.div
@@ -1369,7 +1369,7 @@ const Game = () => {
               exit={{ scale: 0.94, opacity: 0 }}
               transition={{ type: 'spring', stiffness: 260, damping: 22 }}
               onClick={(event) => event.stopPropagation()}
-              className="relative w-full max-w-md sm:max-w-xl bg-slate-950/95 border border-white/10 rounded-2xl px-5 py-6 sm:px-7 sm:py-8 shadow-lg shadow-primary-900/30 text-right"
+              className="relative w-full max-w-sm sm:max-w-xl bg-slate-950/95 border border-white/10 rounded-2xl px-4 py-5 sm:px-7 sm:py-8 shadow-lg shadow-primary-900/30 text-right"
             >
               <button
                 type="button"
@@ -1381,52 +1381,52 @@ const Game = () => {
               </button>
 
               <div className="flex flex-col gap-5 sm:gap-6">
-                <div className="sm:hidden space-y-4 text-right">
-                  <div className="flex items-start gap-3">
-                    <div className="shrink-0 p-3 rounded-xl bg-white/10 border border-white/15">
-                      <Milestone className={`w-7 h-7 ${transitionAccent?.icon ?? 'text-primary-200'}`} />
+                <div className="sm:hidden space-y-4 text-center">
+                  <div className="flex flex-col items-center gap-3 text-white">
+                    <div className="p-2.5 rounded-xl bg-white/10 border border-white/15">
+                      <Milestone className={`w-6 h-6 ${transitionAccent?.icon ?? 'text-primary-200'}`} />
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-2 w-full">
                       <div
-                        className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold ${
+                        className={`inline-flex items-center justify-center gap-2 rounded-full border px-3 py-1 text-[10px] font-semibold ${
                           transitionAccent
-                            ? `bg-gradient-to-r ${transitionAccent.chip} ${transitionAccent.chipText} ${transitionAccent.chipBorder}`
-                            : 'bg-white/10 border-white/20 text-primary-100'
+                            ? `mx-auto bg-gradient-to-r ${transitionAccent.chip} ${transitionAccent.chipText} ${transitionAccent.chipBorder}`
+                            : 'mx-auto bg-white/10 border-white/20 text-primary-100'
                         }`}
                       >
-                        <Sparkles className="w-4 h-4" />
+                        <Sparkles className="w-3.5 h-3.5" />
                         <span>{transitionCopy.badge}</span>
                       </div>
-                      <div className="space-y-1.5">
-                        <h3 className="text-lg font-bold text-white leading-snug">{transitionCopy.title}</h3>
-                        <p className="text-sm text-white/75 leading-relaxed">{transitionCopy.description}</p>
+                      <div className="space-y-1.5 text-white/80">
+                        <h3 className="text-base font-bold leading-snug">{transitionCopy.title}</h3>
+                        <p className="text-xs leading-relaxed">{transitionCopy.description}</p>
                       </div>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-2 text-white/80">
                     {transitionCopy.from !== null && (
-                      <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-right space-y-1">
-                        <p className="text-[11px] text-white/60">مرحله قبلی</p>
-                        <p className="text-base font-semibold text-white">{formatNumber(transitionCopy.from)}</p>
+                      <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-[11px]">
+                        <p className="text-white/60">مرحله قبلی</p>
+                        <p className="text-sm font-semibold text-white">{formatNumber(transitionCopy.from)}</p>
                       </div>
                     )}
                     {transitionCopy.to !== null && (
-                      <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-right space-y-1">
-                        <p className="text-[11px] text-white/60">مرحله جدید</p>
-                        <p className="text-base font-semibold text-white">{formatNumber(transitionCopy.to)}</p>
+                      <div className="rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-[11px]">
+                        <p className="text-white/60">مرحله جدید</p>
+                        <p className="text-sm font-semibold text-white">{formatNumber(transitionCopy.to)}</p>
                       </div>
                     )}
                   </div>
 
                   {transitionCopy.differenceSummary && (
-                    <div className="flex items-center justify-between rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-[11px] text-white/70">
-                      <span>{transitionCopy.differenceSummary}</span>
+                    <div className="mx-auto flex w-full items-center justify-center gap-2 rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-[11px] text-white/70">
                       {transitionCopy.isForward ? (
                         <ArrowUpRight className="w-4 h-4 text-emerald-200" />
                       ) : (
                         <ArrowDownLeft className="w-4 h-4 text-cyan-200" />
                       )}
+                      <span>{transitionCopy.differenceSummary}</span>
                     </div>
                   )}
                 </div>
