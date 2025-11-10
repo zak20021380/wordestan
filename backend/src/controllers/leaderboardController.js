@@ -9,22 +9,31 @@ const getLeaderboard = async (req, res) => {
     const limitNum = Math.min(parseInt(limit), 100); // Max 100 results
     const offsetNum = parseInt(offset);
 
-    // Get top players by total score
-    const leaderboard = await User.find({ isAdmin: false })
-      .select('username totalScore levelsCleared wordsFound bestStreak createdAt')
-      .sort({ totalScore: -1, levelsCleared: -1, wordsFound: -1 })
-      .skip(offsetNum)
-      .limit(limitNum)
-      .lean();
+    // Aggregate top players by username and total score
+    const leaderboard = await User.aggregate([
+      { $match: { isAdmin: false } },
+      {
+        $group: {
+          _id: '$username',
+          totalScore: { $max: '$totalScore' }
+        }
+      },
+      { $sort: { totalScore: -1, _id: 1 } },
+      { $skip: offsetNum },
+      { $limit: limitNum }
+    ]);
 
-    // Add rank to each player
+    // Add rank to each player and format the response
     const rankedLeaderboard = leaderboard.map((player, index) => ({
-      ...player,
+      username: player._id,
+      totalScore: player.totalScore || 0,
       rank: offsetNum + index + 1
     }));
 
-    // Get total count for pagination
-    const totalCount = await User.countDocuments({ isAdmin: false });
+    // Get total count for pagination (distinct usernames)
+    const totalCount = (
+      await User.distinct('username', { isAdmin: false })
+    ).length;
 
     res.json({
       success: true,
