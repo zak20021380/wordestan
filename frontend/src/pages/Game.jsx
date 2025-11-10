@@ -42,6 +42,7 @@ const Game = () => {
     clearLevelTransition,
     autoSolveResult,
     clearAutoSolveResult,
+    levelCompletionStatus,
     loadNextLevel
   } = useGame();
   const { user, isAuthenticated, updateUser } = useAuth();
@@ -276,15 +277,16 @@ const Game = () => {
   }, [currentLevel?.words]);
 
   const hasCompletedAllWords = totalLevelWordCount > 0 && completedWordSet.size >= totalLevelWordCount;
+  const hasSyncedCompletion = Boolean(levelCompletionStatus?.completed);
   const hasAutoSolveCompletion = Boolean(autoSolveResult?.levelCompleted);
   const shouldShowCompletionPrompt =
-    showAutoSolvePrompt && (hasAutoSolveCompletion || hasCompletedAllWords);
+    showAutoSolvePrompt && (hasAutoSolveCompletion || hasCompletedAllWords || hasSyncedCompletion);
   const CompletionIcon = Trophy;
   const completionIconAccent = 'text-amber-200';
   const completionBadgeStyles = 'text-amber-200 border-amber-300/40 bg-amber-500/10';
   const completionBadgeCopy = 'مرحله تکمیل شد';
   const completionTitleCopy = '🏆 عالی کار! مرحله تموم شد!';
-  const completionDescriptionCopy = 'آماده‌ای برای چالش بعدی؟';
+  const completionDescriptionCopy = 'عالی کار دیگه چیه';
 
   const levelWordsByLength = useMemo(() => {
     if (!Array.isArray(currentLevel?.words) || currentLevel.words.length === 0) {
@@ -370,7 +372,7 @@ const Game = () => {
   useEffect(() => {
     if (!autoSolveResult) {
       setShowAutoSolveModal(false);
-      if (!hasCompletedAllWords) {
+      if (!hasCompletedAllWords && !hasSyncedCompletion) {
         setShowAutoSolvePrompt(false);
         setCompletionPromptContext(null);
       }
@@ -382,21 +384,21 @@ const Game = () => {
       setCompletionPromptContext('auto');
       setShowAutoSolvePrompt(true);
     }
-  }, [autoSolveResult, hasCompletedAllWords]);
+  }, [autoSolveResult, hasCompletedAllWords, hasSyncedCompletion]);
 
   useEffect(() => {
     if (hasAutoSolveCompletion) {
       return;
     }
 
-    if (hasCompletedAllWords) {
+    if (hasCompletedAllWords || hasSyncedCompletion) {
       setCompletionPromptContext((prev) => prev ?? 'manual');
       setShowAutoSolvePrompt(true);
     } else {
       setShowAutoSolvePrompt(false);
       setCompletionPromptContext(null);
     }
-  }, [hasCompletedAllWords, hasAutoSolveCompletion]);
+  }, [hasCompletedAllWords, hasAutoSolveCompletion, hasSyncedCompletion]);
 
   const handleCloseShuffleModal = useCallback(() => {
     if (isPurchasingShuffle) {
@@ -604,7 +606,7 @@ const Game = () => {
   };
 
   const handleNextLevel = useCallback(async () => {
-    const levelCompleted = hasAutoSolveCompletion || hasCompletedAllWords;
+    const levelCompleted = hasAutoSolveCompletion || hasCompletedAllWords || hasSyncedCompletion;
 
     if (!levelCompleted) {
       setShowAutoSolvePrompt(false);
@@ -633,6 +635,7 @@ const Game = () => {
     completionPromptContext,
     hasAutoSolveCompletion,
     hasCompletedAllWords,
+    hasSyncedCompletion,
     loadNextLevel,
   ]);
 
