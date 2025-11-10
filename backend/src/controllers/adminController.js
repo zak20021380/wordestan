@@ -3,6 +3,7 @@ const Level = require('../models/Level');
 const CoinPack = require('../models/CoinPack');
 const User = require('../models/User');
 const Purchase = require('../models/Purchase');
+const GameSetting = require('../models/GameSetting');
 const { validationResult } = require('express-validator');
 
 const parseBoolean = (value, defaultValue = false) => {
@@ -966,6 +967,90 @@ const getUsersWithStats = async (req, res) => {
   }
 };
 
+// Game settings
+// @desc    Get reward configuration for game actions
+// @route   GET /api/admin/settings/rewards
+// @access  Admin
+const getGameRewardSettings = async (req, res) => {
+  try {
+    let settings = await GameSetting.findOne()
+      .populate('updatedBy', 'username email')
+      .lean();
+
+    if (!settings) {
+      const defaultSettings = await GameSetting.create({});
+      settings = await GameSetting.findById(defaultSettings._id)
+        .populate('updatedBy', 'username email')
+        .lean();
+    }
+
+    res.json({
+      success: true,
+      data: settings
+    });
+  } catch (error) {
+    console.error('Get game reward settings error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error fetching reward settings'
+    });
+  }
+};
+
+// @desc    Update reward configuration for game actions
+// @route   PUT /api/admin/settings/rewards
+// @access  Admin
+const updateGameRewardSettings = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+    }
+
+    const {
+      skipLevelCoinsReward,
+      skipLevelPointsReward,
+      wordFoundCoinsReward,
+      wordFoundPointsReward
+    } = req.body;
+
+    const settings = await GameSetting.findOneAndUpdate(
+      {},
+      {
+        $set: {
+          skipLevelCoinsReward,
+          skipLevelPointsReward,
+          wordFoundCoinsReward,
+          wordFoundPointsReward,
+          updatedBy: req.user?._id || null
+        }
+      },
+      {
+        new: true,
+        upsert: true,
+        runValidators: true,
+        setDefaultsOnInsert: true
+      }
+    ).populate('updatedBy', 'username email');
+
+    res.json({
+      success: true,
+      message: 'Reward settings updated successfully',
+      data: settings
+    });
+  } catch (error) {
+    console.error('Update game reward settings error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error updating reward settings'
+    });
+  }
+};
+
 module.exports = {
   // Word management
   getWords,
@@ -989,5 +1074,9 @@ module.exports = {
   getDashboardStats,
 
   // Users
-  getUsersWithStats
+  getUsersWithStats,
+
+  // Game settings
+  getGameRewardSettings,
+  updateGameRewardSettings
 };

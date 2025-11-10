@@ -159,4 +159,23 @@ export const adminService = {
       throw new Error(error.response?.data?.message || 'Failed to get users');
     }
   },
+
+  // Game reward settings
+  async getRewardSettings() {
+    try {
+      const response = await api.get('/admin/settings/rewards');
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to get reward settings');
+    }
+  },
+
+  async updateRewardSettings(payload) {
+    try {
+      const response = await api.put('/admin/settings/rewards', payload);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to update reward settings');
+    }
+  }
 };

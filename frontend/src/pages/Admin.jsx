@@ -6,6 +6,7 @@ import {
   Layers,
   ShoppingCart,
   Settings,
+  Trophy,
   Users
 } from 'lucide-react';
 
@@ -30,6 +31,11 @@ const Admin = () => {
       name: 'Coin Packs',
       href: '/admin/coin-packs',
       icon: ShoppingCart
+    },
+    {
+      name: 'Reward Settings',
+      href: '/admin/settings/rewards',
+      icon: Trophy
     },
     {
       name: 'Users',
