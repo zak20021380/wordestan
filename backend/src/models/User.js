@@ -128,6 +128,24 @@ const userSchema = new mongoose.Schema({
   timestamps: true
 });
 
+userSchema.set('toJSON', {
+  transform: (doc, ret) => {
+    if (ret.password) {
+      delete ret.password;
+    }
+    return ret;
+  }
+});
+
+userSchema.set('toObject', {
+  transform: (doc, ret) => {
+    if (ret.password) {
+      delete ret.password;
+    }
+    return ret;
+  }
+});
+
 // Hash password before saving
 userSchema.pre('save', async function(next) {
   if (!this.isModified('password')) return next();

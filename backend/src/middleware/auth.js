@@ -14,7 +14,7 @@ const auth = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id).select('-password');
+    const user = await User.findById(decoded.id);
     
     if (!user) {
       return res.status(401).json({ 
@@ -62,7 +62,7 @@ const optionalAuth = async (req, res, next) => {
     
     if (token) {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      const user = await User.findById(decoded.id).select('-password');
+      const user = await User.findById(decoded.id);
       if (user) {
         req.user = user;
       }
