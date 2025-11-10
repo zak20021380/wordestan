@@ -98,11 +98,15 @@ const Leaderboard = () => {
                             : 'hover:bg-white/5'
                         }`}
                       >
-                        <div className="col-span-3 flex items-center justify-end gap-3 text-right sm:col-span-2">
-                          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-base font-bold text-white">
+                        <div className="col-span-3 flex justify-end sm:col-span-2">
+                          <div className="relative flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-base font-bold text-white">
                             {player.rank}
-                          </span>
-                          <span className="text-xl sm:text-2xl">{getMedal(player.rank)}</span>
+                            {getMedal(player.rank) && (
+                              <span className="absolute -top-1 -left-1 flex h-5 w-5 items-center justify-center rounded-full bg-white/90 text-xs">
+                                {getMedal(player.rank)}
+                              </span>
+                            )}
+                          </div>
                         </div>
 
                         <div className="col-span-5 text-right sm:col-span-6">
