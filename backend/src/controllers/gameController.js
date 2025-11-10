@@ -36,21 +36,32 @@ const getFirstLevel = async (req, res) => {
 const getNextLevel = async (req, res) => {
   try {
     const user = req.user;
-    
-    // Find the next unpublished level for the user
+
+    // First, check if user has completed their current level
+    const currentLevelData = await Level.findOne({
+      order: user.currentLevel,
+      isPublished: true
+    }).populate('words');
+
+    let targetOrder = user.currentLevel;
+
+    // If current level exists and is completed by user, look for next level
+    if (currentLevelData) {
+      const levelProgress = user.getLevelProgress(currentLevelData._id);
+      const isCurrentLevelComplete = levelProgress?.isComplete === true;
+
+      if (isCurrentLevelComplete) {
+        targetOrder = user.currentLevel + 1;
+      }
+    }
+
+    // Find the next level for the user
     const nextLevel = await Level.findOne({
-      order: { $gte: user.currentLevel },
+      order: targetOrder,
       isPublished: true
     })
       .populate('words', 'text length difficulty points meaning')
       .sort({ order: 1 });
-
-    const userProgress = {
-      currentLevel: user.currentLevel,
-      levelsCleared: user.levelsCleared,
-      coins: user.coins,
-      totalScore: user.totalScore
-    };
 
     if (!nextLevel) {
       const hasPublishedLevels = await Level.exists({ isPublished: true });
@@ -69,6 +80,13 @@ const getNextLevel = async (req, res) => {
         status = 'no_levels_for_new_user';
       }
 
+      const userProgress = {
+        currentLevel: user.currentLevel,
+        levelsCleared: user.levelsCleared,
+        coins: user.coins,
+        totalScore: user.totalScore
+      };
+
       return res.json({
         success: true,
         data: null,
@@ -80,8 +98,20 @@ const getNextLevel = async (req, res) => {
       });
     }
 
+    // If user is loading a level with higher order than current, advance them
+    if (nextLevel.order > user.currentLevel) {
+      await user.advanceToNextLevel();
+    }
+
     // Update user's last active
     await user.updateLastActive();
+
+    const userProgress = {
+      currentLevel: user.currentLevel,
+      levelsCleared: user.levelsCleared,
+      coins: user.coins,
+      totalScore: user.totalScore
+    };
 
     const levelObject = nextLevel.toObject({ getters: true });
 

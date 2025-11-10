@@ -143,7 +143,7 @@ userSchema.methods.completeLevel = function(levelId) {
   if (!progress.isComplete) {
     progress.isComplete = true;
     this.levelsCleared += 1;
-    this.currentLevel += 1;
+    // Don't increment currentLevel here - it will be incremented when user loads the next level
     this.totalScore += 100; // Level completion bonus
   }
 
@@ -166,6 +166,12 @@ userSchema.methods.completeLevel = function(levelId) {
     this.completedLevels.push(normalizedLevelId);
   }
 
+  return this.save();
+};
+
+// Advance to next level
+userSchema.methods.advanceToNextLevel = function() {
+  this.currentLevel += 1;
   return this.save();
 };
 
