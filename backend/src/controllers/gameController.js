@@ -23,7 +23,7 @@ const resolveRewardValue = (value, fallback) => {
 
 const getResolvedRewardSettings = async () => {
   try {
-    const settings = await GameSetting.findOne().lean();
+    const settings = await GameSetting.findOne({}, {}, { sort: { updatedAt: -1 } }).lean();
 
     if (!settings) {
       return { ...DEFAULT_REWARD_SETTINGS };
