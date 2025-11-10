@@ -4,6 +4,8 @@ const { auth } = require('../middleware/auth');
 const {
   getFirstLevel,
   getNextLevel,
+  getLevels,
+  unlockLevel,
   completeWord,
   getHint,
   purchaseShuffle,
@@ -37,13 +39,21 @@ const autoSolveValidation = [
     .withMessage('Valid level ID is required')
 ];
 
+const unlockLevelValidation = [
+  body('levelId')
+    .isMongoId()
+    .withMessage('Valid level ID is required')
+];
+
 // Routes
 router.get('/level/1', getFirstLevel);
+router.get('/levels', auth, getLevels);
 router.get('/next-level', auth, getNextLevel);
 router.post('/complete-word', auth, completeWordValidation, completeWord);
 router.post('/hint', auth, hintValidation, getHint);
 router.post('/shuffle', auth, purchaseShuffle);
 router.post('/auto-solve', auth, autoSolveValidation, autoSolve);
+router.post('/unlock-level', auth, unlockLevelValidation, unlockLevel);
 router.get('/stats', auth, getGameStats);
 
 module.exports = router;

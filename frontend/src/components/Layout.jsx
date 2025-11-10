@@ -9,7 +9,8 @@ import {
   Settings,
   Menu,
   X,
-  Coins
+  Coins,
+  Milestone
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import UserProfileMenu from './UserProfileMenu';
@@ -22,6 +23,7 @@ const Layout = ({ children }) => {
   const navigation = [
     { name: 'خونه', href: '/', icon: Home },
     { name: 'بازی', href: '/game', icon: Gamepad2 },
+    { name: 'مراحل', href: '/levels', icon: Milestone },
     { name: 'فروشگاه', href: '/store', icon: ShoppingCart },
     { name: 'امتیازها', href: '/leaderboard', icon: Trophy },
   ];
