@@ -228,19 +228,19 @@ const Register = () => {
               <p className="text-sm text-danger text-center">{serverError}</p>
             )}
           </form>
-        </div>
 
-        {/* Login Link */}
-        <div className="text-center mt-6">
-          <p className="text-white/60">
-            قبلاً اکانت ساختی؟{' '}
-            <Link
-              to="/login"
-              className="text-primary-400 hover:text-primary-300 font-medium transition-colors"
-            >
-              بیا تو!
-            </Link>
-          </p>
+          {/* Login Link */}
+          <div className="text-center mt-6 pt-6 border-t border-white/10">
+            <p className="text-white/60">
+              قبلاً اکانت ساختی؟{' '}
+              <Link
+                to="/login"
+                className="text-primary-400 hover:text-primary-300 font-medium transition-colors"
+              >
+                بیا تو!
+              </Link>
+            </p>
+          </div>
         </div>
       </motion.div>
     </div>
