@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useQueryClient } from 'react-query';
 import { Loader2, CheckCircle, XCircle } from 'lucide-react';
@@ -14,20 +14,9 @@ const PaymentVerify = () => {
   const [status, setStatus] = useState('loading');
   const [message, setMessage] = useState('در حال بررسی پرداخت...');
   const [details, setDetails] = useState(null);
-  const timeoutRef = useRef(null);
   const lastVerificationRef = useRef(null);
 
   const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
-
-  const scheduleRedirect = useCallback((path) => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-
-    timeoutRef.current = setTimeout(() => {
-      navigate(path, { replace: true });
-    }, 3000);
-  }, [navigate]);
 
   useEffect(() => {
     const authority = searchParams.get('Authority');
@@ -39,27 +28,18 @@ const PaymentVerify = () => {
     }
 
     lastVerificationRef.current = verificationKey;
-
-    const cleanup = () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-
     if (!authority) {
       setStatus('failed');
       setMessage('شناسه تراکنش یافت نشد.');
       setDetails(null);
-      scheduleRedirect('/store');
-      return cleanup;
+      return undefined;
     }
 
     if (statusParam !== 'OK') {
       setStatus('failed');
       setMessage('پرداخت توسط کاربر لغو شد.');
       setDetails(null);
-      scheduleRedirect('/store');
-      return cleanup;
+      return undefined;
     }
 
     const verifyPayment = async () => {
@@ -96,26 +76,21 @@ const PaymentVerify = () => {
 
           queryClient.invalidateQueries(['purchaseHistory']);
           queryClient.invalidateQueries(['coinPacks']);
-
-          scheduleRedirect('/');
         } else {
           setStatus('failed');
           setMessage(responseMessage || 'تایید پرداخت ناموفق بود.');
           setDetails(null);
-          scheduleRedirect('/store');
         }
       } catch (error) {
         setStatus('failed');
         setMessage(error.message || 'خطا در تایید پرداخت');
         setDetails(null);
-        scheduleRedirect('/store');
       }
     };
 
     verifyPayment();
 
-    return cleanup;
-  }, [queryClient, scheduleRedirect, searchParams, updateUser]);
+  }, [queryClient, searchParams, updateUser]);
 
   const renderIcon = () => {
     if (status === 'loading') {
@@ -135,7 +110,7 @@ const PaymentVerify = () => {
     }
 
     if (status === 'success') {
-      return 'پرداخت با موفقیت انجام شد و به زودی به صفحه اصلی هدایت می‌شوید.';
+      return 'پرداخت با موفقیت انجام شد. برای ادامه، از دکمه زیر استفاده کنید.';
     }
 
     return 'در صورت کسر وجه، با پشتیبانی تماس بگیرید یا مجددا تلاش کنید.';
@@ -194,6 +169,16 @@ const PaymentVerify = () => {
               </div>
             )}
 
+            {status === 'success' && (
+              <button
+                type="button"
+                onClick={() => navigate('/', { replace: true })}
+                className="mt-4 inline-flex items-center justify-center rounded-2xl bg-white/10 px-6 py-3 text-sm sm:text-base font-semibold text-white transition-all hover:bg-white/20 hover:shadow-[0_0_25px_rgba(168,85,247,0.45)] focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-300"
+              >
+                بازگشت به صفحه اصلی
+              </button>
+            )}
+
             {status === 'failed' && (
               <button
                 type="button"
@@ -205,7 +190,11 @@ const PaymentVerify = () => {
             )}
 
             <p className="text-xs text-white/50 sm:text-sm pt-2">
-              {status === 'success' ? 'در حال انتقال به صفحه اصلی...' : status === 'failed' ? 'به زودی به فروشگاه بازمی‌گردید.' : 'لطفا صفحه را نبندید.'}
+              {status === 'success'
+                ? 'برای خروج از این صفحه، روی دکمه بازگشت کلیک کنید.'
+                : status === 'failed'
+                  ? 'برای تلاش مجدد، روی دکمه بازگشت کلیک کنید.'
+                  : 'لطفا صفحه را نبندید.'}
             </p>
           </div>
         </div>
