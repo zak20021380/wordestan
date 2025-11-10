@@ -247,7 +247,7 @@ const getNextLevel = async (req, res) => {
 // @access  Private
 const getLevels = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).select('-password');
+    const user = await User.findById(req.user._id);
 
     if (!user) {
       return res.status(404).json({
@@ -445,7 +445,7 @@ const unlockLevel = async (req, res) => {
       });
     }
 
-    const user = await User.findById(req.user._id).select('-password');
+    const user = await User.findById(req.user._id);
 
     if (!user) {
       return res.status(404).json({
