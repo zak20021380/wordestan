@@ -70,7 +70,7 @@ app.get('/api/health', (req, res) => {
 app.get('/', (req, res) => {
   res.json({
     success: true,
-    message: 'Word Connect Game API',
+    message: 'HarfLand Game API',
     version: '1.0.0',
     endpoints: {
       auth: '/api/auth',

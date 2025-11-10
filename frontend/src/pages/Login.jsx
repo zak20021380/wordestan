@@ -65,7 +65,7 @@ const Login = () => {
             <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-xl flex items-center justify-center shadow-lg shadow-primary-500/50">
               <Gamepad2 className="w-8 h-8 text-white" />
             </div>
-            <span className="text-3xl font-bold bg-gradient-to-r from-primary-400 to-secondary-400 bg-clip-text text-transparent">وردستان</span>
+            <span className="text-3xl font-bold bg-gradient-to-r from-primary-400 to-secondary-400 bg-clip-text text-transparent">حرف‌لند</span>
           </div>
           <p className="text-white/60">به حساب کاربری خود وارد شوید</p>
         </div>

@@ -45,7 +45,7 @@ const Layout = ({ children }) => {
               <div className="w-10 h-10 bg-gradient-to-br from-primary-500 via-secondary-500 to-accent-500 rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(168,85,247,0.4)] group-hover:shadow-[0_0_30px_rgba(168,85,247,0.6)] transition-all group-hover:scale-110">
                 <Gamepad2 className="w-6 h-6 text-white" />
               </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-primary-400 to-secondary-400 bg-clip-text text-transparent">وردستان</span>
+              <span className="text-xl font-bold bg-gradient-to-r from-primary-400 to-secondary-400 bg-clip-text text-transparent">حرف‌لند</span>
             </Link>
 
             {/* Desktop Navigation */}
@@ -177,7 +177,7 @@ const Layout = ({ children }) => {
       <footer className="bg-glass backdrop-blur-xl border-t-2 border-glass-border mt-auto shadow-[0_-4px_30px_rgba(168,85,247,0.1)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="text-center">
-            <p className="bg-gradient-to-r from-primary-400 to-secondary-400 bg-clip-text text-transparent font-medium">&copy; 2024 وردستان - ساخته شده با ❤️ برای جوونای ایران</p>
+            <p className="bg-gradient-to-r from-primary-400 to-secondary-400 bg-clip-text text-transparent font-medium">&copy; 2024 حرف‌لند - ساخته شده با 💜 برای جوونای ایران</p>
           </div>
         </div>
       </footer>
