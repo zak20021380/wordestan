@@ -30,6 +30,34 @@ const toStringId = (value) => {
   return null;
 };
 
+const extractLevelId = (entry) => {
+  if (!entry) {
+    return null;
+  }
+
+  if (entry.levelId) {
+    return toStringId(entry.levelId);
+  }
+
+  return toStringId(entry);
+};
+
+const determineStarsFromProgress = (progress) => {
+  if (!progress) {
+    return 3;
+  }
+
+  if (progress.usedAutoSolve) {
+    return 1;
+  }
+
+  if (progress.usedShuffle) {
+    return 2;
+  }
+
+  return 3;
+};
+
 // @desc    Get the first level (public)
 // @route   GET /api/game/level/1
 // @access  Public
@@ -98,7 +126,7 @@ const getNextLevel = async (req, res) => {
       const completedLevels = Array.isArray(user.completedLevels) ? user.completedLevels : [];
       const unlockedLevels = Array.isArray(user.unlockedLevels) ? user.unlockedLevels : [];
 
-      const isCompleted = completedLevels.some(entry => toStringId(entry) === levelIdString);
+      const isCompleted = completedLevels.some(entry => extractLevelId(entry) === levelIdString);
       const isUnlocked = unlockedLevels.some(entry => toStringId(entry) === levelIdString);
       const isWithinProgress = targetLevel.order <= user.currentLevel;
 
@@ -109,19 +137,36 @@ const getNextLevel = async (req, res) => {
         });
       }
 
+      if (isCompleted) {
+        return res.status(403).json({
+          success: false,
+          message: 'Level already completed',
+          meta: {
+            status: 'level_completed_locked',
+            requestedLevelId: levelId,
+          }
+        });
+      }
+
       await user.updateLastActive();
 
       const levelObject = targetLevel.toObject({ getters: true });
       const completedWords = levelObject.words
         .filter(word => user.hasCompletedWordInLevel(targetLevel._id, word._id))
         .map(word => word.text);
+      const levelProgress = user.getLevelProgress(targetLevel._id);
+      const powerUpsUsed = {
+        shuffle: Boolean(levelProgress?.usedShuffle),
+        autoSolve: Boolean(levelProgress?.usedAutoSolve)
+      };
 
       return res.json({
         success: true,
         data: {
           level: levelObject,
           completedWords,
-          userProgress
+          userProgress,
+          powerUpsUsed,
         },
         meta: {
           status: isCompleted ? 'level_revisit' : 'level_selected',
@@ -170,13 +215,19 @@ const getNextLevel = async (req, res) => {
     const completedWords = levelObject.words
       .filter(word => user.hasCompletedWordInLevel(nextLevel._id, word._id))
       .map(word => word.text);
+    const levelProgress = user.getLevelProgress(nextLevel._id);
+    const powerUpsUsed = {
+      shuffle: Boolean(levelProgress?.usedShuffle),
+      autoSolve: Boolean(levelProgress?.usedAutoSolve)
+    };
 
     return res.json({
       success: true,
       data: {
         level: levelObject,
         completedWords,
-        userProgress
+        userProgress,
+        powerUpsUsed,
       },
       meta: {
         status: 'level_available'
@@ -213,11 +264,37 @@ const getLevels = async (req, res) => {
       ? parseOrderNumber(levels[levels.length - 1].order)
       : null;
 
+    const completedEntries = Array.isArray(user.completedLevels) ? user.completedLevels : [];
     const completedSet = new Set(
-      (user.completedLevels || [])
-        .map(entry => toStringId(entry))
+      completedEntries
+        .map(entry => extractLevelId(entry))
         .filter(Boolean)
     );
+
+    const completedMap = new Map();
+
+    completedEntries.forEach(entry => {
+      const id = extractLevelId(entry);
+      if (!id) {
+        return;
+      }
+
+      let stars = 0;
+      if (entry && typeof entry === 'object') {
+        if (typeof entry.stars === 'number') {
+          stars = Math.min(3, Math.max(0, Math.round(entry.stars)));
+        } else {
+          stars = 3;
+        }
+      } else {
+        stars = 3;
+      }
+
+      completedMap.set(id, {
+        stars,
+        completedAt: entry?.completedAt ?? null
+      });
+    });
 
     const unlockedSet = new Set(
       (user.unlockedLevels || [])
@@ -240,7 +317,10 @@ const getLevels = async (req, res) => {
 
         progressMap.set(id, {
           completedWords: completedWordsCount,
-          isComplete: Boolean(entry.isComplete)
+          isComplete: Boolean(entry.isComplete),
+          usedShuffle: Boolean(entry.usedShuffle),
+          usedAutoSolve: Boolean(entry.usedAutoSolve),
+          stars: Math.min(3, Math.max(0, Math.round(entry.stars ?? 0)))
         });
       });
     }
@@ -252,9 +332,25 @@ const getLevels = async (req, res) => {
       const completedWords = progress.completedWords ?? 0;
       const completionRate = totalWords === 0 ? 0 : completedWords / totalWords;
       const completionPercentage = Math.round(completionRate * 100);
-      const stars = totalWords === 0
-        ? 0
-        : Math.min(3, Math.max(0, Math.round(completionRate * 3)));
+      const completedInfo = completedMap.get(id) || null;
+      let stars = 0;
+
+      if (progress.isComplete || completedSet.has(id)) {
+        if (progress.stars) {
+          stars = Math.max(stars, progress.stars);
+        }
+
+        const derivedStars = determineStarsFromProgress(progress);
+        stars = Math.max(stars, derivedStars);
+
+        if (completedInfo?.stars) {
+          stars = Math.max(stars, completedInfo.stars);
+        }
+
+        if (stars === 0) {
+          stars = 3;
+        }
+      }
 
       const isCompleted = progress.isComplete || completedSet.has(id);
       const isUnlocked = unlockedSet.has(id);
@@ -296,6 +392,10 @@ const getLevels = async (req, res) => {
 
     const totalLevels = levelsData.length;
     const completedLevelsCount = levelsData.filter(level => level.isCompleted).length;
+    const totalStarsEarned = levelsData.reduce((sum, level) => (
+      level.isCompleted ? sum + Math.max(0, Math.min(3, level.stars || 0)) : sum
+    ), 0);
+    const maxStars = totalLevels * 3;
     const availableLevelsCount = levelsData.filter(level => level.status !== 'locked').length;
     const lockedLevelsCount = totalLevels - availableLevelsCount;
     const progressPercentage = totalLevels === 0
@@ -315,7 +415,9 @@ const getLevels = async (req, res) => {
           lockedLevels: lockedLevelsCount,
           progressPercentage,
           currentLevel: user.currentLevel,
-          coins: user.coins
+          coins: user.coins,
+          totalStars: totalStarsEarned,
+          maxStars
         },
         unlockCost: LEVEL_UNLOCK_COST
       }
@@ -367,7 +469,7 @@ const unlockLevel = async (req, res) => {
     const levelIdString = level._id.toString();
 
     if (Array.isArray(user.completedLevels)
-      && user.completedLevels.some(entry => toStringId(entry) === levelIdString)) {
+      && user.completedLevels.some(entry => extractLevelId(entry) === levelIdString)) {
       return res.status(400).json({
         success: false,
         message: 'Level already completed'
@@ -441,7 +543,7 @@ const unlockLevel = async (req, res) => {
 // @access  Private
 const completeWord = async (req, res) => {
   try {
-    const { word, levelId } = req.body;
+    const { word, levelId, powerUpsUsed: rawPowerUps } = req.body;
     const user = req.user;
 
     // Validate input
@@ -471,6 +573,14 @@ const completeWord = async (req, res) => {
       });
     }
 
+    const powerUpsUsed = {
+      shuffle: Boolean(rawPowerUps?.shuffle),
+      autoSolve: Boolean(rawPowerUps?.autoSolve)
+    };
+
+    const existingProgress = user.getLevelProgress(level._id, { createIfMissing: true });
+    const wasLevelAlreadyComplete = Boolean(existingProgress?.isComplete);
+
     // Check if user has already completed this word
     if (user.hasCompletedWordInLevel(level._id, targetWord._id)) {
       return res.status(400).json({
@@ -482,7 +592,10 @@ const completeWord = async (req, res) => {
     // Award coins and update progress
     const wordReward = parseInt(process.env.WORD_COMPLETE_REWARD) || 20;
     await user.addCoins(wordReward);
-    await user.completeWord(level._id, targetWord._id);
+    await user.completeWord(level._id, targetWord._id, {
+      usedShuffle: powerUpsUsed.shuffle,
+      usedAutoSolve: powerUpsUsed.autoSolve
+    });
 
     // Update word completion stats
     targetWord.timesCompleted += 1;
@@ -494,11 +607,22 @@ const completeWord = async (req, res) => {
 
     const isLevelCompleted = completedWordsCount === level.words.length;
     const levelReward = parseInt(process.env.LEVEL_COMPLETE_REWARD) || 100;
+    const usageSnapshot = {
+      shuffle: Boolean(levelProgress?.usedShuffle),
+      autoSolve: Boolean(levelProgress?.usedAutoSolve)
+    };
 
-    if (isLevelCompleted && !levelProgress?.isComplete) {
-      // Award level completion bonus
-      await user.addCoins(levelReward);
-      await user.completeLevel(level._id);
+    let starsEarned = null;
+
+    if (isLevelCompleted) {
+      starsEarned = determineStarsFromProgress(levelProgress);
+
+      if (!wasLevelAlreadyComplete) {
+        // Award level completion bonus
+        await user.addCoins(levelReward);
+      }
+
+      await user.completeLevel(level._id, { stars: starsEarned });
     }
 
     res.json({
@@ -510,7 +634,9 @@ const completeWord = async (req, res) => {
         totalCoins: user.coins,
         totalScore: user.totalScore,
         levelCompleted: isLevelCompleted,
-        levelBonus: isLevelCompleted ? levelReward : 0
+        levelBonus: isLevelCompleted && !wasLevelAlreadyComplete ? levelReward : 0,
+        starsEarned,
+        powerUpsUsed: usageSnapshot
       }
     });
   } catch (error) {
@@ -591,14 +717,36 @@ const getHint = async (req, res) => {
 // @access  Private
 const purchaseShuffle = async (req, res) => {
   try {
+    const { levelId } = req.body;
     const user = req.user;
     const shuffleCost = parseInt(process.env.SHUFFLE_COST, 10) || 15;
+
+    if (!levelId || !mongoose.Types.ObjectId.isValid(levelId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid level ID is required for shuffle purchase'
+      });
+    }
+
+    const level = await Level.findById(levelId).select('_id');
+
+    if (!level) {
+      return res.status(404).json({
+        success: false,
+        message: 'Level not found'
+      });
+    }
 
     if (user.coins < shuffleCost) {
       return res.status(400).json({
         success: false,
         message: 'Not enough coins for shuffle'
       });
+    }
+
+    const progress = user.getLevelProgress(level._id, { createIfMissing: true });
+    if (progress) {
+      progress.usedShuffle = true;
     }
 
     await user.spendCoins(shuffleCost);
@@ -609,6 +757,10 @@ const purchaseShuffle = async (req, res) => {
       data: {
         coinsSpent: shuffleCost,
         remainingCoins: user.coins,
+        powerUpsUsed: {
+          shuffle: true,
+          autoSolve: Boolean(progress?.usedAutoSolve)
+        }
       }
     });
   } catch (error) {
@@ -625,7 +777,7 @@ const purchaseShuffle = async (req, res) => {
 // @access  Private
 const autoSolve = async (req, res) => {
   try {
-    const { levelId } = req.body;
+    const { levelId, powerUpsUsed: rawPowerUps } = req.body;
     const user = req.user;
 
     // Check if user has enough coins
@@ -646,6 +798,13 @@ const autoSolve = async (req, res) => {
       });
     }
 
+    const powerUpsUsed = {
+      shuffle: Boolean(rawPowerUps?.shuffle)
+    };
+
+    const existingProgress = user.getLevelProgress(level._id, { createIfMissing: true });
+    const wasLevelAlreadyComplete = Boolean(existingProgress?.isComplete);
+
     // Find incomplete words in this level
     const incompleteWords = level.words.filter(word =>
       !user.hasCompletedWordInLevel(level._id, word._id)
@@ -665,7 +824,10 @@ const autoSolve = async (req, res) => {
     await user.spendCoins(autoSolveCost);
 
     // Complete the word (without coin reward)
-    await user.completeWord(level._id, randomWord._id);
+    await user.completeWord(level._id, randomWord._id, {
+      usedAutoSolve: true,
+      usedShuffle: powerUpsUsed.shuffle
+    });
 
     // Update word stats
     randomWord.timesCompleted += 1;
@@ -677,14 +839,23 @@ const autoSolve = async (req, res) => {
     const isLevelCompleted = completedWordsCount === level.words.length;
 
     let levelBonus = 0;
+    const usageSnapshot = {
+      shuffle: Boolean(levelProgress?.usedShuffle),
+      autoSolve: Boolean(levelProgress?.usedAutoSolve)
+    };
+    let starsEarned = null;
 
-    if (isLevelCompleted && !levelProgress?.isComplete) {
+    if (isLevelCompleted) {
       const levelReward = parseInt(process.env.LEVEL_COMPLETE_REWARD) || 100;
 
-      await user.addCoins(levelReward);
-      await user.completeLevel(level._id);
+      starsEarned = determineStarsFromProgress(levelProgress);
 
-      levelBonus = levelReward;
+      if (!wasLevelAlreadyComplete) {
+        await user.addCoins(levelReward);
+        levelBonus = levelReward;
+      }
+
+      await user.completeLevel(level._id, { stars: starsEarned });
     }
 
     res.json({
@@ -696,7 +867,9 @@ const autoSolve = async (req, res) => {
         remainingCoins: user.coins,
         totalScore: user.totalScore,
         levelCompleted: isLevelCompleted,
-        levelBonus
+        levelBonus,
+        starsEarned,
+        powerUpsUsed: usageSnapshot
       }
     });
   } catch (error) {

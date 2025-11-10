@@ -12,6 +12,18 @@ const parseLevelOrder = (value) => {
   return Number.isNaN(numeric) ? null : numeric;
 };
 
+const createPowerUpUsageState = () => ({
+  shuffle: false,
+  autoSolve: false,
+});
+
+const createCompletionStatus = () => ({
+  completed: false,
+  source: null,
+  stars: null,
+  powerUpsUsed: createPowerUpUsageState(),
+});
+
 const GameContext = createContext({});
 
 export const useGame = () => {
@@ -35,15 +47,56 @@ export const GameProvider = ({ children }) => {
     isConnecting: false,
   });
   const [levelTransition, setLevelTransition] = useState(null);
-  const [levelCompletionStatus, setLevelCompletionStatus] = useState({
-    completed: false,
-    source: null,
-  });
+  const [levelCompletionStatus, setLevelCompletionStatus] = useState(() => createCompletionStatus());
+  const [powerUpUsage, setPowerUpUsage] = useState(() => createPowerUpUsageState());
+  const powerUpUsageRef = useRef(powerUpUsage);
   const [autoSolveResult, setAutoSolveResult] = useState(null);
   const [isLevelSwitching, setIsLevelSwitching] = useState(false);
   const previousLevelOrderRef = useRef(null);
   const pendingTransitionRef = useRef(null);
   const hasInitializedLevelRef = useRef(false);
+
+  useEffect(() => {
+    powerUpUsageRef.current = powerUpUsage;
+  }, [powerUpUsage]);
+
+  const resetPowerUpUsage = useCallback(() => {
+    const next = createPowerUpUsageState();
+    powerUpUsageRef.current = next;
+    setPowerUpUsage(next);
+  }, []);
+
+  const mergePowerUpUsage = useCallback((usage = {}) => {
+    setPowerUpUsage(prev => {
+      const next = {
+        shuffle: prev.shuffle || Boolean(usage.shuffle),
+        autoSolve: prev.autoSolve || Boolean(usage.autoSolve),
+      };
+
+      if (next.shuffle === prev.shuffle && next.autoSolve === prev.autoSolve) {
+        return prev;
+      }
+
+      powerUpUsageRef.current = next;
+      return next;
+    });
+  }, []);
+
+  const markPowerUpUsed = useCallback((type) => {
+    if (!type) {
+      return;
+    }
+
+    setPowerUpUsage(prev => {
+      if (prev[type]) {
+        return prev;
+      }
+
+      const next = { ...prev, [type]: true };
+      powerUpUsageRef.current = next;
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     if (authLoading) {
@@ -64,7 +117,8 @@ export const GameProvider = ({ children }) => {
     hasInitializedLevelRef.current = false;
     setLevelTransition(null);
     setAutoSolveResult(null);
-    setLevelCompletionStatus({ completed: false, source: null });
+    setLevelCompletionStatus(createCompletionStatus());
+    setPowerUpUsage(createPowerUpUsageState());
     setIsLevelSwitching(false);
   }, [isAuthenticated, authLoading]);
 
@@ -72,6 +126,12 @@ export const GameProvider = ({ children }) => {
     const payload = response?.data ?? null;
     const meta = options.metaOverride ?? response?.meta ?? null;
     const nextLevel = payload?.level ?? null;
+    const currentLevelId = currentLevel?._id ? String(currentLevel._id) : null;
+    const nextLevelId = nextLevel?._id ? String(nextLevel._id) : null;
+
+    if (payload?.powerUpsUsed) {
+      mergePowerUpUsage(payload.powerUpsUsed);
+    }
 
     setLevelMeta(meta);
 
@@ -88,8 +148,13 @@ export const GameProvider = ({ children }) => {
       pendingTransitionRef.current = null;
       hasInitializedLevelRef.current = false;
       setLevelTransition(null);
-      setLevelCompletionStatus({ completed: false, source: null });
+      setLevelCompletionStatus(createCompletionStatus());
+      resetPowerUpUsage();
       return { level: null, meta, payload };
+    }
+
+    if (nextLevelId && nextLevelId !== currentLevelId) {
+      resetPowerUpUsage();
     }
 
     const newOrder = parseLevelOrder(nextLevel.order);
@@ -154,13 +219,26 @@ export const GameProvider = ({ children }) => {
 
     if (completedAll) {
       const completionSource = options.completionSource ?? 'synced';
-      setLevelCompletionStatus({ completed: true, source: completionSource });
+      setLevelCompletionStatus({
+        completed: true,
+        source: completionSource,
+        stars: null,
+        powerUpsUsed: { ...powerUpUsageRef.current },
+      });
     } else {
-      setLevelCompletionStatus({ completed: false, source: null });
+      setLevelCompletionStatus(createCompletionStatus());
     }
 
     return { level: nextLevel, meta, payload, completedWords };
-  }, [setGameState, setLevelCompletionStatus, setLevelMeta, setLevelTransition]);
+  }, [
+    currentLevel?._id,
+    mergePowerUpUsage,
+    resetPowerUpUsage,
+    setGameState,
+    setLevelCompletionStatus,
+    setLevelMeta,
+    setLevelTransition,
+  ]);
 
   // Fetch next level
   const { isLoading: levelLoading, refetch: refetchNextLevel } = useQuery(
@@ -258,7 +336,8 @@ export const GameProvider = ({ children }) => {
         previousLevelOrderRef.current = guestOrder;
         hasInitializedLevelRef.current = true;
         pendingTransitionRef.current = null;
-        setLevelCompletionStatus({ completed: false, source: null });
+        setLevelCompletionStatus(createCompletionStatus());
+        resetPowerUpUsage();
       },
       onError: () => {
         setCurrentLevel(null);
@@ -279,10 +358,17 @@ export const GameProvider = ({ children }) => {
 
   // Complete word mutation
   const completeWordMutation = useMutation(
-    ({ word, levelId }) => gameService.completeWord(word, levelId),
+    ({ word, levelId, powerUpsUsed }) => gameService.completeWord(word, levelId, powerUpsUsed),
     {
       onSuccess: (data) => {
         const completedWord = data?.data?.word?.text;
+        const serverUsage = data?.data?.powerUpsUsed ?? {};
+        const mergedUsage = {
+          shuffle: powerUpUsageRef.current.shuffle || Boolean(serverUsage.shuffle),
+          autoSolve: powerUpUsageRef.current.autoSolve || Boolean(serverUsage.autoSolve),
+        };
+
+        mergePowerUpUsage(serverUsage);
 
         // Update user coins in auth context
         if (user) {
@@ -323,10 +409,17 @@ export const GameProvider = ({ children }) => {
           };
         }
 
+        const starsEarned = data?.data?.starsEarned ?? null;
+
         setLevelCompletionStatus(
           completedAll
-            ? { completed: true, source: 'manual' }
-            : { completed: false, source: null }
+            ? {
+              completed: true,
+              source: 'manual',
+              stars: starsEarned,
+              powerUpsUsed: mergedUsage,
+            }
+            : createCompletionStatus()
         );
 
         // Invalidate queries to refetch and get updated completed words
@@ -338,9 +431,17 @@ export const GameProvider = ({ children }) => {
 
   // Auto solve mutation
   const autoSolveMutation = useMutation(
-    ({ levelId }) => gameService.autoSolve(levelId),
+    ({ levelId, powerUpsUsed }) => gameService.autoSolve(levelId, powerUpsUsed),
     {
       onSuccess: (data) => {
+        const serverUsage = data?.data?.powerUpsUsed ?? {};
+        const mergedUsage = {
+          shuffle: powerUpUsageRef.current.shuffle || Boolean(serverUsage.shuffle),
+          autoSolve: true,
+        };
+
+        mergePowerUpUsage({ ...serverUsage, autoSolve: true });
+
         // Update user coins
         if (user) {
           updateUser({
@@ -386,12 +487,22 @@ export const GameProvider = ({ children }) => {
           coinsSpent: data?.data?.coinsSpent ?? null,
           remainingCoins: data?.data?.remainingCoins ?? null,
           levelCompleted: completedAll,
+          levelBonus: data?.data?.levelBonus ?? 0,
+          starsEarned: data?.data?.starsEarned ?? null,
+          powerUpsUsed: mergedUsage,
         });
+
+        const starsEarned = data?.data?.starsEarned ?? null;
 
         setLevelCompletionStatus(
           completedAll
-            ? { completed: true, source: 'auto' }
-            : { completed: false, source: null }
+            ? {
+              completed: true,
+              source: 'auto',
+              stars: starsEarned,
+              powerUpsUsed: mergedUsage,
+            }
+            : createCompletionStatus()
         );
 
         if (!completedAll) {
@@ -536,6 +647,7 @@ export const GameProvider = ({ children }) => {
       const result = await completeWordMutation.mutateAsync({
         word: wordToSubmit,
         levelId: currentLevel._id,
+        powerUpsUsed: powerUpUsageRef.current,
       });
 
       if (result?.data?.levelCompleted) {
@@ -561,6 +673,7 @@ export const GameProvider = ({ children }) => {
 
     return autoSolveMutation.mutateAsync({
       levelId: currentLevel._id,
+      powerUpsUsed: powerUpUsageRef.current,
     });
   };
 
@@ -571,7 +684,7 @@ export const GameProvider = ({ children }) => {
   const clearAutoSolveResult = useCallback(() => {
     setAutoSolveResult(null);
     setLevelCompletionStatus(prev =>
-      prev.source === 'auto' ? { completed: false, source: null } : prev
+      prev.source === 'auto' ? createCompletionStatus() : prev
     );
   }, []);
 
@@ -583,8 +696,9 @@ export const GameProvider = ({ children }) => {
       completedWords: [],
       isConnecting: false,
     });
-    setLevelCompletionStatus({ completed: false, source: null });
-  }, []);
+    setLevelCompletionStatus(createCompletionStatus());
+    resetPowerUpUsage();
+  }, [resetPowerUpUsage]);
 
   const loadNextLevel = useCallback(async () => {
     resetGameState();
@@ -615,6 +729,9 @@ export const GameProvider = ({ children }) => {
     submitWord,
     autoSolve,
     loadLevelById,
+    powerUpUsage,
+    markPowerUpUsed,
+    resetPowerUpUsage,
 
     // Mutations
     completeWordMutation,

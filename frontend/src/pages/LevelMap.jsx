@@ -25,7 +25,7 @@ const FILTERS = [
 
 const statusConfig = {
   completed: {
-    label: 'تکمیل شد',
+    label: 'تکمیل شده',
     icon: CheckCircle2,
     iconClass: 'text-emerald-300 drop-shadow-[0_0_12px_rgba(16,185,129,0.6)]',
     chipClass: 'bg-emerald-500/15 text-emerald-100 border border-emerald-400/40',
@@ -84,6 +84,9 @@ const LevelMap = () => {
   const levels = data?.data?.levels ?? [];
   const stats = data?.data?.stats ?? {};
   const unlockCost = data?.data?.unlockCost ?? 70;
+  const totalStarsEarned = stats.totalStars
+    ?? levels.filter(level => level.isCompleted).reduce((sum, level) => sum + (level.stars || 0), 0);
+  const maxStarsAvailable = stats.maxStars ?? (levels.length * 3);
 
   const progressPercentage = useMemo(() => {
     const percentage = stats.progressPercentage ?? null;
@@ -186,6 +189,11 @@ const LevelMap = () => {
       return;
     }
 
+    if (level.isCompleted || level.status === 'completed') {
+      toast.success('این مرحله رو قبلاً فتح کردی! 🌟');
+      return;
+    }
+
     if (level.status === 'locked') {
       handleUnlockLevel(level);
       return;
@@ -200,6 +208,9 @@ const LevelMap = () => {
     const cardHighlight = level.isCurrent
       ? 'ring-2 ring-secondary-300/70 shadow-[0_0_30px_rgba(192,132,252,0.45)]'
       : '';
+    const completedGlow = level.status === 'completed'
+      ? 'ring-2 ring-emerald-300/30 shadow-[0_0_35px_rgba(16,185,129,0.35)]'
+      : '';
 
     return (
       <motion.div
@@ -213,7 +224,7 @@ const LevelMap = () => {
         whileHover={{ scale: 1.015 }}
         className={`relative overflow-hidden rounded-3xl border backdrop-blur-xl px-5 py-6 min-h-[220px] flex flex-col justify-between transition-all duration-300 ${
           cardHighlight || ''
-        } bg-gradient-to-br ${config.cardClass}`}
+        } ${completedGlow} bg-gradient-to-br ${config.cardClass}`}
       >
         <div className="flex items-start justify-between">
           <div className="flex items-center space-x-2 space-x-reverse text-white/80">
@@ -244,7 +255,16 @@ const LevelMap = () => {
           </div>
 
           <div className="flex flex-col space-y-2">
-            {level.status !== 'locked' ? (
+            {level.status === 'completed' ? (
+              <button
+                type="button"
+                disabled
+                className="flex items-center justify-center space-x-2 space-x-reverse rounded-2xl border border-emerald-400/40 bg-emerald-500/20 px-4 py-2 text-sm font-bold text-emerald-100 opacity-90 cursor-not-allowed"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                <span>✓ تکمیل شده</span>
+              </button>
+            ) : level.status !== 'locked' ? (
               <button
                 type="button"
                 onClick={() => handlePlayLevel(level)}
@@ -310,7 +330,7 @@ const LevelMap = () => {
             <div className="flex flex-col items-start space-y-2 rounded-2xl border border-white/10 bg-white/5 px-6 py-4 backdrop-blur-xl text-white/80">
               <span className="text-sm">پیشرفت کلی</span>
               <p className="text-2xl font-black text-white">
-                {formatNumber(stats.completedLevels ?? 0)} از {formatNumber(stats.totalLevels ?? levels.length)} مرحله
+                {formatNumber(stats.completedLevels ?? 0)}/{formatNumber(stats.totalLevels ?? levels.length)} مرحله • {formatNumber(totalStarsEarned)} ستاره از {formatNumber(maxStarsAvailable)}
               </p>
               <div className="w-full h-2.5 rounded-full bg-white/10 overflow-hidden">
                 <div
