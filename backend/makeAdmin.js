@@ -10,7 +10,7 @@ const makeAdmin = async () => {
     console.log('Connected to MongoDB successfully');
 
     // Find and update the user
-    const email = 'zakaria@wordestan.com';
+    const email = 'zakaria@harfland.com';
     console.log(`\nLooking for user with email: ${email}`);
 
     const user = await User.findOneAndUpdate(

@@ -76,7 +76,7 @@ const Home = () => {
         className="text-center"
       >
         <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-primary-400 via-secondary-400 to-accent-400 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(168,85,247,0.5)] animate-gradient-shift bg-[length:200%_auto]">
-          وردستان
+          حرف‌لند
         </h1>
         <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto drop-shadow-lg">
           بیا باهم کلمه بسازیم! حروف رو وصل کن، کلمات پنهان رو پیدا کن و با دوستات رقابت کن! 🎯
