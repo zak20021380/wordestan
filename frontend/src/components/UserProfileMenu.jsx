@@ -72,11 +72,40 @@ const UserProfileMenu = () => {
       return [];
     }
 
-    return source.map((level, index) => ({
-      id: level?._id || `${index}`,
-      order: level?.order,
-      letters: level?.letters
-    }));
+    return source
+      .map((entry, index) => {
+        const levelData = entry?.levelId ?? entry?.level ?? entry;
+        const rawId = levelData?._id ?? entry?._id ?? entry?.id ?? index;
+        const id = typeof rawId === 'object' && rawId !== null && typeof rawId.toString === 'function'
+          ? rawId.toString()
+          : `${rawId}`;
+
+        const order = levelData?.order ?? entry?.order ?? null;
+        const letters = levelData?.letters ?? entry?.letters ?? null;
+        const stars = typeof entry?.stars === 'number' ? Math.min(3, Math.max(0, Math.round(entry.stars))) : null;
+        const completedAt = entry?.completedAt ?? null;
+
+        return {
+          id,
+          order,
+          letters,
+          stars,
+          completedAt,
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => {
+        if (a.completedAt && b.completedAt) {
+          return new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime();
+        }
+        if (a.completedAt) {
+          return -1;
+        }
+        if (b.completedAt) {
+          return 1;
+        }
+        return (b.order ?? 0) - (a.order ?? 0);
+      });
   }, [profile, user]);
 
   const stats = useMemo(() => ([
@@ -372,18 +401,35 @@ const UserProfileMenu = () => {
                       </p>
                       {completedLevels.length > 0 ? (
                         <ul className="max-h-28 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
-                          {completedLevels.map((level, index) => (
-                            <li
-                              key={level.id}
-                              className="flex items-center justify-between text-xs text-white/80 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2"
-                            >
-                              <span className="font-bold">مرحله {level.order ?? index + 1}</span>
-                              {level.letters ? (
-                                <span className="text-white/60 font-medium">{level.letters}</span>
-                              ) : null}
-                            </li>
-                          ))}
-                        </ul>
+                      {completedLevels.map((level, index) => (
+                        <li
+                          key={level.id}
+                          className="flex items-center justify-between text-xs text-white/80 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold">
+                              مرحله {formatNumber(level.order ?? index + 1)}
+                            </span>
+                            {level.letters ? (
+                              <span className="text-white/60 font-medium">{level.letters}</span>
+                            ) : null}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {Array.from({ length: 3 }).map((_, starIndex) => {
+                              const isFilled = starIndex < (level.stars ?? 0);
+                              return (
+                                <span
+                                  key={`${level.id}-star-${starIndex}`}
+                                  className={isFilled ? 'text-amber-300' : 'text-white/20'}
+                                >
+                                  {isFilled ? '⭐' : '☆'}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
                       ) : (
                         <p className="text-xs text-white/60">هنوز مرحله‌ای تکمیل نشده است.</p>
                       )}

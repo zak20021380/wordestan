@@ -80,9 +80,15 @@ export const gameService = {
   },
 
   // Submit completed word
-  async completeWord(word, levelId) {
+  async completeWord(word, levelId, powerUpsUsed) {
     try {
-      const response = await api.post('/game/complete-word', { word, levelId });
+      const payload = { word, levelId };
+
+      if (powerUpsUsed) {
+        payload.powerUpsUsed = powerUpsUsed;
+      }
+
+      const response = await api.post('/game/complete-word', payload);
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to complete word');
@@ -90,9 +96,15 @@ export const gameService = {
   },
 
   // Auto solve word
-  async autoSolve(levelId) {
+  async autoSolve(levelId, powerUpsUsed) {
     try {
-      const response = await api.post('/game/auto-solve', { levelId });
+      const payload = { levelId };
+
+      if (powerUpsUsed) {
+        payload.powerUpsUsed = powerUpsUsed;
+      }
+
+      const response = await api.post('/game/auto-solve', payload);
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to auto solve');

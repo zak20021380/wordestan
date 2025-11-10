@@ -44,7 +44,9 @@ const Game = () => {
     clearAutoSolveResult,
     levelCompletionStatus,
     loadNextLevel,
-    loadLevelById
+    loadLevelById,
+    powerUpUsage,
+    markPowerUpUsed,
   } = useGame();
   const { user, isAuthenticated, updateUser } = useAuth();
 
@@ -57,6 +59,7 @@ const Game = () => {
   const [showAutoSolvePrompt, setShowAutoSolvePrompt] = useState(false);
   const [isConfirmingNextLevel, setIsConfirmingNextLevel] = useState(false);
   const [completionPromptContext, setCompletionPromptContext] = useState(null);
+  const [powerUpsUsed, setPowerUpsUsed] = useState({ shuffle: false, autoSolve: false });
   const shuffleCost = 15;
   const currentLevelId = currentLevel?._id ?? null;
   const [searchParams, setSearchParams] = useSearchParams();
@@ -164,6 +167,14 @@ const Game = () => {
       userProgress: levelTransition.userProgress ?? null,
     };
   }, [levelTransition, formatNumber]);
+
+  useEffect(() => {
+    setPowerUpsUsed(powerUpUsage);
+  }, [powerUpUsage]);
+
+  useEffect(() => {
+    setShuffleUsageCount(0);
+  }, [currentLevelId]);
 
   const transitionAccent = useMemo(() => {
     if (!transitionCopy) {
@@ -322,7 +333,39 @@ const Game = () => {
   const completionBadgeStyles = 'text-amber-200 border-amber-300/40 bg-amber-500/10';
   const completionBadgeCopy = 'مرحله تکمیل شد';
   const completionTitleCopy = '🏆 عالی کار! مرحله تموم شد!';
-  const completionDescriptionCopy = 'عالی کار دیگه چیه';
+  const completionStars = levelCompletionStatus?.stars ?? autoSolveResult?.starsEarned ?? null;
+  const completionPowerUps = levelCompletionStatus?.powerUpsUsed ?? autoSolveResult?.powerUpsUsed ?? powerUpsUsed;
+  const usedShuffleThisLevel = Boolean(completionPowerUps?.shuffle);
+  const usedAutoSolveThisLevel = Boolean(completionPowerUps?.autoSolve);
+  const completionDescriptionCopy = completionStars === 3
+    ? 'بدون کمک! عااالی! 🔥'
+    : completionStars === 2
+      ? 'خوب بود! 👍'
+      : completionStars === 1
+        ? 'تونستی تمومش کنی! 💪'
+        : 'عالی کار کردی! ✨';
+  const completionStarElements = useMemo(() => (
+    Array.from({ length: 3 }).map((_, index) => {
+      const isFilled = completionStars !== null && index < completionStars;
+      return (
+        <motion.span
+          key={index}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{
+            opacity: isFilled ? 1 : 0.2,
+            scale: isFilled ? 1 : 0.9,
+          }}
+          transition={{ delay: index * 0.2, duration: 0.35 }}
+          className={`text-xl sm:text-2xl ${isFilled
+            ? 'text-amber-300 drop-shadow-[0_0_12px_rgba(250,204,21,0.65)]'
+            : 'text-white/20'
+          }`}
+        >
+          {isFilled ? '⭐' : '☆'}
+        </motion.span>
+      );
+    })
+  ), [completionStars]);
 
   const levelWordsByLength = useMemo(() => {
     if (!Array.isArray(currentLevel?.words) || currentLevel.words.length === 0) {
@@ -451,6 +494,8 @@ const Game = () => {
     if (shuffleUsageCount === 0) {
       gameCanvasRef.current.shuffleLetters();
       setShuffleUsageCount(1);
+      setPowerUpsUsed(prev => (prev.shuffle ? prev : { ...prev, shuffle: true }));
+      markPowerUpUsed('shuffle');
       return;
     }
 
@@ -465,7 +510,7 @@ const Game = () => {
     }
 
     setShuffleModal({ type: 'confirm' });
-  }, [shuffleUsageCount, isAuthenticated, user?.coins, shuffleCost]);
+  }, [shuffleUsageCount, isAuthenticated, user?.coins, shuffleCost, markPowerUpUsed]);
 
   const handleConfirmShufflePurchase = useCallback(async () => {
     if (!isAuthenticated || isPurchasingShuffle) {
@@ -486,6 +531,8 @@ const Game = () => {
       }
 
       setShuffleUsageCount(prev => prev + 1);
+      setPowerUpsUsed(prev => (prev.shuffle ? prev : { ...prev, shuffle: true }));
+      markPowerUpUsed('shuffle');
       setShuffleModal({ type: null });
       gameCanvasRef.current?.shuffleLetters?.();
       toast.success('چیدمان با موفقیت تغییر کرد ✨');
@@ -499,6 +546,7 @@ const Game = () => {
     isPurchasingShuffle,
     currentLevelId,
     updateUser,
+    markPowerUpUsed,
   ]);
 
   const renderShuffleModalContent = () => {
@@ -628,7 +676,10 @@ const Game = () => {
     }
 
     try {
-      await autoSolve();
+      const result = await autoSolve();
+      setPowerUpsUsed(prev => (prev.autoSolve ? prev : { ...prev, autoSolve: true }));
+      markPowerUpUsed('autoSolve');
+      return result;
     } catch (error) {
       toast.error(error.message || 'یه مشکلی پیش اومد!');
     }
@@ -1224,9 +1275,30 @@ const Game = () => {
                       {completionBadgeCopy}
                     </span>
                   )}
-                  <div className="space-y-1">
+                  <div className="space-y-2">
                     <p className="text-sm font-semibold text-white/90">{completionTitleCopy}</p>
+                    {completionStars !== null && (
+                      <div className="flex items-center gap-1 text-amber-300">
+                        {completionStarElements}
+                      </div>
+                    )}
                     <p className="text-xs text-white/70 leading-relaxed">{completionDescriptionCopy}</p>
+                    {(usedShuffleThisLevel || usedAutoSolveThisLevel) && (
+                      <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] text-white/70">
+                        {usedShuffleThisLevel && (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/40 bg-amber-500/10 px-2.5 py-0.5 text-amber-100">
+                            <Shuffle className="w-3.5 h-3.5" />
+                            تغییر چیدمان
+                          </span>
+                        )}
+                        {usedAutoSolveThisLevel && (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-primary-400/40 bg-primary-500/10 px-2.5 py-0.5 text-primary-100">
+                            <Sparkles className="w-3.5 h-3.5" />
+                            حل خودکار
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <div className="flex flex-wrap items-center gap-2 pt-1">
                     <button
@@ -1452,19 +1524,43 @@ const Game = () => {
               >
                 <X className="w-5 h-5" />
               </button>
-              <div className="flex flex-col items-center gap-6">
-                <div className="p-3 rounded-2xl bg-primary-500/20 border border-primary-400/30 text-primary-100">
-                  <Sparkles className="w-7 h-7" />
-                </div>
-                <div className="space-y-2">
-                  <h3 className="text-xl font-bold">کلمه‌ای پیدا شد ✨</h3>
-                  <p className="text-sm text-white/70">یکی از کلمات با موفقیت پیدا شد.</p>
-                </div>
-                {autoSolveResult?.word?.text && (
-                  <div className="w-full rounded-2xl border border-primary-400/30 bg-primary-500/10 p-4">
-                    <p className="text-xs text-primary-200 mb-2">کلمه حل‌شده</p>
-                    <p className="text-2xl font-extrabold tracking-wide" dir="ltr">
-                      {autoSolveResult.word.text}
+                <div className="flex flex-col items-center gap-6">
+                  <div className="p-3 rounded-2xl bg-primary-500/20 border border-primary-400/30 text-primary-100">
+                    <Sparkles className="w-7 h-7" />
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-xl font-bold">کلمه‌ای پیدا شد ✨</h3>
+                    <p className="text-sm text-white/70">یکی از کلمات با موفقیت پیدا شد.</p>
+                  </div>
+                  {typeof autoSolveResult?.starsEarned === 'number' && (
+                    <div className="flex flex-col items-center gap-1 text-xs text-white/70">
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: 3 }).map((_, index) => {
+                          const isFilled = index < (autoSolveResult.starsEarned ?? 0);
+                          return (
+                            <span
+                              key={`auto-solve-star-${index}`}
+                              className={`text-lg ${isFilled ? 'text-amber-300 drop-shadow-[0_0_10px_rgba(250,204,21,0.45)]' : 'text-white/20'}`}
+                            >
+                              {isFilled ? '⭐' : '☆'}
+                            </span>
+                          );
+                        })}
+                      </div>
+                      <span>
+                        {autoSolveResult.starsEarned === 3
+                          ? 'بدون کمک! عااالی! 🔥'
+                          : autoSolveResult.starsEarned === 2
+                            ? 'با یک تغییر چیدمان، دو ستاره گرفتی 🌟'
+                            : 'حل خودکار یعنی یک ستاره، ولی مرحله کامل شد 💪'}
+                      </span>
+                    </div>
+                  )}
+                  {autoSolveResult?.word?.text && (
+                    <div className="w-full rounded-2xl border border-primary-400/30 bg-primary-500/10 p-4">
+                      <p className="text-xs text-primary-200 mb-2">کلمه حل‌شده</p>
+                      <p className="text-2xl font-extrabold tracking-wide" dir="ltr">
+                        {autoSolveResult.word.text}
                     </p>
                   </div>
                 )}

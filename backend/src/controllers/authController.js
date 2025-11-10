@@ -203,7 +203,7 @@ const getMe = async (req, res) => {
       .select('-password')
       .populate('levelProgress.levelId', 'order letters')
       .populate('levelProgress.completedWords', 'text length')
-      .populate('completedLevels', 'order letters');
+      .populate('completedLevels.levelId', 'order letters');
 
     res.json({
       success: true,
