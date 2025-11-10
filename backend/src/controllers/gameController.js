@@ -2,8 +2,56 @@ const mongoose = require('mongoose');
 const Level = require('../models/Level');
 const Word = require('../models/Word');
 const User = require('../models/User');
+const GameSetting = require('../models/GameSetting');
 
 const LEVEL_UNLOCK_COST = parseInt(process.env.LEVEL_UNLOCK_COST, 10) || 70;
+
+const DEFAULT_REWARD_SETTINGS = {
+  skipLevelCoinsReward: 0,
+  skipLevelPointsReward: 0,
+  wordFoundCoinsReward: parseInt(process.env.WORD_COMPLETE_REWARD, 10) || 20,
+  wordFoundPointsReward: parseInt(process.env.WORD_COMPLETE_POINTS, 10) || 20,
+};
+
+const resolveRewardValue = (value, fallback) => {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric < 0) {
+    return fallback;
+  }
+  return numeric;
+};
+
+const getResolvedRewardSettings = async () => {
+  try {
+    const settings = await GameSetting.findOne().lean();
+
+    if (!settings) {
+      return { ...DEFAULT_REWARD_SETTINGS };
+    }
+
+    return {
+      skipLevelCoinsReward: resolveRewardValue(
+        settings.skipLevelCoinsReward,
+        DEFAULT_REWARD_SETTINGS.skipLevelCoinsReward
+      ),
+      skipLevelPointsReward: resolveRewardValue(
+        settings.skipLevelPointsReward,
+        DEFAULT_REWARD_SETTINGS.skipLevelPointsReward
+      ),
+      wordFoundCoinsReward: resolveRewardValue(
+        settings.wordFoundCoinsReward,
+        DEFAULT_REWARD_SETTINGS.wordFoundCoinsReward
+      ),
+      wordFoundPointsReward: resolveRewardValue(
+        settings.wordFoundPointsReward,
+        DEFAULT_REWARD_SETTINGS.wordFoundPointsReward
+      ),
+    };
+  } catch (error) {
+    console.error('Failed to load game reward settings:', error);
+    return { ...DEFAULT_REWARD_SETTINGS };
+  }
+};
 
 const parseOrderNumber = (value) => {
   if (value === null || value === undefined) {
@@ -590,12 +638,19 @@ const completeWord = async (req, res) => {
       });
     }
 
-    // Award coins and update progress
-    const wordReward = parseInt(process.env.WORD_COMPLETE_REWARD) || 20;
-    await user.addCoins(wordReward);
+    // Award coins and update progress based on configurable rewards
+    const rewardSettings = await getResolvedRewardSettings();
+    const wordCoinsReward = rewardSettings.wordFoundCoinsReward;
+    const wordPointsReward = rewardSettings.wordFoundPointsReward;
+
+    if (wordCoinsReward > 0) {
+      await user.addCoins(wordCoinsReward);
+    }
+
     await user.completeWord(level._id, targetWord._id, {
       usedShuffle: powerUpsUsed.shuffle,
-      usedAutoSolve: powerUpsUsed.autoSolve
+      usedAutoSolve: powerUpsUsed.autoSolve,
+      pointsReward: wordPointsReward
     });
 
     // Update word completion stats
@@ -643,7 +698,8 @@ const completeWord = async (req, res) => {
       message: isLevelCompleted ? 'Level completed!' : 'Word completed!',
       data: {
         word: targetWord,
-        coinsEarned: wordReward,
+        coinsEarned: wordCoinsReward,
+        pointsEarned: wordPointsReward,
         totalCoins: user.coins,
         totalScore: user.totalScore,
         levelCompleted: isLevelCompleted,
