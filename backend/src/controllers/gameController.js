@@ -339,10 +339,26 @@ const autoSolve = async (req, res) => {
 
     // Complete the word (without coin reward)
     await user.completeWord(level._id, randomWord._id);
-    
+
     // Update word stats
     randomWord.timesCompleted += 1;
     await randomWord.save();
+
+    // Check if level is now completed after auto-solve
+    const levelProgress = user.getLevelProgress(level._id);
+    const completedWordsCount = levelProgress?.completedWords?.length || 0;
+    const isLevelCompleted = completedWordsCount === level.words.length;
+
+    let levelBonus = 0;
+
+    if (isLevelCompleted && !levelProgress?.isComplete) {
+      const levelReward = parseInt(process.env.LEVEL_COMPLETE_REWARD) || 100;
+
+      await user.addCoins(levelReward);
+      await user.completeLevel(level._id);
+
+      levelBonus = levelReward;
+    }
 
     res.json({
       success: true,
@@ -351,7 +367,9 @@ const autoSolve = async (req, res) => {
         solvedWord: randomWord,
         coinsSpent: autoSolveCost,
         remainingCoins: user.coins,
-        totalScore: user.totalScore
+        totalScore: user.totalScore,
+        levelCompleted: isLevelCompleted,
+        levelBonus
       }
     });
   } catch (error) {
