@@ -973,16 +973,21 @@ const getUsersWithStats = async (req, res) => {
 // @access  Admin
 const getGameRewardSettings = async (req, res) => {
   try {
-    let settings = await GameSetting.findOne()
-      .populate('updatedBy', 'username email')
-      .lean();
+    const settingsDoc = await GameSetting.findOneAndUpdate(
+      {},
+      { $setOnInsert: {} },
+      {
+        new: true,
+        upsert: true,
+        setDefaultsOnInsert: true,
+        sort: { createdAt: 1 }
+      }
+    )
+      .populate('updatedBy', 'username email');
 
-    if (!settings) {
-      const defaultSettings = await GameSetting.create({});
-      settings = await GameSetting.findById(defaultSettings._id)
-        .populate('updatedBy', 'username email')
-        .lean();
-    }
+    const settings = typeof settingsDoc?.toObject === 'function'
+      ? settingsDoc.toObject()
+      : settingsDoc;
 
     res.json({
       success: true,
@@ -1033,7 +1038,8 @@ const updateGameRewardSettings = async (req, res) => {
         new: true,
         upsert: true,
         runValidators: true,
-        setDefaultsOnInsert: true
+        setDefaultsOnInsert: true,
+        sort: { createdAt: 1 }
       }
     ).populate('updatedBy', 'username email');
 
