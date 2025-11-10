@@ -80,6 +80,10 @@ const userSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Level'
   }],
+  unlockedLevels: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Level'
+  }],
   isAdmin: {
     type: Boolean,
     default: false

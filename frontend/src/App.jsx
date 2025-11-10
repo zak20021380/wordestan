@@ -7,6 +7,7 @@ import { GameProvider } from './contexts/GameContext';
 // Pages
 import Home from './pages/Home';
 import Game from './pages/Game';
+import LevelMap from './pages/LevelMap';
 import Store from './pages/Store';
 import PaymentVerify from './pages/PaymentVerify';
 import Leaderboard from './pages/Leaderboard';
@@ -54,6 +55,14 @@ function App() {
                       <Routes>
                         <Route path="/" element={<Home />} />
                         <Route path="/game" element={<Game />} />
+                        <Route
+                          path="/levels"
+                          element={
+                            <ProtectedRoute>
+                              <LevelMap />
+                            </ProtectedRoute>
+                          }
+                        />
                         <Route
                           path="/store"
                           element={

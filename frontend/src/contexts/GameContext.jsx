@@ -3,6 +3,15 @@ import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { gameService } from '../services/gameService';
 import { useAuth } from './AuthContext';
 
+const parseLevelOrder = (value) => {
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  const numeric = Number(value);
+  return Number.isNaN(numeric) ? null : numeric;
+};
+
 const GameContext = createContext({});
 
 export const useGame = () => {
@@ -31,6 +40,7 @@ export const GameProvider = ({ children }) => {
     source: null,
   });
   const [autoSolveResult, setAutoSolveResult] = useState(null);
+  const [isLevelSwitching, setIsLevelSwitching] = useState(false);
   const previousLevelOrderRef = useRef(null);
   const pendingTransitionRef = useRef(null);
   const hasInitializedLevelRef = useRef(false);
@@ -55,7 +65,102 @@ export const GameProvider = ({ children }) => {
     setLevelTransition(null);
     setAutoSolveResult(null);
     setLevelCompletionStatus({ completed: false, source: null });
+    setIsLevelSwitching(false);
   }, [isAuthenticated, authLoading]);
+
+  const handleLevelSync = useCallback((response, options = {}) => {
+    const payload = response?.data ?? null;
+    const meta = options.metaOverride ?? response?.meta ?? null;
+    const nextLevel = payload?.level ?? null;
+
+    setLevelMeta(meta);
+
+    if (!nextLevel) {
+      setCurrentLevel(null);
+      setGameState(prev => ({
+        ...prev,
+        selectedNodes: [],
+        selectionPreview: '',
+        currentWord: '',
+        completedWords: [],
+      }));
+      previousLevelOrderRef.current = null;
+      pendingTransitionRef.current = null;
+      hasInitializedLevelRef.current = false;
+      setLevelTransition(null);
+      setLevelCompletionStatus({ completed: false, source: null });
+      return { level: null, meta, payload };
+    }
+
+    const newOrder = parseLevelOrder(nextLevel.order);
+    const previousOrder = parseLevelOrder(previousLevelOrderRef.current);
+    const hasPrevious = hasInitializedLevelRef.current && previousOrder !== null;
+
+    const transitionOverride = options.transitionOverride ?? null;
+    const pending = transitionOverride ?? pendingTransitionRef.current ?? null;
+
+    let transitionType = pending?.type ?? null;
+    let difference = null;
+
+    if (hasPrevious && newOrder !== null && previousOrder !== null) {
+      difference = newOrder - previousOrder;
+    }
+
+    if (hasPrevious && newOrder !== null && newOrder !== previousOrder) {
+      if (!transitionType) {
+        if (difference > 1) {
+          transitionType = 'skipped';
+        } else if (difference === 1) {
+          transitionType = 'advanced';
+        } else if (difference < 0) {
+          transitionType = 'revisit';
+        } else {
+          transitionType = 'advanced';
+        }
+      }
+
+      setLevelTransition({
+        type: transitionType,
+        from: previousOrder,
+        to: newOrder,
+        difference,
+        userProgress: payload?.userProgress ?? null,
+        meta,
+        cause: pending ?? null,
+        timestamp: Date.now(),
+      });
+    }
+
+    previousLevelOrderRef.current = newOrder;
+    hasInitializedLevelRef.current = true;
+    pendingTransitionRef.current = null;
+
+    const completedWords = Array.from(
+      new Set((payload?.completedWords ?? []).filter(Boolean).map(word => word.toUpperCase()))
+    );
+    const totalWords = Array.isArray(nextLevel?.words)
+      ? nextLevel.words.filter(Boolean).length
+      : 0;
+    const completedAll = totalWords > 0 && completedWords.length >= totalWords;
+
+    setCurrentLevel(nextLevel);
+    setGameState(prev => ({
+      ...prev,
+      selectedNodes: [],
+      selectionPreview: '',
+      currentWord: '',
+      completedWords,
+    }));
+
+    if (completedAll) {
+      const completionSource = options.completionSource ?? 'synced';
+      setLevelCompletionStatus({ completed: true, source: completionSource });
+    } else {
+      setLevelCompletionStatus({ completed: false, source: null });
+    }
+
+    return { level: nextLevel, meta, payload, completedWords };
+  }, [setGameState, setLevelCompletionStatus, setLevelMeta, setLevelTransition]);
 
   // Fetch next level
   const { isLoading: levelLoading, refetch: refetchNextLevel } = useQuery(
@@ -64,101 +169,49 @@ export const GameProvider = ({ children }) => {
     {
       enabled: !authLoading && isAuthenticated,
       onSuccess: (response) => {
-        const payload = response?.data ?? null;
-        const meta = response?.meta ?? null;
-        const nextLevel = payload?.level ?? null;
-
-        setLevelMeta(meta);
-
-        // Handle null when no more levels are available
-        if (!nextLevel) {
-          setCurrentLevel(null);
-          setGameState(prev => ({
-            ...prev,
-            selectedNodes: [],
-            selectionPreview: '',
-            currentWord: '',
-            completedWords: [],
-          }));
-          previousLevelOrderRef.current = null;
-          pendingTransitionRef.current = null;
-          hasInitializedLevelRef.current = false;
-          return;
-        }
-
-        const parseOrder = (value) => {
-          if (value === null || value === undefined) {
-            return null;
-          }
-          const numeric = Number(value);
-          return Number.isNaN(numeric) ? null : numeric;
-        };
-
-        const newOrder = parseOrder(nextLevel.order);
-        const previousOrder = parseOrder(previousLevelOrderRef.current);
-        const hasPrevious = hasInitializedLevelRef.current && previousOrder !== null;
-
-        if (
-          hasPrevious &&
-          newOrder !== null &&
-          newOrder !== previousOrder
-        ) {
-          const pending = pendingTransitionRef.current;
-          let transitionType = pending?.type;
-          const difference = newOrder - previousOrder;
-
-          if (!transitionType) {
-            if (difference > 1) {
-              transitionType = 'skipped';
-            } else if (difference === 1) {
-              transitionType = 'advanced';
-            } else if (difference < 0) {
-              transitionType = 'revisit';
-            } else {
-              transitionType = 'advanced';
-            }
-          }
-
-          setLevelTransition({
-            type: transitionType,
-            from: previousOrder,
-            to: newOrder,
-            difference,
-            userProgress: payload?.userProgress ?? null,
-            meta,
-            cause: pending ?? null,
-            timestamp: Date.now(),
-          });
-        }
-
-        previousLevelOrderRef.current = newOrder;
-        hasInitializedLevelRef.current = true;
-        pendingTransitionRef.current = null;
-
-        const completedWords = Array.from(
-          new Set((payload.completedWords ?? []).filter(Boolean).map(word => word.toUpperCase()))
-        );
-        const totalWords = Array.isArray(nextLevel?.words)
-          ? nextLevel.words.filter(Boolean).length
-          : 0;
-        const completedAll = totalWords > 0 && completedWords.length >= totalWords;
-
-        setCurrentLevel(nextLevel);
-        setGameState(prev => ({
-          ...prev,
-          selectedNodes: [],
-          selectionPreview: '',
-          currentWord: '',
-          completedWords,
-        }));
-        setLevelCompletionStatus(
-          completedAll
-            ? { completed: true, source: 'synced' }
-            : { completed: false, source: null }
-        );
+        handleLevelSync(response);
       },
     }
   );
+
+  const loadLevelById = useCallback(async (levelId, options = {}) => {
+    if (!levelId) {
+      return null;
+    }
+
+    if (!isAuthenticated) {
+      throw new Error('برای انتخاب مرحله باید وارد حساب کاربری شوی');
+    }
+
+    setIsLevelSwitching(true);
+    try {
+      const response = await gameService.getNextLevel(levelId);
+      queryClient.setQueryData(['nextLevel', user?.id], response);
+
+      const targetOrder = parseLevelOrder(response?.data?.level?.order);
+      const transitionOverride = {
+        type: options.transitionType || 'changed',
+        from: parseLevelOrder(currentLevel?.order),
+        to: targetOrder,
+        target: targetOrder,
+        requestedLevelId: levelId,
+      };
+
+      handleLevelSync(response, {
+        transitionOverride,
+        metaOverride: {
+          ...(response?.meta ?? {}),
+          status: response?.meta?.status ?? 'level_selected',
+          requestedLevelId: levelId,
+        },
+        completionSource: options.completionSource || 'manual',
+      });
+
+      return response;
+    } finally {
+      setIsLevelSwitching(false);
+    }
+  }, [currentLevel?.order, handleLevelSync, isAuthenticated, queryClient, user?.id]);
 
   const { isLoading: guestLevelLoading, refetch: refetchGuestLevel } = useQuery(
     ['guestLevel'],
@@ -187,15 +240,7 @@ export const GameProvider = ({ children }) => {
           return;
         }
 
-        const parseOrder = (value) => {
-          if (value === null || value === undefined) {
-            return null;
-          }
-          const numeric = Number(value);
-          return Number.isNaN(numeric) ? null : numeric;
-        };
-
-        const guestOrder = parseOrder(level.order);
+        const guestOrder = parseLevelOrder(level.order);
 
         setCurrentLevel(level);
         setLevelMeta({
@@ -228,7 +273,9 @@ export const GameProvider = ({ children }) => {
     }
   );
 
-  const combinedLevelLoading = authLoading || (isAuthenticated ? levelLoading : guestLevelLoading);
+  const combinedLevelLoading = authLoading
+    || isLevelSwitching
+    || (isAuthenticated ? levelLoading : guestLevelLoading);
 
   // Complete word mutation
   const completeWordMutation = useMutation(
@@ -270,17 +317,9 @@ export const GameProvider = ({ children }) => {
         const completedAll = totalWords > 0 && updatedCompletedWords.length >= totalWords;
 
         if (completedAll) {
-          const parseOrder = (value) => {
-            if (value === null || value === undefined) {
-              return null;
-            }
-            const numeric = Number(value);
-            return Number.isNaN(numeric) ? null : numeric;
-          };
-
           pendingTransitionRef.current = {
             type: 'completed',
-            from: parseOrder(currentLevel?.order),
+            from: parseLevelOrder(currentLevel?.order),
           };
         }
 
@@ -336,17 +375,9 @@ export const GameProvider = ({ children }) => {
         const completedAll = totalWords > 0 && updatedCompletedWords.length >= totalWords;
 
         if (completedAll) {
-          const parseOrder = (value) => {
-            if (value === null || value === undefined) {
-              return null;
-            }
-            const numeric = Number(value);
-            return Number.isNaN(numeric) ? null : numeric;
-          };
-
           pendingTransitionRef.current = {
             type: 'completed',
-            from: parseOrder(currentLevel?.order),
+            from: parseLevelOrder(currentLevel?.order),
           };
         }
 
@@ -508,17 +539,9 @@ export const GameProvider = ({ children }) => {
       });
 
       if (result?.data?.levelCompleted) {
-        const parseOrder = (value) => {
-          if (value === null || value === undefined) {
-            return null;
-          }
-          const numeric = Number(value);
-          return Number.isNaN(numeric) ? null : numeric;
-        };
-
         pendingTransitionRef.current = {
           type: 'completed',
-          from: parseOrder(currentLevel?.order),
+          from: parseLevelOrder(currentLevel?.order),
         };
       }
 
@@ -591,6 +614,7 @@ export const GameProvider = ({ children }) => {
     finalizeWordSelection,
     submitWord,
     autoSolve,
+    loadLevelById,
 
     // Mutations
     completeWordMutation,

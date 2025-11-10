@@ -49,12 +49,33 @@ export const gameService = {
   },
 
   // Get next level for user
-  async getNextLevel() {
+  async getNextLevel(levelId) {
     try {
-      const response = await api.get('/game/next-level');
+      const config = levelId ? { params: { levelId } } : {};
+      const response = await api.get('/game/next-level', config);
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to get next level');
+    }
+  },
+
+  // Get all levels with progress
+  async getLevels() {
+    try {
+      const response = await api.get('/game/levels');
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to load levels');
+    }
+  },
+
+  // Unlock a specific level
+  async unlockLevel(levelId) {
+    try {
+      const response = await api.post('/game/unlock-level', { levelId });
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to unlock level');
     }
   },
 

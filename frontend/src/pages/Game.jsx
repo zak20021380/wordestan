@@ -1,5 +1,5 @@
 import { useRef, useState, useMemo, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGame } from '../contexts/GameContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -43,7 +43,8 @@ const Game = () => {
     autoSolveResult,
     clearAutoSolveResult,
     levelCompletionStatus,
-    loadNextLevel
+    loadNextLevel,
+    loadLevelById
   } = useGame();
   const { user, isAuthenticated, updateUser } = useAuth();
 
@@ -58,6 +59,9 @@ const Game = () => {
   const [completionPromptContext, setCompletionPromptContext] = useState(null);
   const shuffleCost = 15;
   const currentLevelId = currentLevel?._id ?? null;
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedLevelId = searchParams.get('levelId');
+  const lastRequestedLevelRef = useRef(null);
   const faNumberFormatter = useMemo(() => new Intl.NumberFormat('fa-IR'), []);
   const formatNumber = useCallback(
     (value) => {
@@ -197,6 +201,38 @@ const Game = () => {
         };
     }
   }, [transitionCopy]);
+
+  useEffect(() => {
+    if (!requestedLevelId) {
+      lastRequestedLevelRef.current = null;
+      return;
+    }
+
+    if (!isAuthenticated) {
+      return;
+    }
+
+    if (requestedLevelId === currentLevelId) {
+      lastRequestedLevelRef.current = requestedLevelId;
+      return;
+    }
+
+    if (lastRequestedLevelRef.current === requestedLevelId) {
+      return;
+    }
+
+    lastRequestedLevelRef.current = requestedLevelId;
+
+    loadLevelById(requestedLevelId, {
+      completionSource: 'manual',
+      transitionType: 'changed',
+    })
+      .catch((error) => {
+        toast.error(error.message || 'باز کردن این مرحله ممکن نشد');
+        lastRequestedLevelRef.current = null;
+        setSearchParams({}, { replace: true });
+      });
+  }, [requestedLevelId, isAuthenticated, loadLevelById, currentLevelId, setSearchParams]);
 
   useEffect(() => {
     if (!levelTransition) {

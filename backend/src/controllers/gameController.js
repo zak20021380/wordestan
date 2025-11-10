@@ -1,6 +1,34 @@
+const mongoose = require('mongoose');
 const Level = require('../models/Level');
 const Word = require('../models/Word');
 const User = require('../models/User');
+
+const LEVEL_UNLOCK_COST = parseInt(process.env.LEVEL_UNLOCK_COST, 10) || 70;
+
+const parseOrderNumber = (value) => {
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  const numeric = Number(value);
+  return Number.isNaN(numeric) ? null : numeric;
+};
+
+const toStringId = (value) => {
+  if (!value) {
+    return null;
+  }
+
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  if (typeof value.toString === 'function') {
+    return value.toString();
+  }
+
+  return null;
+};
 
 // @desc    Get the first level (public)
 // @route   GET /api/game/level/1
@@ -30,20 +58,13 @@ const getFirstLevel = async (req, res) => {
   }
 };
 
-// @desc    Get next level for user
+// @desc    Get next level for user or load a specific level
 // @route   GET /api/game/next-level
 // @access  Private
 const getNextLevel = async (req, res) => {
   try {
     const user = req.user;
-    
-    // Find the next unpublished level for the user
-    const nextLevel = await Level.findOne({
-      order: { $gte: user.currentLevel },
-      isPublished: true
-    })
-      .populate('words', 'text length difficulty points meaning')
-      .sort({ order: 1 });
+    const { levelId } = req.query ?? {};
 
     const userProgress = {
       currentLevel: user.currentLevel,
@@ -52,13 +73,76 @@ const getNextLevel = async (req, res) => {
       totalScore: user.totalScore
     };
 
+    if (levelId) {
+      if (!mongoose.Types.ObjectId.isValid(levelId)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid level ID'
+        });
+      }
+
+      const targetLevel = await Level.findOne({
+        _id: levelId,
+        isPublished: true
+      })
+        .populate('words', 'text length difficulty points meaning');
+
+      if (!targetLevel) {
+        return res.status(404).json({
+          success: false,
+          message: 'Level not found'
+        });
+      }
+
+      const levelIdString = targetLevel._id.toString();
+      const completedLevels = Array.isArray(user.completedLevels) ? user.completedLevels : [];
+      const unlockedLevels = Array.isArray(user.unlockedLevels) ? user.unlockedLevels : [];
+
+      const isCompleted = completedLevels.some(entry => toStringId(entry) === levelIdString);
+      const isUnlocked = unlockedLevels.some(entry => toStringId(entry) === levelIdString);
+      const isWithinProgress = targetLevel.order <= user.currentLevel;
+
+      if (!isCompleted && !isUnlocked && !isWithinProgress) {
+        return res.status(403).json({
+          success: false,
+          message: 'Level is locked'
+        });
+      }
+
+      await user.updateLastActive();
+
+      const levelObject = targetLevel.toObject({ getters: true });
+      const completedWords = levelObject.words
+        .filter(word => user.hasCompletedWordInLevel(targetLevel._id, word._id))
+        .map(word => word.text);
+
+      return res.json({
+        success: true,
+        data: {
+          level: levelObject,
+          completedWords,
+          userProgress
+        },
+        meta: {
+          status: isCompleted ? 'level_revisit' : 'level_selected',
+          requestedLevelId: levelId
+        }
+      });
+    }
+
+    const nextLevel = await Level.findOne({
+      order: { $gte: user.currentLevel },
+      isPublished: true
+    })
+      .populate('words', 'text length difficulty points meaning')
+      .sort({ order: 1 });
+
     if (!nextLevel) {
       const hasPublishedLevels = await Level.exists({ isPublished: true });
       const firstPublishedLevel = hasPublishedLevels
         ? await Level.findOne({ isPublished: true }).sort({ order: 1 }).select('order')
         : null;
 
-      // Update user's last active even if there's no level to return
       await user.updateLastActive();
 
       let status = 'all_levels_completed';
@@ -80,16 +164,14 @@ const getNextLevel = async (req, res) => {
       });
     }
 
-    // Update user's last active
     await user.updateLastActive();
 
     const levelObject = nextLevel.toObject({ getters: true });
-
     const completedWords = levelObject.words
       .filter(word => user.hasCompletedWordInLevel(nextLevel._id, word._id))
       .map(word => word.text);
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         level: levelObject,
@@ -102,9 +184,254 @@ const getNextLevel = async (req, res) => {
     });
   } catch (error) {
     console.error('Get next level error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Server error fetching next level'
+    });
+  }
+};
+
+// @desc    Get all levels with progress overview
+// @route   GET /api/game/levels
+// @access  Private
+const getLevels = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select('-password');
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    const levels = await Level.find({ isPublished: true })
+      .sort({ order: 1 })
+      .lean();
+
+    const highestLevelOrder = levels.length > 0
+      ? parseOrderNumber(levels[levels.length - 1].order)
+      : null;
+
+    const completedSet = new Set(
+      (user.completedLevels || [])
+        .map(entry => toStringId(entry))
+        .filter(Boolean)
+    );
+
+    const unlockedSet = new Set(
+      (user.unlockedLevels || [])
+        .map(entry => toStringId(entry))
+        .filter(Boolean)
+    );
+
+    const progressMap = new Map();
+
+    if (Array.isArray(user.levelProgress)) {
+      user.levelProgress.forEach(entry => {
+        const id = toStringId(entry?.levelId);
+        if (!id) {
+          return;
+        }
+
+        const completedWordsCount = Array.isArray(entry.completedWords)
+          ? entry.completedWords.length
+          : 0;
+
+        progressMap.set(id, {
+          completedWords: completedWordsCount,
+          isComplete: Boolean(entry.isComplete)
+        });
+      });
+    }
+
+    const levelsData = levels.map(level => {
+      const id = level._id.toString();
+      const totalWords = Array.isArray(level.words) ? level.words.length : 0;
+      const progress = progressMap.get(id) || { completedWords: 0, isComplete: false };
+      const completedWords = progress.completedWords ?? 0;
+      const completionRate = totalWords === 0 ? 0 : completedWords / totalWords;
+      const completionPercentage = Math.round(completionRate * 100);
+      const stars = totalWords === 0
+        ? 0
+        : Math.min(3, Math.max(0, Math.round(completionRate * 3)));
+
+      const isCompleted = progress.isComplete || completedSet.has(id);
+      const isUnlocked = unlockedSet.has(id);
+      const isPastLevel = level.order < user.currentLevel;
+      const isCurrentLevel = level.order === user.currentLevel
+        || (highestLevelOrder !== null
+          && user.currentLevel > highestLevelOrder
+          && level.order === highestLevelOrder);
+
+      let status = 'locked';
+
+      if (isCompleted) {
+        status = 'completed';
+      } else if (isCurrentLevel || isUnlocked || isPastLevel) {
+        status = 'available';
+      }
+
+      const canUnlock = status === 'locked'
+        && level.order > user.currentLevel
+        && !isUnlocked;
+
+      return {
+        id,
+        order: level.order,
+        letters: level.letters,
+        totalWords,
+        completedWords,
+        completionRate,
+        completionPercentage,
+        stars,
+        status,
+        isCurrent: isCurrentLevel,
+        isUnlocked,
+        isCompleted,
+        canUnlock,
+        unlockCost: LEVEL_UNLOCK_COST
+      };
+    });
+
+    const totalLevels = levelsData.length;
+    const completedLevelsCount = levelsData.filter(level => level.isCompleted).length;
+    const availableLevelsCount = levelsData.filter(level => level.status !== 'locked').length;
+    const lockedLevelsCount = totalLevels - availableLevelsCount;
+    const progressPercentage = totalLevels === 0
+      ? 0
+      : Math.round((completedLevelsCount / totalLevels) * 100);
+
+    await user.updateLastActive();
+
+    return res.json({
+      success: true,
+      data: {
+        levels: levelsData,
+        stats: {
+          totalLevels,
+          completedLevels: completedLevelsCount,
+          availableLevels: availableLevelsCount,
+          lockedLevels: lockedLevelsCount,
+          progressPercentage,
+          currentLevel: user.currentLevel,
+          coins: user.coins
+        },
+        unlockCost: LEVEL_UNLOCK_COST
+      }
+    });
+  } catch (error) {
+    console.error('Get levels overview error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Server error fetching levels overview'
+    });
+  }
+};
+
+// @desc    Unlock a specific level for coins
+// @route   POST /api/game/unlock-level
+// @access  Private
+const unlockLevel = async (req, res) => {
+  try {
+    const { levelId } = req.body;
+
+    if (!levelId || !mongoose.Types.ObjectId.isValid(levelId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid level ID is required'
+      });
+    }
+
+    const user = await User.findById(req.user._id).select('-password');
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    const level = await Level.findOne({
+      _id: levelId,
+      isPublished: true
+    });
+
+    if (!level) {
+      return res.status(404).json({
+        success: false,
+        message: 'Level not found'
+      });
+    }
+
+    const levelIdString = level._id.toString();
+
+    if (Array.isArray(user.completedLevels)
+      && user.completedLevels.some(entry => toStringId(entry) === levelIdString)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Level already completed'
+      });
+    }
+
+    if (Array.isArray(user.unlockedLevels)
+      && user.unlockedLevels.some(entry => toStringId(entry) === levelIdString)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Level already unlocked'
+      });
+    }
+
+    if (level.order <= user.currentLevel) {
+      return res.status(400).json({
+        success: false,
+        message: 'Level is already available'
+      });
+    }
+
+    if (user.coins < LEVEL_UNLOCK_COST) {
+      return res.status(400).json({
+        success: false,
+        message: 'Not enough coins to unlock level'
+      });
+    }
+
+    user.coins -= LEVEL_UNLOCK_COST;
+
+    if (!Array.isArray(user.unlockedLevels)) {
+      user.unlockedLevels = [];
+    }
+
+    user.unlockedLevels.push(level._id);
+
+    if (!user.currentLevel || level.order > user.currentLevel) {
+      user.currentLevel = level.order;
+    }
+
+    user.lastActive = new Date();
+    await user.save();
+
+    return res.json({
+      success: true,
+      message: 'Level unlocked successfully',
+      data: {
+        levelId: level._id,
+        levelOrder: level.order,
+        coins: user.coins,
+        currentLevel: user.currentLevel,
+        unlockedLevels: user.unlockedLevels
+          .map(entry => toStringId(entry))
+          .filter(Boolean)
+      },
+      meta: {
+        unlockCost: LEVEL_UNLOCK_COST
+      }
+    });
+  } catch (error) {
+    console.error('Unlock level error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Server error unlocking level'
     });
   }
 };
@@ -427,6 +754,8 @@ const getGameStats = async (req, res) => {
 module.exports = {
   getFirstLevel,
   getNextLevel,
+  getLevels,
+  unlockLevel,
   completeWord,
   getHint,
   purchaseShuffle,
