@@ -1360,7 +1360,7 @@ const Game = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm px-4 py-6 sm:py-10"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm px-3 py-6 sm:px-4 sm:py-10"
             onClick={clearLevelTransition}
           >
             <motion.div
@@ -1369,7 +1369,7 @@ const Game = () => {
               exit={{ scale: 0.94, opacity: 0 }}
               transition={{ type: 'spring', stiffness: 260, damping: 22 }}
               onClick={(event) => event.stopPropagation()}
-              className="relative w-full max-w-xl bg-gradient-to-br from-purple-900/90 via-slate-900/95 to-cyan-900/85 border border-white/10 rounded-3xl px-5 py-6 sm:px-7 sm:py-8 shadow-[0_30px_90px_rgba(15,6,32,0.6)] text-right"
+              className="relative w-full max-w-md sm:max-w-xl bg-slate-950/95 border border-white/10 rounded-2xl px-5 py-6 sm:px-7 sm:py-8 shadow-lg shadow-primary-900/30 text-right"
             >
               <button
                 type="button"
@@ -1380,29 +1380,33 @@ const Game = () => {
                 <X className="w-5 h-5" />
               </button>
 
-              <div className="flex flex-col gap-6">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="flex items-start gap-4 sm:gap-5">
-                    <div className="shrink-0 p-3 sm:p-4 rounded-2xl bg-white/10 border border-white/15 shadow-[0_0_25px_rgba(168,85,247,0.25)]">
-                      <Milestone className={`w-9 h-9 sm:w-10 sm:h-10 ${transitionAccent?.icon ?? 'text-primary-200'}`} />
+              <div className="flex flex-col gap-5 sm:gap-6">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+                  <div className="flex items-start gap-3 sm:gap-4">
+                    <div className="shrink-0 p-3 rounded-xl bg-white/10 border border-white/15">
+                      <Milestone className={`w-8 h-8 sm:w-9 sm:h-9 ${transitionAccent?.icon ?? 'text-primary-200'}`} />
                     </div>
-                    <div className="flex-1 space-y-3">
+                    <div className="space-y-3">
                       <div
-                        className={`inline-flex items-center gap-2 bg-gradient-to-r ${transitionAccent?.chip ?? 'from-primary-500/20 to-secondary-500/20'} ${transitionAccent?.chipText ?? 'text-primary-100'} ${transitionAccent?.chipBorder ?? 'border-primary-500/40'} border rounded-full px-3 py-1 text-[11px] font-semibold`}
+                        className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold ${
+                          transitionAccent
+                            ? `bg-gradient-to-r ${transitionAccent.chip} ${transitionAccent.chipText} ${transitionAccent.chipBorder}`
+                            : 'bg-white/10 border-white/20 text-primary-100'
+                        }`}
                       >
                         <Sparkles className="w-4 h-4" />
                         <span>{transitionCopy.badge}</span>
                       </div>
                       <div className="space-y-2">
-                        <h3 className="text-2xl sm:text-3xl font-extrabold text-white leading-snug">
+                        <h3 className="text-xl sm:text-2xl font-bold text-white leading-snug">
                           {transitionCopy.title}
                         </h3>
-                        <p className="text-sm sm:text-base text-white/80 leading-relaxed">
+                        <p className="text-sm sm:text-base text-white/75 leading-relaxed">
                           {transitionCopy.description}
                         </p>
                       </div>
                       {transitionCopy.differenceSummary && (
-                        <div className="inline-flex items-center gap-1 rounded-full bg-white/10 border border-white/15 px-2.5 py-1 text-[11px] text-white/70">
+                        <div className="inline-flex items-center gap-1 rounded-full bg-white/10 border border-white/20 px-2.5 py-1 text-[11px] text-white/70">
                           {transitionCopy.isForward ? (
                             <ArrowUpRight className="w-4 h-4 text-emerald-200" />
                           ) : (
@@ -1415,10 +1419,10 @@ const Game = () => {
                   </div>
 
                   {transitionCopy.to !== null && (
-                    <div className="w-full sm:w-auto">
-                      <div className="h-full rounded-2xl bg-white/8 border border-white/15 px-4 py-3 text-center shadow-[0_0_25px_rgba(6,182,212,0.2)]">
+                    <div className="flex sm:block justify-end sm:justify-start">
+                      <div className="rounded-xl bg-white/8 border border-white/15 px-4 py-3 text-center min-w-[120px]">
                         <p className="text-xs text-white/60">مرحله جدید</p>
-                        <p className="mt-1 text-3xl font-black text-white">
+                        <p className="mt-1 text-2xl sm:text-3xl font-extrabold text-white">
                           {formatNumber(transitionCopy.to)}
                         </p>
                       </div>
@@ -1429,25 +1433,25 @@ const Game = () => {
                 {(transitionCopy.from !== null || transitionCopy.to !== null || transitionCopy.differenceLabel) && (
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {transitionCopy.from !== null && (
-                      <div className="rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-right">
+                      <div className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-right space-y-1">
                         <p className="text-xs text-white/60">مرحله قبلی</p>
-                        <p className="mt-1 text-lg font-semibold text-white">
+                        <p className="text-lg font-semibold text-white">
                           {formatNumber(transitionCopy.from)}
                         </p>
                       </div>
                     )}
                     {transitionCopy.to !== null && (
-                      <div className="rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-right">
+                      <div className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-right space-y-1">
                         <p className="text-xs text-white/60">مرحله فعلی</p>
-                        <p className="mt-1 text-lg font-semibold text-white">
+                        <p className="text-lg font-semibold text-white">
                           {formatNumber(transitionCopy.to)}
                         </p>
                       </div>
                     )}
                     {transitionCopy.differenceLabel && (
-                      <div className="rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-right">
+                      <div className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-right space-y-1">
                         <p className="text-xs text-white/60">تغییر مرحله</p>
-                        <p className="mt-1 text-base font-semibold text-white">
+                        <p className="text-base font-semibold text-white">
                           {transitionCopy.differenceLabel}
                         </p>
                       </div>
@@ -1455,33 +1459,33 @@ const Game = () => {
                   </div>
                 )}
 
-                  {transitionCopy.userProgress && (
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <div className="rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-right">
-                        <p className="text-xs text-white/60">مرحله فعلی بازیکن</p>
-                        <p className="mt-1 text-lg font-semibold text-white">
-                          {transitionCopy.userProgress.currentLevel != null
-                            ? `مرحله ${formatNumber(transitionCopy.userProgress.currentLevel)}`
-                            : '—'}
-                        </p>
-                      </div>
-                      <div className="rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-right">
-                        <p className="text-xs text-white/60">مراحل تکمیل‌شده</p>
-                        <p className="mt-1 text-lg font-semibold text-white">
-                          {formatNumber(transitionCopy.userProgress.levelsCleared ?? 0)}
-                        </p>
-                      </div>
-                      <div className="rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-right">
-                        <p className="text-xs text-white/60">امتیاز کل</p>
-                        <p className="mt-1 text-lg font-semibold text-white">
-                          {formatNumber(transitionCopy.userProgress.totalScore ?? 0)}
-                        </p>
-                      </div>
+                {transitionCopy.userProgress && (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-right space-y-1">
+                      <p className="text-xs text-white/60">مرحله فعلی بازیکن</p>
+                      <p className="text-lg font-semibold text-white">
+                        {transitionCopy.userProgress.currentLevel != null
+                          ? `مرحله ${formatNumber(transitionCopy.userProgress.currentLevel)}`
+                          : '—'}
+                      </p>
                     </div>
-                  )}
+                    <div className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-right space-y-1">
+                      <p className="text-xs text-white/60">مراحل تکمیل‌شده</p>
+                      <p className="text-lg font-semibold text-white">
+                        {formatNumber(transitionCopy.userProgress.levelsCleared ?? 0)}
+                      </p>
+                    </div>
+                    <div className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-right space-y-1">
+                      <p className="text-xs text-white/60">امتیاز کل</p>
+                      <p className="text-lg font-semibold text-white">
+                        {formatNumber(transitionCopy.userProgress.totalScore ?? 0)}
+                      </p>
+                    </div>
+                  </div>
+                )}
 
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-xs text-white/60">
-                  <p className="leading-relaxed">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-white/70">
+                  <p className="leading-relaxed text-white/70">
                     {transitionCopy.type === 'completed'
                       ? 'امتیاز مرحله قبل برات ذخیره شد. برای مرحله جدید آماده‌ای؟'
                       : 'تغییر مرحله ذخیره شد. وقتشه ادامه بدی!'}
@@ -1489,7 +1493,7 @@ const Game = () => {
                   <button
                     type="button"
                     onClick={clearLevelTransition}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary-500 via-secondary-500 to-primary-500 px-5 py-2.5 text-sm font-semibold text-white shadow-[0_0_25px_rgba(168,85,247,0.4)] transition-all hover:from-primary-400 hover:via-secondary-400 hover:to-primary-400"
+                    className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-primary-500 via-secondary-500 to-primary-500 px-4 py-2 text-sm font-semibold text-white shadow-md transition-all hover:from-primary-400 hover:via-secondary-400 hover:to-primary-400"
                   >
                     <span>بزن بریم</span>
                     <ArrowRight className="w-4 h-4" />
