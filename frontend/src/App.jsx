@@ -20,7 +20,6 @@ import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
 import AdminDashboard from './components/admin/AdminDashboard';
-import WordManagement from './components/admin/WordManagement';
 import LevelManagement from './components/admin/LevelManagement';
 import CoinPackManagement from './components/admin/CoinPackManagement';
 import UserManagement from './components/admin/UserManagement';
@@ -83,7 +82,6 @@ function App() {
                           }
                         >
                           <Route index element={<AdminDashboard />} />
-                          <Route path="words" element={<WordManagement />} />
                           <Route path="levels" element={<LevelManagement />} />
                           <Route path="coin-packs" element={<CoinPackManagement />} />
                           <Route path="users" element={<UserManagement />} />

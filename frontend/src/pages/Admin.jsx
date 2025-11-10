@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import {
   LayoutDashboard,
-  BookOpen,
   Layers,
   ShoppingCart,
   Settings,
@@ -21,11 +20,6 @@ const Admin = () => {
       name: 'Dashboard',
       href: '/admin',
       icon: LayoutDashboard
-    },
-    {
-      name: 'Words',
-      href: '/admin/words',
-      icon: BookOpen
     },
     {
       name: 'Levels',
