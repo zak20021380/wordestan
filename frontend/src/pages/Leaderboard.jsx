@@ -1,113 +1,30 @@
-import { useState } from 'react';
 import { useQuery } from 'react-query';
 import { useAuth } from '../contexts/AuthContext';
 import { leaderboardService } from '../services/leaderboardService';
 import { motion } from 'framer-motion';
-import { 
-  Trophy, 
-  Medal, 
-  Crown, 
-  Star, 
-  TrendingUp,
-  Users,
-  Target,
-  Zap
-} from 'lucide-react';
+import { Trophy } from 'lucide-react';
 
 const Leaderboard = () => {
-  const { user, isAuthenticated } = useAuth();
-  const [selectedTab, setSelectedTab] = useState('global');
+  const { user } = useAuth();
 
-  // Fetch global leaderboard
-  const { data: globalData, isLoading: globalLoading } = useQuery(
+  const { data, isLoading } = useQuery(
     ['leaderboard', 'global'],
     () => leaderboardService.getLeaderboard(50, 0),
     {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-    }
-  );
-
-  // Fetch user's rank
-  const { data: myRankData, isLoading: myRankLoading } = useQuery(
-    ['myRank'],
-    () => leaderboardService.getMyRank(),
-    {
-      enabled: isAuthenticated,
       staleTime: 5 * 60 * 1000,
     }
   );
 
-  // Fetch leaderboard statistics
-  const { data: statsData } = useQuery(
-    ['leaderboardStats'],
-    () => leaderboardService.getLeaderboardStats(),
-    {
-      staleTime: 10 * 60 * 1000, // 10 minutes
-    }
-  );
+  const leaderboard = data?.data?.leaderboard || [];
 
-  const getRankIcon = (rank) => {
-    if (rank === 1) return <Crown className="w-6 h-6 text-yellow-400" />;
-    if (rank === 2) return <Medal className="w-6 h-6 text-gray-300" />;
-    if (rank === 3) return <Medal className="w-6 h-6 text-amber-600" />;
-    return <Star className="w-6 h-6 text-white/40" />;
+  const getMedal = (rank) => {
+    if (rank === 1) return '🥇';
+    if (rank === 2) return '🥈';
+    if (rank === 3) return '🥉';
+    return '';
   };
 
-  const getRankColor = (rank) => {
-    if (rank === 1) return 'from-yellow-400 to-yellow-600';
-    if (rank === 2) return 'from-gray-300 to-gray-500';
-    if (rank === 3) return 'from-amber-600 to-amber-800';
-    return 'from-primary-500 to-primary-700';
-  };
-
-  const renderPlayerRow = (player, isUser = false) => (
-    <motion.div
-      key={player.id || player._id}
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      className={`flex items-center justify-between p-4 rounded-lg mb-2 ${
-        isUser 
-          ? 'bg-primary-500/20 border border-primary-400/50' 
-          : 'bg-glass-hover hover:bg-glass'
-      } transition-colors`}
-    >
-      <div className="flex items-center space-x-4">
-        {/* Rank */}
-        <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-r ${getRankColor(player.rank)}">
-          <span className="text-white font-bold text-sm">{player.rank}</span>
-        </div>
-
-        {/* Player Info */}
-        <div>
-          <div className="flex items-center space-x-2">
-            <span className={`font-semibold ${isUser ? 'text-primary-400' : 'text-white'}`}>
-              {player.username}
-            </span>
-            {isUser && (
-              <span className="bg-primary-500/20 text-primary-400 text-xs px-2 py-1 rounded-full">
-                شما
-              </span>
-            )}
-          </div>
-          <div className="text-white/60 text-sm flex items-center space-x-4">
-            <span>{player.levelsCleared || 0} مرحله</span>
-            <span>{player.wordsFound || 0} کلمه</span>
-            <span>{player.bestStreak || 0} بهترین رکورد</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Score */}
-      <div className="text-right">
-        <div className="text-2xl font-bold text-white">
-          {player.totalScore?.toLocaleString() || 0}
-        </div>
-        <div className="text-white/60 text-sm">امتیاز</div>
-      </div>
-    </motion.div>
-  );
-
-  if (globalLoading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
@@ -116,7 +33,7 @@ const Leaderboard = () => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="max-w-3xl mx-auto">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -125,144 +42,63 @@ const Leaderboard = () => {
       >
         <div className="flex items-center justify-center space-x-3 mb-4">
           <Trophy className="w-10 h-10 text-yellow-400" />
-          <h1 className="text-4xl font-bold text-white">جدول امتیازات</h1>
+          <h1 className="text-4xl font-bold text-white">🏆 رتبه‌بندی جهانی</h1>
         </div>
-        <p className="text-xl text-white/80 max-w-2xl mx-auto">
-          ببینید در مقایسه با سایر علاقه‌مندان پازل کلمه در سراسر جهان در چه جایگاهی هستید
+        <p className="text-lg text-white/70 max-w-xl mx-auto">
+          فقط نام کاربر، امتیاز کل و رتبه — ساده و شفاف.
         </p>
       </motion.div>
 
-      {/* Stats Overview */}
-      {statsData?.data && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"
-        >
-          <div className="bg-glass backdrop-blur-lg rounded-xl border border-glass-border p-4 text-center">
-            <Users className="w-8 h-8 text-primary-400 mx-auto mb-2" />
-            <div className="text-2xl font-bold text-white">
-              {statsData.data.totalPlayers.toLocaleString()}
-            </div>
-            <div className="text-white/60 text-sm">کل بازیکنان</div>
-          </div>
-
-          <div className="bg-glass backdrop-blur-lg rounded-xl border border-glass-border p-4 text-center">
-            <TrendingUp className="w-8 h-8 text-success mx-auto mb-2" />
-            <div className="text-2xl font-bold text-white">
-              {statsData.data.activePlayersToday.toLocaleString()}
-            </div>
-            <div className="text-white/60 text-sm">فعال امروز</div>
-          </div>
-
-          <div className="bg-glass backdrop-blur-lg rounded-xl border border-glass-border p-4 text-center">
-            <Zap className="w-8 h-8 text-secondary-400 mx-auto mb-2" />
-            <div className="text-2xl font-bold text-white">
-              {Math.round(statsData.data.statistics.averageScore).toLocaleString()}
-            </div>
-            <div className="text-white/60 text-sm">میانگین امتیاز</div>
-          </div>
-
-          <div className="bg-glass backdrop-blur-lg rounded-xl border border-glass-border p-4 text-center">
-            <Target className="w-8 h-8 text-purple-400 mx-auto mb-2" />
-            <div className="text-2xl font-bold text-white">
-              {statsData.data.statistics.maxScore.toLocaleString()}
-            </div>
-            <div className="text-white/60 text-sm">بالاترین امتیاز</div>
-          </div>
-        </motion.div>
-      )}
-
-      {/* Tabs */}
-      <div className="flex justify-center mb-8">
-        <div className="bg-glass backdrop-blur-lg rounded-xl p-1 border border-glass-border">
-          <button
-            onClick={() => setSelectedTab('global')}
-            className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-              selectedTab === 'global'
-                ? 'bg-primary-500 text-white'
-                : 'text-white/60 hover:text-white'
-            }`}
-          >
-            جهانی
-          </button>
-          {isAuthenticated && (
-            <button
-              onClick={() => setSelectedTab('personal')}
-              className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-                selectedTab === 'personal'
-                  ? 'bg-primary-500 text-white'
-                  : 'text-white/60 hover:text-white'
-              }`}
-            >
-              رتبه شما
-            </button>
-          )}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="bg-glass backdrop-blur-lg rounded-2xl border border-glass-border p-6"
+      >
+        <div className="flex items-center justify-between mb-6 text-white" dir="rtl">
+          <h2 className="text-2xl font-bold flex items-center gap-2">
+            <span>رتبه‌بندی جهانی</span>
+            <span className="text-sm text-white/60">۵۰ بازیکن برتر</span>
+          </h2>
         </div>
-      </div>
 
-      {/* Global Leaderboard */}
-      {selectedTab === 'global' && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="bg-glass backdrop-blur-lg rounded-2xl border border-glass-border p-6"
-        >
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-white flex items-center space-x-2">
-              <Trophy className="w-6 h-6 text-yellow-400" />
-              <span>رتبه‌بندی جهانی</span>
-            </h2>
-            <div className="text-white/60">
-              50 بازیکن برتر
-            </div>
+        {leaderboard.length > 0 ? (
+          <div className="divide-y divide-white/5 rounded-xl overflow-hidden border border-white/5">
+            {leaderboard.map((player) => {
+              const isCurrentUser = user?.username === player.username;
+
+              return (
+                <div
+                  key={player.rank}
+                  className={`bg-black/20 backdrop-blur-sm px-4 py-3 flex items-center justify-between gap-4 transition-colors ${
+                    isCurrentUser ? 'bg-primary-500/10 border-r-4 border-primary-400' : 'border-r-4 border-transparent'
+                  }`}
+                  dir="rtl"
+                >
+                  <div className="flex items-center gap-4">
+                    <span className="text-lg font-bold text-white w-8 text-center">
+                      {player.rank}
+                    </span>
+                    <span className="text-2xl w-10 text-center">{getMedal(player.rank)}</span>
+                    <span
+                      className={`text-base font-semibold ${
+                        isCurrentUser ? 'text-primary-200' : 'text-white'
+                      }`}
+                    >
+                      {player.username}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-white font-semibold">
+                    <span>{player.totalScore?.toLocaleString() || 0}</span>
+                    <span className="text-sm text-white/60">امتیاز</span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-          
-          {globalData?.data?.leaderboard?.length > 0 ? (
-            <div className="space-y-2">
-              {globalData.data.leaderboard.map((player) => 
-                renderPlayerRow(player, user && player._id === user._id)
-              )}
-            </div>
-          ) : (
-            <div className="text-center text-white/60 py-12">
-              هیچ بازیکنی یافت نشد
-            </div>
-          )}
-        </motion.div>
-      )}
-
-      {/* Personal Rank */}
-      {selectedTab === 'personal' && isAuthenticated && myRankData?.data && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="space-y-6"
-        >
-          {/* Your Rank */}
-          <div className="bg-glass backdrop-blur-lg rounded-2xl border border-glass-border p-6">
-            <h2 className="text-2xl font-bold text-white mb-6 flex items-center space-x-2">
-              <Star className="w-6 h-6 text-primary-400" />
-              <span>رتبه‌بندی شما</span>
-            </h2>
-            
-            {renderPlayerRow(myRankData.data.user, true)}
-          </div>
-
-          {/* Nearby Players */}
-          {myRankData.data.nearby && myRankData.data.nearby.length > 0 && (
-            <div className="bg-glass backdrop-blur-lg rounded-2xl border border-glass-border p-6">
-              <h3 className="text-xl font-bold text-white mb-6">بازیکنان نزدیک به شما</h3>
-              <div className="space-y-2">
-                {myRankData.data.nearby.map((player) => 
-                  renderPlayerRow(player, player._id === user._id)
-                )}
-              </div>
-            </div>
-          )}
-        </motion.div>
-      )}
+        ) : (
+          <div className="text-center text-white/60 py-12">هیچ بازیکنی یافت نشد</div>
+        )}
+      </motion.div>
     </div>
   );
 };

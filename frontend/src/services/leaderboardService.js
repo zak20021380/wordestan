@@ -34,24 +34,5 @@ export const leaderboardService = {
       throw new Error(error.response?.data?.message || 'Failed to get leaderboard');
     }
   },
-
-  // Get user's rank
-  async getMyRank() {
-    try {
-      const response = await api.get('/leaderboard/me');
-      return response.data;
-    } catch (error) {
-      throw new Error(error.response?.data?.message || 'Failed to get user rank');
-    }
-  },
-
-  // Get leaderboard statistics
-  async getLeaderboardStats() {
-    try {
-      const response = await api.get('/leaderboard/stats');
-      return response.data;
-    } catch (error) {
-      throw new Error(error.response?.data?.message || 'Failed to get leaderboard stats');
-    }
-  },
 };
+

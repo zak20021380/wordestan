@@ -187,33 +187,25 @@ const Home = () => {
           </div>
 
           <div className="space-y-3">
-            {leaderboardData.leaderboard.slice(0, 5).map((player, index) => {
-              const rankColors = [
-                'from-accent-400 to-accent-600',
-                'from-secondary-400 to-secondary-600',
-                'from-primary-400 to-primary-600',
-                'from-blue-400 to-blue-600',
-                'from-primary-300 to-secondary-300'
-              ];
+            {leaderboardData.leaderboard.slice(0, 5).map((player) => {
+              const medal = player.rank === 1 ? '🥇' : player.rank === 2 ? '🥈' : player.rank === 3 ? '🥉' : '';
+
               return (
                 <div
-                  key={player._id}
-                  className="flex items-center justify-between bg-gradient-to-r from-glass-purple to-glass-dark rounded-xl p-4 border border-glass-border hover:border-primary-500/30 transition-all hover:shadow-[0_0_20px_rgba(168,85,247,0.2)]"
+                  key={player.rank}
+                  className="flex items-center justify-between bg-glass-hover rounded-xl p-4 border border-glass-border hover:border-primary-500/40 transition-all hover:shadow-[0_0_20px_rgba(168,85,247,0.2)]"
+                  dir="rtl"
                 >
-                  <div className="flex items-center space-x-4 space-x-reverse">
-                    <div className={`flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-r ${rankColors[index]} text-white font-bold text-sm shadow-[0_0_15px_rgba(168,85,247,0.4)]`}>
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-r from-primary-500/80 to-secondary-500/80 text-white font-bold text-sm shadow-[0_0_15px_rgba(168,85,247,0.4)]">
                       {player.rank}
                     </div>
-                    <div>
-                      <div className="text-white font-bold">{player.username}</div>
-                      <div className="text-white/70 text-sm">
-                        {player.levelsCleared} مرحله • {player.wordsFound} کلمه
-                      </div>
-                    </div>
+                    <div className="text-2xl w-8 text-center">{medal}</div>
+                    <div className="text-white font-bold text-base">{player.username}</div>
                   </div>
-                  <div className="text-left">
-                    <div className="text-primary-400 font-bold text-lg drop-shadow-[0_0_10px_rgba(168,85,247,0.3)]">{player.totalScore.toLocaleString()}</div>
-                    <div className="text-white/60 text-sm">امتیاز</div>
+                  <div className="flex items-center gap-2 text-primary-300 font-bold">
+                    <span>{player.totalScore?.toLocaleString() || 0}</span>
+                    <span className="text-sm text-white/60">امتیاز</span>
                   </div>
                 </div>
               );
