@@ -1360,16 +1360,16 @@ const Game = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm px-4 py-10"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm px-4 py-6 sm:py-10"
             onClick={clearLevelTransition}
           >
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
+              initial={{ scale: 0.94, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+              exit={{ scale: 0.94, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 260, damping: 22 }}
               onClick={(event) => event.stopPropagation()}
-              className="relative w-full max-w-2xl bg-gradient-to-br from-purple-900/90 via-slate-900/95 to-cyan-900/85 border border-white/10 rounded-3xl px-6 py-8 sm:px-8 shadow-[0_40px_120px_rgba(15,6,32,0.65)] text-right"
+              className="relative w-full max-w-xl bg-gradient-to-br from-purple-900/90 via-slate-900/95 to-cyan-900/85 border border-white/10 rounded-3xl px-5 py-6 sm:px-7 sm:py-8 shadow-[0_30px_90px_rgba(15,6,32,0.6)] text-right"
             >
               <button
                 type="button"
@@ -1380,27 +1380,29 @@ const Game = () => {
                 <X className="w-5 h-5" />
               </button>
 
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 flex-1">
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 sm:p-4 rounded-2xl bg-white/10 border border-white/15 shadow-[0_0_25px_rgba(168,85,247,0.3)]">
-                      <Milestone className={`w-10 h-10 ${transitionAccent?.icon ?? 'text-primary-200'}`} />
+              <div className="flex flex-col gap-6">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="flex items-start gap-4 sm:gap-5">
+                    <div className="shrink-0 p-3 sm:p-4 rounded-2xl bg-white/10 border border-white/15 shadow-[0_0_25px_rgba(168,85,247,0.25)]">
+                      <Milestone className={`w-9 h-9 sm:w-10 sm:h-10 ${transitionAccent?.icon ?? 'text-primary-200'}`} />
                     </div>
-                    <div>
+                    <div className="flex-1 space-y-3">
                       <div
-                        className={`inline-flex items-center gap-2 bg-gradient-to-r ${transitionAccent?.chip ?? 'from-primary-500/20 to-secondary-500/20'} ${transitionAccent?.chipText ?? 'text-primary-100'} ${transitionAccent?.chipBorder ?? 'border-primary-500/40'} border rounded-full px-3 py-1.5 text-[11px] font-semibold`}
+                        className={`inline-flex items-center gap-2 bg-gradient-to-r ${transitionAccent?.chip ?? 'from-primary-500/20 to-secondary-500/20'} ${transitionAccent?.chipText ?? 'text-primary-100'} ${transitionAccent?.chipBorder ?? 'border-primary-500/40'} border rounded-full px-3 py-1 text-[11px] font-semibold`}
                       >
                         <Sparkles className="w-4 h-4" />
                         <span>{transitionCopy.badge}</span>
                       </div>
-                      <h3 className="mt-3 text-2xl sm:text-3xl font-extrabold text-white leading-snug">
-                        {transitionCopy.title}
-                      </h3>
-                      <p className="mt-2 text-sm sm:text-base text-white/80 leading-relaxed">
-                        {transitionCopy.description}
-                      </p>
+                      <div className="space-y-2">
+                        <h3 className="text-2xl sm:text-3xl font-extrabold text-white leading-snug">
+                          {transitionCopy.title}
+                        </h3>
+                        <p className="text-sm sm:text-base text-white/80 leading-relaxed">
+                          {transitionCopy.description}
+                        </p>
+                      </div>
                       {transitionCopy.differenceSummary && (
-                        <div className="mt-3 inline-flex items-center gap-2 bg-white/10 border border-white/15 rounded-full px-3 py-1 text-[11px] text-white/70">
+                        <div className="inline-flex items-center gap-1 rounded-full bg-white/10 border border-white/15 px-2.5 py-1 text-[11px] text-white/70">
                           {transitionCopy.isForward ? (
                             <ArrowUpRight className="w-4 h-4 text-emerald-200" />
                           ) : (
@@ -1411,88 +1413,88 @@ const Game = () => {
                       )}
                     </div>
                   </div>
+
+                  {transitionCopy.to !== null && (
+                    <div className="w-full sm:w-auto">
+                      <div className="h-full rounded-2xl bg-white/8 border border-white/15 px-4 py-3 text-center shadow-[0_0_25px_rgba(6,182,212,0.2)]">
+                        <p className="text-xs text-white/60">مرحله جدید</p>
+                        <p className="mt-1 text-3xl font-black text-white">
+                          {formatNumber(transitionCopy.to)}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                {transitionCopy.to !== null && (
-                  <div className="sm:self-start">
-                    <div className="bg-white/10 border border-white/20 rounded-2xl px-5 py-4 text-center shadow-[0_0_25px_rgba(6,182,212,0.25)]">
-                      <p className="text-xs text-white/60">مرحله جدید</p>
-                      <p className="mt-1 text-3xl font-black text-white">
-                        {formatNumber(transitionCopy.to)}
-                      </p>
-                    </div>
+                {(transitionCopy.from !== null || transitionCopy.to !== null || transitionCopy.differenceLabel) && (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {transitionCopy.from !== null && (
+                      <div className="rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-right">
+                        <p className="text-xs text-white/60">مرحله قبلی</p>
+                        <p className="mt-1 text-lg font-semibold text-white">
+                          {formatNumber(transitionCopy.from)}
+                        </p>
+                      </div>
+                    )}
+                    {transitionCopy.to !== null && (
+                      <div className="rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-right">
+                        <p className="text-xs text-white/60">مرحله فعلی</p>
+                        <p className="mt-1 text-lg font-semibold text-white">
+                          {formatNumber(transitionCopy.to)}
+                        </p>
+                      </div>
+                    )}
+                    {transitionCopy.differenceLabel && (
+                      <div className="rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-right">
+                        <p className="text-xs text-white/60">تغییر مرحله</p>
+                        <p className="mt-1 text-base font-semibold text-white">
+                          {transitionCopy.differenceLabel}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
-              </div>
 
-              {(transitionCopy.from !== null || transitionCopy.to !== null) && (
-                <div className="mt-6">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white/5 border border-white/10 rounded-2xl px-4 py-3">
-                    <div className="flex-1 flex items-center justify-between gap-6">
-                      <div className="flex flex-col text-right">
-                        <span className="text-xs text-white/50">مرحله قبلی</span>
-                        <span className="text-lg font-bold text-white">
-                          {transitionCopy.from !== null ? formatNumber(transitionCopy.from) : '—'}
-                        </span>
+                  {transitionCopy.userProgress && (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-right">
+                        <p className="text-xs text-white/60">مرحله فعلی بازیکن</p>
+                        <p className="mt-1 text-lg font-semibold text-white">
+                          {transitionCopy.userProgress.currentLevel != null
+                            ? `مرحله ${formatNumber(transitionCopy.userProgress.currentLevel)}`
+                            : '—'}
+                        </p>
                       </div>
-                      <div className="flex items-center gap-2 text-primary-100">
-                        <ArrowRight className="w-5 h-5" />
-                        {transitionCopy.differenceLabel && (
-                          <span className="text-sm font-semibold text-white/80">
-                            {transitionCopy.differenceLabel}
-                          </span>
-                        )}
+                      <div className="rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-right">
+                        <p className="text-xs text-white/60">مراحل تکمیل‌شده</p>
+                        <p className="mt-1 text-lg font-semibold text-white">
+                          {formatNumber(transitionCopy.userProgress.levelsCleared ?? 0)}
+                        </p>
                       </div>
-                      <div className="flex flex-col text-right">
-                        <span className="text-xs text-white/50">مرحله فعلی</span>
-                        <span className="text-lg font-bold text-white">
-                          {transitionCopy.to !== null ? formatNumber(transitionCopy.to) : '—'}
-                        </span>
+                      <div className="rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-right">
+                        <p className="text-xs text-white/60">امتیاز کل</p>
+                        <p className="mt-1 text-lg font-semibold text-white">
+                          {formatNumber(transitionCopy.userProgress.totalScore ?? 0)}
+                        </p>
                       </div>
                     </div>
-                  </div>
-                </div>
-              )}
+                  )}
 
-              {transitionCopy.userProgress && (
-                <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-right">
-                    <p className="text-xs text-white/60 mb-1">مرحله فعلی</p>
-                    <p className="text-lg font-semibold text-white">
-                      {transitionCopy.userProgress.currentLevel != null
-                        ? `مرحله ${formatNumber(transitionCopy.userProgress.currentLevel)}`
-                        : '—'}
-                    </p>
-                  </div>
-                  <div className="bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-right">
-                    <p className="text-xs text-white/60 mb-1">مراحل تکمیل‌شده</p>
-                    <p className="text-lg font-semibold text-white">
-                      {formatNumber(transitionCopy.userProgress.levelsCleared ?? 0)}
-                    </p>
-                  </div>
-                  <div className="bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-right">
-                    <p className="text-xs text-white/60 mb-1">امتیاز کل</p>
-                    <p className="text-lg font-semibold text-white">
-                      {formatNumber(transitionCopy.userProgress.totalScore ?? 0)}
-                    </p>
-                  </div>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-xs text-white/60">
+                  <p className="leading-relaxed">
+                    {transitionCopy.type === 'completed'
+                      ? 'امتیاز مرحله قبل برات ذخیره شد. برای مرحله جدید آماده‌ای؟'
+                      : 'تغییر مرحله ذخیره شد. وقتشه ادامه بدی!'}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={clearLevelTransition}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary-500 via-secondary-500 to-primary-500 px-5 py-2.5 text-sm font-semibold text-white shadow-[0_0_25px_rgba(168,85,247,0.4)] transition-all hover:from-primary-400 hover:via-secondary-400 hover:to-primary-400"
+                  >
+                    <span>بزن بریم</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
                 </div>
-              )}
-
-              <div className="mt-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div className="text-xs text-white/50">
-                  {transitionCopy.type === 'completed'
-                    ? 'امتیاز مرحله قبل برات ذخیره شد. برای مرحله جدید آماده‌ای؟'
-                    : 'تغییر مرحله ذخیره شد. وقتشه ادامه بدی!'}
-                </div>
-                <button
-                  type="button"
-                  onClick={clearLevelTransition}
-                  className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-primary-500 via-secondary-500 to-primary-500 hover:from-primary-400 hover:via-secondary-400 hover:to-primary-400 text-white font-semibold px-6 py-3 rounded-xl shadow-[0_0_25px_rgba(168,85,247,0.45)] transition-all"
-                >
-                  <span>بزن بریم</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
               </div>
             </motion.div>
           </motion.div>
