@@ -23,9 +23,17 @@ import {
   ChevronUp,
   BookOpen,
   Milestone,
-  X
+  X,
+  PartyPopper,
+  Stars
 } from 'lucide-react';
 import GameCanvas from '../components/GameCanvas';
+
+const NO_LEVEL_STATUSES = new Set([
+  'no_published_levels',
+  'no_levels_for_new_user',
+  'all_levels_completed',
+]);
 
 const Game = () => {
   const gameCanvasRef = useRef(null);
@@ -60,11 +68,15 @@ const Game = () => {
   const [isConfirmingNextLevel, setIsConfirmingNextLevel] = useState(false);
   const [completionPromptContext, setCompletionPromptContext] = useState(null);
   const [powerUpsUsed, setPowerUpsUsed] = useState({ shuffle: false, autoSolve: false });
+  const [newLevelsModal, setNewLevelsModal] = useState(null);
   const shuffleCost = 15;
   const currentLevelId = currentLevel?._id ?? null;
   const [searchParams, setSearchParams] = useSearchParams();
   const requestedLevelId = searchParams.get('levelId');
   const lastRequestedLevelRef = useRef(null);
+  const previousMetaStatusRef = useRef(levelMeta?.status ?? null);
+  const hasInitializedMetaStatusRef = useRef(false);
+  const hasShownNewLevelsModalRef = useRef(false);
   const faNumberFormatter = useMemo(() => new Intl.NumberFormat('fa-IR'), []);
   const formatNumber = useCallback(
     (value) => {
@@ -175,6 +187,61 @@ const Game = () => {
   useEffect(() => {
     setShuffleUsageCount(0);
   }, [currentLevelId]);
+
+  useEffect(() => {
+    const status = levelMeta?.status ?? null;
+    const hasLevel = Boolean(currentLevel);
+
+    if (!hasInitializedMetaStatusRef.current) {
+      previousMetaStatusRef.current = status;
+      hasInitializedMetaStatusRef.current = true;
+
+      if (!hasLevel && NO_LEVEL_STATUSES.has(status)) {
+        hasShownNewLevelsModalRef.current = false;
+      }
+
+      return;
+    }
+
+    const previousStatus = previousMetaStatusRef.current;
+    const previouslyNoLevels = NO_LEVEL_STATUSES.has(previousStatus);
+    const nowInNoLevelState = !hasLevel && NO_LEVEL_STATUSES.has(status);
+
+    if (previouslyNoLevels && hasLevel && !hasShownNewLevelsModalRef.current) {
+      setNewLevelsModal({
+        previousStatus,
+        status,
+        levelOrder: currentLevel?.order ?? null,
+        timestamp: Date.now(),
+      });
+      hasShownNewLevelsModalRef.current = true;
+    }
+
+    if (nowInNoLevelState) {
+      hasShownNewLevelsModalRef.current = false;
+    }
+
+    previousMetaStatusRef.current = status;
+  }, [levelMeta?.status, currentLevel]);
+
+  useEffect(() => {
+    if (!newLevelsModal) {
+      return undefined;
+    }
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setNewLevelsModal(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [newLevelsModal]);
+
+  const handleCloseNewLevelsModal = useCallback(() => {
+    setNewLevelsModal(null);
+  }, []);
 
   const transitionAccent = useMemo(() => {
     if (!transitionCopy) {
@@ -322,6 +389,50 @@ const Game = () => {
 
     return currentLevel.words.filter(Boolean).length;
   }, [currentLevel?.words]);
+
+  const newLevelsCopy = useMemo(() => {
+    if (!newLevelsModal) {
+      return null;
+    }
+
+    const previousStatus = newLevelsModal.previousStatus;
+    const levelOrder = newLevelsModal.levelOrder ?? null;
+    const orderLabel = levelOrder ? `مرحله ${formatNumber(levelOrder)}` : 'مرحله جدید';
+
+    let description = 'چند مرحله جدید به بازی اضافه شده و همین الان می‌تونی بری سراغشون.';
+    if (previousStatus === 'all_levels_completed') {
+      description = 'منتظر مرحله‌های تازه بودی و بالاخره رسیدن! وقتشه دوباره بدرخشی و رکورد تازه بزنی.';
+    } else if (previousStatus === 'no_levels_for_new_user') {
+      description = 'اولین مرحله‌های بازی منتشر شدن. آماده‌ای اولین تجربه‌ات رو شروع کنی؟';
+    } else if (previousStatus === 'no_published_levels') {
+      description = 'حالا دیگه بازی آماده‌ست و مرحله‌های تازه در دسترس تو قرار گرفتن. بیا و اولین نفر باش!';
+    }
+
+    const spotlight = levelOrder
+      ? `از همین الان ${orderLabel} برای بازی آماده‌ست.`
+      : 'اولین مرحله همین الآن آماده تجربه کردنه!';
+
+    const progress = levelMeta?.userProgress ?? null;
+    const clearedLevels = formatNumber(progress?.levelsCleared ?? (user?.levelsCleared ?? 0));
+
+    const progressSummary = isGuestMode
+      ? 'برای اینکه پیشرفت و سکه‌ها همیشه ذخیره بشن، همین الان حساب بساز و بعد برو سراغ مراحل جدید.'
+      : `تا حالا ${clearedLevels} مرحله رو پشت سر گذاشتی. آماده‌ای بری سراغ مرحله‌های تازه؟`;
+
+    return {
+      badge: 'مرحله‌های تازه',
+      title: '🎉 مرحله‌های جدید رسید!',
+      description,
+      spotlight,
+      progressSummary,
+      orderLabel,
+    };
+  }, [newLevelsModal, formatNumber, isGuestMode, levelMeta?.userProgress, user?.levelsCleared]);
+
+  const resolvedClearedLevelsLabel = useMemo(
+    () => formatNumber(levelMeta?.userProgress?.levelsCleared ?? (user?.levelsCleared ?? 0)),
+    [formatNumber, levelMeta?.userProgress?.levelsCleared, user?.levelsCleared]
+  );
 
   const hasCompletedAllWords = totalLevelWordCount > 0 && completedWordSet.size >= totalLevelWordCount;
   const hasSyncedCompletion = Boolean(levelCompletionStatus?.completed);
@@ -1318,6 +1429,105 @@ const Game = () => {
                 </div>
               </div>
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {newLevelsModal && newLevelsCopy && (
+          <motion.div
+            key="new-levels-modal"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 backdrop-blur-sm px-4 py-6"
+            onClick={handleCloseNewLevelsModal}
+          >
+            <motion.div
+              initial={{ scale: 0.92, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.92, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 260, damping: 24 }}
+              className="relative w-full max-w-3xl overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-slate-950/95 via-purple-950/90 to-slate-950/95 px-6 py-7 text-right shadow-[0_45px_140px_rgba(14,10,45,0.65)] sm:px-10 sm:py-10"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="pointer-events-none absolute -top-24 -left-24 h-72 w-72 rounded-full bg-primary-500/20 blur-3xl" />
+              <div className="pointer-events-none absolute -bottom-28 -right-20 h-80 w-80 rounded-full bg-secondary-500/20 blur-3xl" />
+              <button
+                type="button"
+                onClick={handleCloseNewLevelsModal}
+                className="absolute top-5 left-5 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+                aria-label="بستن"
+              >
+                <X className="h-5 w-5" />
+              </button>
+              <div className="relative flex flex-col gap-8">
+                <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-center gap-4 sm:gap-6">
+                    <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl border border-white/15 bg-gradient-to-br from-primary-500/30 via-purple-500/25 to-cyan-500/30 text-white shadow-[0_25px_60px_rgba(88,28,135,0.45)] sm:h-20 sm:w-20">
+                      <PartyPopper className="h-8 w-8 drop-shadow-[0_0_18px_rgba(255,255,255,0.45)] sm:h-10 sm:w-10" />
+                    </div>
+                    <div className="space-y-3 text-right">
+                      <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold tracking-tight text-white/80 sm:text-xs">
+                        <Sparkles className="h-3.5 w-3.5 text-primary-200" />
+                        <span>{newLevelsCopy.badge}</span>
+                      </div>
+                      <h2 className="text-2xl font-black leading-snug text-white drop-shadow-[0_10px_30px_rgba(15,23,42,0.35)] sm:text-3xl">
+                        {newLevelsCopy.title}
+                      </h2>
+                      <p className="max-w-xl text-sm leading-relaxed text-white/70 sm:text-base">
+                        {newLevelsCopy.description}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">
+                  <div className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2 text-white">
+                        <Milestone className="h-5 w-5 text-primary-200" />
+                        <span className="text-sm font-semibold sm:text-base">{newLevelsCopy.orderLabel}</span>
+                      </div>
+                      <div className="flex items-center space-x-2 space-x-reverse text-xs text-white/60 sm:text-sm">
+                        <Stars className="h-4 w-4 text-amber-300" />
+                        <span>{resolvedClearedLevelsLabel} مرحله فتح شده</span>
+                      </div>
+                    </div>
+                    <p className="text-xs leading-relaxed text-white/70 sm:text-sm">{newLevelsCopy.spotlight}</p>
+                  </div>
+                  <div className="flex flex-col gap-3 rounded-2xl border border-primary-500/30 bg-gradient-to-br from-primary-500/20 via-indigo-500/10 to-cyan-500/20 p-5 backdrop-blur-sm">
+                    <div className="flex items-center gap-2 text-white">
+                      <Sparkles className="h-5 w-5 text-primary-100" />
+                      <span className="text-sm font-semibold sm:text-base">وقت درخشش دوباره ✨</span>
+                    </div>
+                    <p className="text-xs leading-relaxed text-white/80 sm:text-sm">{newLevelsCopy.progressSummary}</p>
+                    {isGuestMode && (
+                      <Link
+                        to="/register"
+                        className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold text-white/90 transition-all hover:bg-white/20 sm:text-sm"
+                      >
+                        <UserPlus className="h-4 w-4" />
+                        <span>ثبت‌نام و ذخیره پیشرفت</span>
+                      </Link>
+                    )}
+                  </div>
+                </div>
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-xs leading-relaxed text-white/60 sm:text-sm">
+                    همین الان وارد مرحله‌ی تازه شو؛ هرچی زودتر شروع کنی، زودتر رکورد جدید می‌زنی.
+                  </p>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                    <button
+                      type="button"
+                      onClick={handleCloseNewLevelsModal}
+                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary-500 to-secondary-500 px-6 py-2.5 text-sm font-semibold text-white shadow-[0_20px_55px_rgba(99,102,241,0.45)] transition-all hover:from-primary-400 hover:to-secondary-400 hover:shadow-[0_25px_65px_rgba(99,102,241,0.55)] sm:text-base"
+                    >
+                      <span>بزن بریم!</span>
+                      <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
