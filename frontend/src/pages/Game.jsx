@@ -54,6 +54,7 @@ const Game = () => {
   const [showAutoSolveModal, setShowAutoSolveModal] = useState(false);
   const [showAutoSolvePrompt, setShowAutoSolvePrompt] = useState(false);
   const [isConfirmingNextLevel, setIsConfirmingNextLevel] = useState(false);
+  const [completionPromptContext, setCompletionPromptContext] = useState(null);
   const shuffleCost = 15;
   const currentLevelId = currentLevel?._id ?? null;
   const faNumberFormatter = useMemo(() => new Intl.NumberFormat('fa-IR'), []);
@@ -266,6 +267,39 @@ const Game = () => {
     );
   }, [gameState.completedWords]);
 
+  const totalLevelWordCount = useMemo(() => {
+    if (!Array.isArray(currentLevel?.words)) {
+      return 0;
+    }
+
+    return currentLevel.words.filter(Boolean).length;
+  }, [currentLevel?.words]);
+
+  const hasCompletedAllWords = totalLevelWordCount > 0 && completedWordSet.size >= totalLevelWordCount;
+  const hasAutoSolveCompletion = Boolean(autoSolveResult?.levelCompleted);
+  const shouldShowCompletionPrompt =
+    showAutoSolvePrompt && (hasAutoSolveCompletion || hasCompletedAllWords);
+  const CompletionIcon = completionPromptContext === 'auto' ? Sparkles : Trophy;
+  const completionIconAccent = completionPromptContext === 'auto' ? 'text-emerald-200' : 'text-amber-200';
+  const completionBadgeStyles =
+    completionPromptContext === 'auto'
+      ? 'text-emerald-200 border-emerald-300/40 bg-emerald-500/10'
+      : 'text-amber-200 border-amber-300/40 bg-amber-500/10';
+  const completionBadgeCopy =
+    completionPromptContext === 'auto'
+      ? 'کمک حل خودکار'
+      : completionPromptContext === 'manual'
+      ? 'کشف دستی'
+      : 'مرحله تکمیل شد';
+  const completionTitleCopy =
+    completionPromptContext === 'auto'
+      ? 'ماموریت با جادوی حل خودکار تکمیل شد! ✨'
+      : 'مرحله رو بدون هیچ کمکی فتح کردی! 🏆';
+  const completionDescriptionCopy =
+    completionPromptContext === 'auto'
+      ? 'جادوی ما آخرین کلمه رو برات پیدا کرد. می‌خوای همین حالا به مرحله بعد بری؟'
+      : 'همه‌ی کلمات این مرحله رو خودت پیدا کردی. بیا مرحله بعد رو هم با همین انرژی ادامه بدیم.';
+
   const levelWordsByLength = useMemo(() => {
     if (!Array.isArray(currentLevel?.words) || currentLevel.words.length === 0) {
       return [];
@@ -312,6 +346,8 @@ const Game = () => {
     setShowMeanings(false);
     setActiveMeaning(null);
     setShuffleUsageCount(0);
+    setShowAutoSolvePrompt(false);
+    setCompletionPromptContext(null);
   }, [currentLevelId]);
 
   useEffect(() => {
@@ -348,15 +384,33 @@ const Game = () => {
   useEffect(() => {
     if (!autoSolveResult) {
       setShowAutoSolveModal(false);
-      setShowAutoSolvePrompt(false);
+      if (!hasCompletedAllWords) {
+        setShowAutoSolvePrompt(false);
+        setCompletionPromptContext(null);
+      }
       return;
     }
 
     setShowAutoSolveModal(true);
     if (autoSolveResult.levelCompleted) {
+      setCompletionPromptContext('auto');
       setShowAutoSolvePrompt(true);
     }
-  }, [autoSolveResult]);
+  }, [autoSolveResult, hasCompletedAllWords]);
+
+  useEffect(() => {
+    if (hasAutoSolveCompletion) {
+      return;
+    }
+
+    if (hasCompletedAllWords) {
+      setCompletionPromptContext((prev) => prev ?? 'manual');
+      setShowAutoSolvePrompt(true);
+    } else {
+      setShowAutoSolvePrompt(false);
+      setCompletionPromptContext(null);
+    }
+  }, [hasCompletedAllWords, hasAutoSolveCompletion]);
 
   const handleCloseShuffleModal = useCallback(() => {
     if (isPurchasingShuffle) {
@@ -564,9 +618,12 @@ const Game = () => {
   };
 
   const handleConfirmNextLevel = async () => {
-    if (!autoSolveResult?.levelCompleted) {
-      clearAutoSolveResult();
+    const levelCompleted = hasAutoSolveCompletion || hasCompletedAllWords;
+
+    if (!levelCompleted) {
       setShowAutoSolvePrompt(false);
+      setCompletionPromptContext(null);
+      clearAutoSolveResult();
       return;
     }
 
@@ -576,6 +633,7 @@ const Game = () => {
     } finally {
       setIsConfirmingNextLevel(false);
       setShowAutoSolvePrompt(false);
+      setCompletionPromptContext(null);
     }
   };
 
@@ -928,9 +986,12 @@ const Game = () => {
                 disabled={isAutoSolving || (user?.coins ?? 0) < 50}
                 className="w-full bg-gradient-to-r from-purple-500/20 to-cyan-500/20 hover:from-purple-500/30 hover:to-cyan-500/30 disabled:opacity-50 disabled:cursor-not-allowed border border-purple-500/30 text-white py-3 px-4 rounded-lg transition-all shadow-[0_0_15px_rgba(168,85,247,0.2)] hover:shadow-[0_0_25px_rgba(168,85,247,0.4)] flex items-center justify-between"
               >
-                <div className="flex items-center space-x-2 space-x-reverse">
-                  <Sparkles className="w-5 h-5 text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]" />
-                  <span>حل خودکار</span>
+                <div className="flex items-start space-x-2 space-x-reverse text-right">
+                  <Sparkles className="mt-0.5 w-5 h-5 text-purple-300 drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]" />
+                  <div className="leading-tight">
+                    <span className="block text-sm font-semibold text-white">جادوی حل خودکار</span>
+                    <span className="block text-[11px] text-white/70">وقتی گیر کردی، اجازه بده جادو یک کلمه تازه برات کشف کنه</span>
+                  </div>
                 </div>
                 <div className="flex items-center space-x-1 space-x-reverse text-yellow-400">
                   <Coins className="w-4 h-4" />
@@ -1104,7 +1165,7 @@ const Game = () => {
         </div>
       </div>
       <AnimatePresence>
-        {showAutoSolvePrompt && autoSolveResult?.levelCompleted && (
+        {shouldShowCompletionPrompt && (
           <motion.div
             key="auto-solve-banner"
             initial={{ opacity: 0, x: -30 }}
@@ -1115,13 +1176,19 @@ const Game = () => {
           >
             <div className="bg-gradient-to-br from-emerald-500/20 via-purple-500/30 to-cyan-500/20 border border-white/15 backdrop-blur-md rounded-2xl p-5 shadow-[0_20px_60px_rgba(76,29,149,0.45)] text-right">
               <div className="flex items-start gap-4">
-                <div className="p-2 rounded-xl bg-white/10 border border-white/20 text-emerald-200">
-                  <Sparkles className="w-6 h-6" />
+                <div className={`p-2 rounded-xl bg-white/10 border border-white/20 ${completionIconAccent}`}>
+                  <CompletionIcon className="w-6 h-6" />
                 </div>
-                <div className="flex-1 space-y-2">
-                  <div>
-                    <p className="text-sm font-semibold text-white/80">آخرین کلمه با حل خودکار پیدا شد!</p>
-                    <p className="text-xs text-white/70 mt-1">آماده‌ای به مرحله بعدی بروی و ماجراجویی تازه‌ای شروع کنی؟</p>
+                <div className="flex-1 space-y-3">
+                  {completionPromptContext && (
+                    <span className={`inline-flex items-center justify-center gap-1 rounded-full border px-3 py-1 text-[11px] font-semibold tracking-tight ${completionBadgeStyles}`}>
+                      <CheckCircle className="w-3.5 h-3.5" />
+                      {completionBadgeCopy}
+                    </span>
+                  )}
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold text-white/90">{completionTitleCopy}</p>
+                    <p className="text-xs text-white/70 leading-relaxed">{completionDescriptionCopy}</p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2 pt-1">
                     <button
