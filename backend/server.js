@@ -153,10 +153,27 @@ const removeLegacyEmailIndex = async () => {
   }
 };
 
+const getMongoUri = () => {
+  const rawUri = typeof process.env.MONGODB_URI === 'string'
+    ? process.env.MONGODB_URI.trim()
+    : '';
+
+  if (rawUri) {
+    return rawUri;
+  }
+
+  const fallbackUri = 'mongodb://localhost:27017/harfland';
+  console.warn('[Database] MONGODB_URI not set. Falling back to default local database:', fallbackUri);
+  return fallbackUri;
+};
+
+const resolvedMongoUri = getMongoUri();
+
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI);
+    const conn = await mongoose.connect(resolvedMongoUri);
     console.log(`MongoDB Connected: ${conn.connection.host}`);
+    console.log(`MongoDB Database: ${conn.connection.name}`);
     await removeLegacyEmailIndex();
   } catch (error) {
     console.error('Database connection error:', error);
@@ -174,7 +191,11 @@ const startServer = async () => {
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
       console.log(`Environment: ${process.env.NODE_ENV}`);
-      console.log(`MongoDB URI: ${process.env.MONGODB_URI}`);
+      if (process.env.MONGODB_URI) {
+        console.log('MongoDB URI: [configured via MONGODB_URI]');
+      } else {
+        console.log(`MongoDB URI: ${resolvedMongoUri} (default)`);
+      }
     });
   } catch (error) {
     console.error('Failed to start server:', error);
