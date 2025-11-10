@@ -4,10 +4,17 @@ const User = require('../models/User');
 
 // Generate JWT token
 const generateToken = (userId, isAdmin = false) => {
+  const rawExpiresIn = isAdmin ? process.env.JWT_ADMIN_EXPIRES_IN : process.env.JWT_EXPIRES_IN;
+  const expiresIn = typeof rawExpiresIn === 'string' && rawExpiresIn.trim() !== ''
+    ? rawExpiresIn.trim()
+    : isAdmin
+      ? '12h'
+      : '7d';
+
   return jwt.sign(
-    { id: userId, isAdmin }, 
+    { id: userId, isAdmin },
     process.env.JWT_SECRET,
-    { expiresIn: isAdmin ? process.env.JWT_ADMIN_EXPIRES_IN : process.env.JWT_EXPIRES_IN }
+    { expiresIn }
   );
 };
 
