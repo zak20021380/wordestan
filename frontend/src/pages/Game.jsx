@@ -42,7 +42,7 @@ const Game = () => {
     clearLevelTransition,
     autoSolveResult,
     clearAutoSolveResult,
-    confirmAutoSolveCompletion
+    loadNextLevel
   } = useGame();
   const { user, isAuthenticated, updateUser } = useAuth();
 
@@ -279,26 +279,12 @@ const Game = () => {
   const hasAutoSolveCompletion = Boolean(autoSolveResult?.levelCompleted);
   const shouldShowCompletionPrompt =
     showAutoSolvePrompt && (hasAutoSolveCompletion || hasCompletedAllWords);
-  const CompletionIcon = completionPromptContext === 'auto' ? Sparkles : Trophy;
-  const completionIconAccent = completionPromptContext === 'auto' ? 'text-emerald-200' : 'text-amber-200';
-  const completionBadgeStyles =
-    completionPromptContext === 'auto'
-      ? 'text-emerald-200 border-emerald-300/40 bg-emerald-500/10'
-      : 'text-amber-200 border-amber-300/40 bg-amber-500/10';
-  const completionBadgeCopy =
-    completionPromptContext === 'auto'
-      ? 'کمک حل خودکار'
-      : completionPromptContext === 'manual'
-      ? 'کشف دستی'
-      : 'مرحله تکمیل شد';
-  const completionTitleCopy =
-    completionPromptContext === 'auto'
-      ? 'ماموریت با جادوی حل خودکار تکمیل شد! ✨'
-      : 'مرحله رو بدون هیچ کمکی فتح کردی! 🏆';
-  const completionDescriptionCopy =
-    completionPromptContext === 'auto'
-      ? 'جادوی ما آخرین کلمه رو برات پیدا کرد. می‌خوای همین حالا به مرحله بعد بری؟'
-      : 'همه‌ی کلمات این مرحله رو خودت پیدا کردی. بیا مرحله بعد رو هم با همین انرژی ادامه بدیم.';
+  const CompletionIcon = Trophy;
+  const completionIconAccent = 'text-amber-200';
+  const completionBadgeStyles = 'text-amber-200 border-amber-300/40 bg-amber-500/10';
+  const completionBadgeCopy = 'مرحله تکمیل شد';
+  const completionTitleCopy = '🏆 عالی کار! مرحله تموم شد!';
+  const completionDescriptionCopy = 'آماده‌ای برای چالش بعدی؟';
 
   const levelWordsByLength = useMemo(() => {
     if (!Array.isArray(currentLevel?.words) || currentLevel.words.length === 0) {
@@ -617,7 +603,7 @@ const Game = () => {
     }
   };
 
-  const handleConfirmNextLevel = async () => {
+  const handleNextLevel = useCallback(async () => {
     const levelCompleted = hasAutoSolveCompletion || hasCompletedAllWords;
 
     if (!levelCompleted) {
@@ -627,15 +613,28 @@ const Game = () => {
       return;
     }
 
+    const contextToRestore = completionPromptContext;
+
     try {
       setIsConfirmingNextLevel(true);
-      await confirmAutoSolveCompletion();
-    } finally {
-      setIsConfirmingNextLevel(false);
       setShowAutoSolvePrompt(false);
       setCompletionPromptContext(null);
+      await loadNextLevel();
+      clearAutoSolveResult();
+    } catch (error) {
+      toast.error(error.message || 'نتونستیم مرحله بعدی رو بیاریم!');
+      setCompletionPromptContext(contextToRestore);
+      setShowAutoSolvePrompt(true);
+    } finally {
+      setIsConfirmingNextLevel(false);
     }
-  };
+  }, [
+    clearAutoSolveResult,
+    completionPromptContext,
+    hasAutoSolveCompletion,
+    hasCompletedAllWords,
+    loadNextLevel,
+  ]);
 
   // Loading state
   if (levelLoading) {
@@ -1193,7 +1192,7 @@ const Game = () => {
                   <div className="flex flex-wrap items-center gap-2 pt-1">
                     <button
                       type="button"
-                      onClick={handleConfirmNextLevel}
+                      onClick={handleNextLevel}
                       disabled={isConfirmingNextLevel}
                       className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-400 hover:to-secondary-400 text-white text-sm font-semibold transition-all disabled:opacity-70"
                     >
@@ -1202,7 +1201,7 @@ const Game = () => {
                       ) : (
                         <ArrowRight className="w-4 h-4" />
                       )}
-                      <span>بله، بریم مرحله بعد</span>
+                      <span>بریم مرحله بعد →</span>
                     </button>
                   </div>
                 </div>

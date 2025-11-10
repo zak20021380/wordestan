@@ -53,7 +53,7 @@ export const GameProvider = ({ children }) => {
   }, [isAuthenticated, authLoading]);
 
   // Fetch next level
-  const { isLoading: levelLoading } = useQuery(
+  const { isLoading: levelLoading, refetch: refetchNextLevel } = useQuery(
     ['nextLevel', user?.id],
     () => gameService.getNextLevel(),
     {
@@ -144,7 +144,7 @@ export const GameProvider = ({ children }) => {
     }
   );
 
-  const { isLoading: guestLevelLoading } = useQuery(
+  const { isLoading: guestLevelLoading, refetch: refetchGuestLevel } = useQuery(
     ['guestLevel'],
     () => gameService.getFirstLevel(),
     {
@@ -495,15 +495,26 @@ export const GameProvider = ({ children }) => {
     setAutoSolveResult(null);
   }, []);
 
-  const confirmAutoSolveCompletion = useCallback(async () => {
-    if (!user) {
-      setAutoSolveResult(null);
+  const resetGameState = useCallback(() => {
+    setGameState({
+      selectedNodes: [],
+      selectionPreview: '',
+      currentWord: '',
+      completedWords: [],
+      isConnecting: false,
+    });
+  }, []);
+
+  const loadNextLevel = useCallback(async () => {
+    resetGameState();
+
+    if (isAuthenticated) {
+      await refetchNextLevel({ cancelRefetch: false, throwOnError: true });
       return;
     }
 
-    await queryClient.invalidateQueries(['nextLevel', user.id]);
-    setAutoSolveResult(null);
-  }, [queryClient, user]);
+    await refetchGuestLevel({ cancelRefetch: false, throwOnError: true });
+  }, [isAuthenticated, refetchGuestLevel, refetchNextLevel, resetGameState]);
 
   const value = {
     currentLevel,
@@ -534,7 +545,7 @@ export const GameProvider = ({ children }) => {
     // Auto-solve feedback
     autoSolveResult,
     clearAutoSolveResult,
-    confirmAutoSolveCompletion,
+    loadNextLevel,
   };
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
