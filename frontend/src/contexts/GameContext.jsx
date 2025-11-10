@@ -26,6 +26,10 @@ export const GameProvider = ({ children }) => {
     isConnecting: false,
   });
   const [levelTransition, setLevelTransition] = useState(null);
+  const [levelCompletionStatus, setLevelCompletionStatus] = useState({
+    completed: false,
+    source: null,
+  });
   const [autoSolveResult, setAutoSolveResult] = useState(null);
   const previousLevelOrderRef = useRef(null);
   const pendingTransitionRef = useRef(null);
@@ -50,6 +54,7 @@ export const GameProvider = ({ children }) => {
     hasInitializedLevelRef.current = false;
     setLevelTransition(null);
     setAutoSolveResult(null);
+    setLevelCompletionStatus({ completed: false, source: null });
   }, [isAuthenticated, authLoading]);
 
   // Fetch next level
@@ -130,16 +135,27 @@ export const GameProvider = ({ children }) => {
         hasInitializedLevelRef.current = true;
         pendingTransitionRef.current = null;
 
+        const completedWords = Array.from(
+          new Set((payload.completedWords ?? []).filter(Boolean).map(word => word.toUpperCase()))
+        );
+        const totalWords = Array.isArray(nextLevel?.words)
+          ? nextLevel.words.filter(Boolean).length
+          : 0;
+        const completedAll = totalWords > 0 && completedWords.length >= totalWords;
+
         setCurrentLevel(nextLevel);
         setGameState(prev => ({
           ...prev,
           selectedNodes: [],
           selectionPreview: '',
           currentWord: '',
-          completedWords: Array.from(
-            new Set((payload.completedWords ?? []).filter(Boolean))
-          ),
+          completedWords,
         }));
+        setLevelCompletionStatus(
+          completedAll
+            ? { completed: true, source: 'synced' }
+            : { completed: false, source: null }
+        );
       },
     }
   );
@@ -197,6 +213,7 @@ export const GameProvider = ({ children }) => {
         previousLevelOrderRef.current = guestOrder;
         hasInitializedLevelRef.current = true;
         pendingTransitionRef.current = null;
+        setLevelCompletionStatus({ completed: false, source: null });
       },
       onError: () => {
         setCurrentLevel(null);
@@ -229,20 +246,49 @@ export const GameProvider = ({ children }) => {
         }
 
         // Clear current selection and update completed words locally
+        let updatedCompletedWords = [];
         setGameState(prev => {
           const normalizedWord = completedWord?.toUpperCase();
-          const updatedCompletedWords = normalizedWord
+          const updated = normalizedWord
             ? Array.from(new Set([...prev.completedWords, normalizedWord]))
             : prev.completedWords;
+
+          updatedCompletedWords = updated;
 
           return {
             ...prev,
             selectedNodes: [],
             selectionPreview: '',
             currentWord: '',
-            completedWords: updatedCompletedWords,
+            completedWords: updated,
           };
         });
+
+        const totalWords = Array.isArray(currentLevel?.words)
+          ? currentLevel.words.filter(Boolean).length
+          : 0;
+        const completedAll = totalWords > 0 && updatedCompletedWords.length >= totalWords;
+
+        if (completedAll) {
+          const parseOrder = (value) => {
+            if (value === null || value === undefined) {
+              return null;
+            }
+            const numeric = Number(value);
+            return Number.isNaN(numeric) ? null : numeric;
+          };
+
+          pendingTransitionRef.current = {
+            type: 'completed',
+            from: parseOrder(currentLevel?.order),
+          };
+        }
+
+        setLevelCompletionStatus(
+          completedAll
+            ? { completed: true, source: 'manual' }
+            : { completed: false, source: null }
+        );
 
         // Invalidate queries to refetch and get updated completed words
         queryClient.invalidateQueries(['nextLevel', user?.id]);
@@ -284,7 +330,9 @@ export const GameProvider = ({ children }) => {
           };
         });
 
-        const totalWords = currentLevel?.words?.length ?? 0;
+        const totalWords = Array.isArray(currentLevel?.words)
+          ? currentLevel.words.filter(Boolean).length
+          : 0;
         const completedAll = totalWords > 0 && updatedCompletedWords.length >= totalWords;
 
         if (completedAll) {
@@ -308,6 +356,12 @@ export const GameProvider = ({ children }) => {
           remainingCoins: data?.data?.remainingCoins ?? null,
           levelCompleted: completedAll,
         });
+
+        setLevelCompletionStatus(
+          completedAll
+            ? { completed: true, source: 'auto' }
+            : { completed: false, source: null }
+        );
 
         if (!completedAll) {
           // Invalidate queries to refetch and get updated completed words
@@ -493,6 +547,9 @@ export const GameProvider = ({ children }) => {
 
   const clearAutoSolveResult = useCallback(() => {
     setAutoSolveResult(null);
+    setLevelCompletionStatus(prev =>
+      prev.source === 'auto' ? { completed: false, source: null } : prev
+    );
   }, []);
 
   const resetGameState = useCallback(() => {
@@ -503,6 +560,7 @@ export const GameProvider = ({ children }) => {
       completedWords: [],
       isConnecting: false,
     });
+    setLevelCompletionStatus({ completed: false, source: null });
   }, []);
 
   const loadNextLevel = useCallback(async () => {
@@ -545,6 +603,7 @@ export const GameProvider = ({ children }) => {
     // Auto-solve feedback
     autoSolveResult,
     clearAutoSolveResult,
+    levelCompletionStatus,
     loadNextLevel,
   };
 
