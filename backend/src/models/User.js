@@ -35,7 +35,7 @@ const completedLevelSchema = new mongoose.Schema({
   levelId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Level',
-    required: true
+    required: false
   },
   stars: {
     type: Number,
