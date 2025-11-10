@@ -16,6 +16,8 @@ const Leaderboard = () => {
   );
 
   const leaderboard = data?.data?.leaderboard || [];
+  const topPlayers = leaderboard.slice(0, 3);
+  const otherPlayers = leaderboard.slice(3);
 
   const getMedal = (rank) => {
     if (rank === 1) return '🥇';
@@ -65,148 +67,173 @@ const Leaderboard = () => {
   }
 
   return (
-    <div className="relative">
-      <div className="absolute inset-x-0 top-0 -z-10 h-72 bg-gradient-to-br from-primary-500/30 via-purple-500/20 to-transparent blur-3xl" />
+    <div className="relative min-h-screen overflow-hidden bg-gradient-to-b from-[#10082e] via-[#07031d] to-[#02000c]">
+      <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[420px] bg-gradient-to-b from-primary-500/30 via-purple-500/20 to-transparent blur-3xl" />
+      <div className="pointer-events-none absolute -right-24 top-32 -z-10 h-56 w-56 rounded-full bg-primary-500/20 blur-3xl sm:h-72 sm:w-72" />
+      <div className="pointer-events-none absolute -left-32 top-56 -z-10 h-64 w-64 rounded-full bg-purple-500/10 blur-3xl sm:-left-20 sm:h-80 sm:w-80" />
 
-      <div className="max-w-4xl mx-auto space-y-8 px-4 sm:px-6 lg:px-0">
+      <div className="mx-auto flex max-w-5xl flex-col gap-10 px-4 pb-16 pt-12 sm:px-6 lg:px-8">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center"
+          transition={{ duration: 0.4 }}
+          className="mx-auto flex max-w-3xl flex-col items-center text-center text-white"
         >
-          <div className="inline-flex items-center gap-3 rounded-full bg-white/10 px-4 py-2 backdrop-blur-xl">
-            <Trophy className="h-6 w-6 text-yellow-300" />
-            <span className="text-sm font-medium text-white/80">۵۰ بازیکن برتر</span>
+          <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-xs font-medium text-white/80 backdrop-blur-xl sm:text-sm">
+            <Trophy className="h-5 w-5 text-yellow-300" />
+            <span>۵۰ بازیکن برتر جهان</span>
           </div>
-          <h1 className="mt-6 text-4xl font-black tracking-tight text-white sm:text-5xl">
-            رتبه‌بندی جهانی
+          <h1 className="mt-6 text-3xl font-black leading-tight tracking-tight sm:text-5xl">
+            رتبه‌بندی جهانی بازیکنان
           </h1>
-          <p className="mt-4 text-base text-white/70 sm:text-lg">
-            با تازه‌ترین سبک طراحی، وضعیت بازیکنان برتر را در یک نگاه ببینید. رتبه‌ها به‌روزرسانی
-            زنده و تطبیق‌پذیر با موبایل.
+          <p className="mt-4 text-sm leading-7 text-white/70 sm:text-base">
+            رقابت جهانی را در فضایی مدرن و کاملاً واکنش‌گرا دنبال کنید. جدول افتخار ما تجربه‌ای حرفه‌ای روی موبایل و دسکتاپ رقم می‌زند.
           </p>
         </motion.div>
 
-        <motion.div
+        <motion.section
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.1 }}
-          className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl shadow-primary-900/20 backdrop-blur-2xl"
+          transition={{ delay: 0.1, duration: 0.4 }}
+          className="relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-white/[0.04] px-5 py-8 shadow-2xl shadow-primary-900/20 backdrop-blur-2xl sm:px-8"
+          dir="rtl"
         >
-          <div className="flex flex-col gap-6" dir="rtl">
+          <div className="absolute inset-x-10 top-0 -z-10 h-32 rounded-b-full bg-gradient-to-b from-white/10 to-transparent opacity-60" />
+
+          <div className="flex flex-col gap-6">
             <div className="flex flex-col gap-4 text-white sm:flex-row sm:items-center sm:justify-between">
               <div className="flex-1">
-                <p className="text-xs font-medium uppercase tracking-wider text-white/50 sm:text-sm">
-                  رده‌بندی نهایی
-                </p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-white/50 sm:text-sm">رده‌بندی نهایی</p>
                 <h2 className="mt-1 bg-gradient-to-l from-white to-white/80 bg-clip-text text-2xl font-black text-transparent sm:text-3xl">
                   جدول افتخار بازی
                 </h2>
               </div>
-              <div className="flex flex-wrap items-center justify-start gap-2 rounded-2xl bg-gradient-to-r from-black/40 to-black/20 px-3 py-2 text-xs backdrop-blur-sm sm:justify-center sm:gap-3 sm:px-4 sm:text-sm">
-                <span className="flex items-center gap-1.5 rounded-lg bg-yellow-500/10 px-2 py-1 ring-1 ring-yellow-500/20">
+              <div className="flex flex-wrap items-center justify-start gap-2 rounded-2xl bg-gradient-to-r from-white/5 to-transparent px-3 py-2 text-[11px] backdrop-blur-sm sm:justify-center sm:gap-3 sm:px-4 sm:text-xs">
+                <span className="flex items-center gap-1.5 rounded-xl bg-yellow-500/10 px-2 py-1 font-medium text-yellow-200 ring-1 ring-yellow-500/30">
                   <span className="text-lg sm:text-xl">🥇</span>
-                  <span className="font-medium text-yellow-200">رتبه ۱</span>
+                  رتبه ۱
                 </span>
-                <span className="flex items-center gap-1.5 rounded-lg bg-gray-400/10 px-2 py-1 ring-1 ring-gray-400/20">
+                <span className="flex items-center gap-1.5 rounded-xl bg-gray-400/10 px-2 py-1 font-medium text-gray-200 ring-1 ring-gray-400/30">
                   <span className="text-lg sm:text-xl">🥈</span>
-                  <span className="font-medium text-gray-200">رتبه ۲</span>
+                  رتبه ۲
                 </span>
-                <span className="flex items-center gap-1.5 rounded-lg bg-orange-500/10 px-2 py-1 ring-1 ring-orange-500/20">
+                <span className="flex items-center gap-1.5 rounded-xl bg-orange-500/10 px-2 py-1 font-medium text-orange-200 ring-1 ring-orange-500/30">
                   <span className="text-lg sm:text-xl">🥉</span>
-                  <span className="font-medium text-orange-200">رتبه ۳</span>
+                  رتبه ۳
                 </span>
               </div>
             </div>
 
             {leaderboard.length > 0 ? (
-              <div className="overflow-hidden rounded-2xl border border-white/10">
-                {/* Table Header */}
-                <div className="hidden sm:grid grid-cols-12 bg-gradient-to-r from-white/10 via-white/5 to-transparent px-6 py-3 text-xs font-semibold uppercase tracking-wider text-white/60">
-                  <span className="col-span-2 text-right">رتبه</span>
-                  <span className="col-span-6 text-right">بازیکن</span>
-                  <span className="col-span-4 text-center">امتیاز</span>
-                </div>
-
-                <div className="divide-y divide-white/5 bg-black/20 backdrop-blur-xl">
-                  {leaderboard.map((player, index) => {
+              <div className="flex flex-col gap-8">
+                {/* Podium */}
+                <div className="grid gap-4 sm:grid-cols-3 sm:items-end">
+                  {topPlayers.map((player, index) => {
                     const isCurrentUser = user?.username === player.username;
-                    const medal = getMedal(player.rank);
+                    const highlightStyles =
+                      player.rank === 1
+                        ? 'sm:order-2 sm:-mt-10 bg-gradient-to-br from-yellow-400/20 via-yellow-500/10 to-transparent'
+                        : player.rank === 2
+                        ? 'sm:order-1'
+                        : 'sm:order-3';
 
                     return (
                       <motion.div
                         key={player.rank}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.03, duration: 0.3 }}
-                        className={`grid grid-cols-12 items-center gap-3 px-4 py-4 transition-all duration-300 sm:gap-4 sm:px-6 ${getRowStyle(
-                          player.rank,
-                          isCurrentUser
-                        )}`}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.15, duration: 0.4 }}
+                        className={`relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.06] p-6 text-center shadow-xl transition-transform duration-500 hover:-translate-y-2 hover:shadow-2xl ${highlightStyles}`}
                       >
-                        {/* Rank Badge - Mobile & Desktop */}
-                        <div className="col-span-3 flex items-center justify-end gap-2 sm:col-span-2 sm:gap-3">
-                          <div className="flex flex-col items-center gap-1 sm:flex-row sm:gap-3">
-                            <span
-                              className={`flex h-11 w-11 items-center justify-center rounded-full text-base font-bold transition-transform hover:scale-110 sm:h-12 sm:w-12 sm:text-lg ${getRankBadgeStyle(
-                                player.rank
-                              )}`}
-                            >
-                              {player.rank}
-                            </span>
-                            {medal && (
-                              <span className="text-2xl sm:text-3xl animate-pulse">
-                                {medal}
+                        <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-transparent opacity-70" />
+                        <div className="relative z-10 flex flex-col items-center gap-3">
+                          <span
+                            className={`flex h-14 w-14 items-center justify-center rounded-full text-xl font-bold ${getRankBadgeStyle(
+                              player.rank
+                            )}`}
+                          >
+                            {player.rank}
+                          </span>
+                          <p className={`text-lg font-bold sm:text-xl ${isCurrentUser ? 'text-primary-100' : 'text-white'}`}>
+                            {player.username}
+                            {isCurrentUser && (
+                              <span className="mr-2 rounded-full bg-primary-500/30 px-2 py-0.5 text-xs font-medium text-primary-50">
+                                شما
                               </span>
                             )}
-                          </div>
-                        </div>
-
-                        {/* Player Info */}
-                        <div className="col-span-6 sm:col-span-6">
-                          <div className="flex flex-col gap-1">
-                            <p
-                              className={`text-sm font-bold sm:text-lg ${
-                                isCurrentUser
-                                  ? 'text-primary-200'
-                                  : player.rank <= 3
-                                  ? 'text-white'
-                                  : 'text-white/90'
-                              }`}
-                            >
-                              {player.username}
-                              {isCurrentUser && (
-                                <span className="mr-2 rounded-full bg-primary-500/30 px-2 py-0.5 text-xs font-medium text-primary-100">
-                                  شما
-                                </span>
-                              )}
-                            </p>
-                            <p className="text-xs text-white/50 sm:text-sm">
-                              {player.rank <= 3 ? 'بازیکن افتخاری' : 'بازیکن جهانی'}
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Score */}
-                        <div className="col-span-3 flex flex-col items-center justify-center gap-0.5 sm:col-span-4">
-                          <div className="flex items-baseline gap-1 sm:gap-2">
-                            <span
-                              className={`text-base font-black sm:text-xl ${
-                                player.rank <= 3
-                                  ? 'bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent'
-                                  : 'text-white'
-                              }`}
-                            >
+                          </p>
+                          <p className="text-xs text-white/60 sm:text-sm">
+                            {player.rank === 1 ? 'قهرمان جهانی' : player.rank === 2 ? 'نایب قهرمان' : 'سوم جهانی'}
+                          </p>
+                          <div className="mt-3 flex flex-col items-center text-white">
+                            <span className="text-2xl font-black sm:text-3xl">
                               {player.totalScore?.toLocaleString() || 0}
                             </span>
+                            <span className="text-xs text-white/60">امتیاز کل</span>
                           </div>
-                          <span className="text-xs text-white/50">امتیاز</span>
                         </div>
                       </motion.div>
                     );
                   })}
                 </div>
+
+                {/* Remaining Players */}
+                {otherPlayers.length > 0 && (
+                  <div className="flex flex-col gap-3">
+                    {otherPlayers.map((player, index) => {
+                      const isCurrentUser = user?.username === player.username;
+                      const medal = getMedal(player.rank);
+
+                      return (
+                        <motion.div
+                          key={player.rank}
+                          initial={{ opacity: 0, y: 12 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.2 + index * 0.04, duration: 0.3 }}
+                          className={`flex flex-col gap-4 rounded-2xl border border-white/5 bg-white/[0.02] p-4 text-white shadow-lg transition-all duration-300 hover:border-primary-400/40 hover:bg-primary-500/10 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-5 ${getRowStyle(
+                            player.rank,
+                            isCurrentUser
+                          )}`}
+                        >
+                          <div className="flex items-center justify-between gap-4 sm:justify-start">
+                            <div className="flex items-center gap-3">
+                              <span
+                                className={`flex h-11 w-11 items-center justify-center rounded-2xl text-lg font-bold sm:h-12 sm:w-12 ${getRankBadgeStyle(
+                                  player.rank
+                                )}`}
+                              >
+                                {player.rank}
+                              </span>
+                              {medal && <span className="text-2xl sm:text-3xl">{medal}</span>}
+                            </div>
+                          </div>
+
+                          <div className="flex flex-1 flex-col gap-1 text-right sm:items-end">
+                            <p className={`text-base font-bold sm:text-lg ${isCurrentUser ? 'text-primary-100' : 'text-white'}`}>
+                              {player.username}
+                              {isCurrentUser && (
+                                <span className="mr-2 rounded-full bg-primary-500/20 px-2 py-0.5 text-xs font-medium text-primary-50">
+                                  شما
+                                </span>
+                              )}
+                            </p>
+                            <p className="text-xs text-white/50 sm:text-sm">
+                              {player.rank <= 10 ? 'بازیکن برتر جهانی' : 'بازیکن فعال جهانی'}
+                            </p>
+                          </div>
+
+                          <div className="flex items-center justify-between gap-2 text-left sm:flex-col sm:items-end sm:justify-center sm:gap-1">
+                            <span className="text-lg font-black sm:text-xl">
+                              {player.totalScore?.toLocaleString() || 0}
+                            </span>
+                            <span className="text-xs text-white/50">امتیاز</span>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             ) : (
               <div className="flex min-h-[200px] flex-col items-center justify-center rounded-2xl bg-black/30 text-center text-white/60">
@@ -215,7 +242,7 @@ const Leaderboard = () => {
               </div>
             )}
           </div>
-        </motion.div>
+        </motion.section>
       </div>
     </div>
   );
