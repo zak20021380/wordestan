@@ -889,13 +889,22 @@ const autoSolve = async (req, res) => {
     // Select a random incomplete word
     const randomWord = incompleteWords[Math.floor(Math.random() * incompleteWords.length)];
 
-    // Deduct coins
+    // Get reward settings for skip level rewards
+    const rewardSettings = await getResolvedRewardSettings();
+    const skipLevelCoinsReward = rewardSettings.skipLevelCoinsReward;
+    const skipLevelPointsReward = rewardSettings.skipLevelPointsReward;
+
+    // Deduct coins for auto-solve cost
     await user.spendCoins(autoSolveCost);
 
-    // Complete the word (without coin reward)
+    // Award skip level coins reward
+    await user.addCoins(skipLevelCoinsReward);
+
+    // Complete the word with skip level points reward
     await user.completeWord(level._id, randomWord._id, {
       usedAutoSolve: true,
-      usedShuffle: powerUpsUsed.shuffle
+      usedShuffle: powerUpsUsed.shuffle,
+      pointsReward: skipLevelPointsReward
     });
 
     // Update word stats
@@ -945,6 +954,9 @@ const autoSolve = async (req, res) => {
       data: {
         solvedWord: randomWord,
         coinsSpent: autoSolveCost,
+        skipLevelCoinsReward,
+        skipLevelPointsReward,
+        netCoinsChange: skipLevelCoinsReward - autoSolveCost,
         remainingCoins: user.coins,
         totalScore: user.totalScore,
         levelCompleted: isLevelCompleted,
