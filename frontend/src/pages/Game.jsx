@@ -53,9 +53,7 @@ const Game = () => {
   const [shuffleModal, setShuffleModal] = useState({ type: null });
   const [isPurchasingShuffle, setIsPurchasingShuffle] = useState(false);
   const [showAutoSolveModal, setShowAutoSolveModal] = useState(false);
-  const [showAutoSolvePrompt, setShowAutoSolvePrompt] = useState(false);
-  const [isConfirmingNextLevel, setIsConfirmingNextLevel] = useState(false);
-  const [completionPromptContext, setCompletionPromptContext] = useState(null);
+  const autoAdvanceLevelRef = useRef(null);
   const shuffleCost = 15;
   const currentLevelId = currentLevel?._id ?? null;
   const faNumberFormatter = useMemo(() => new Intl.NumberFormat('fa-IR'), []);
@@ -279,14 +277,6 @@ const Game = () => {
   const hasCompletedAllWords = totalLevelWordCount > 0 && completedWordSet.size >= totalLevelWordCount;
   const hasSyncedCompletion = Boolean(levelCompletionStatus?.completed);
   const hasAutoSolveCompletion = Boolean(autoSolveResult?.levelCompleted);
-  const shouldShowCompletionPrompt =
-    showAutoSolvePrompt && (hasAutoSolveCompletion || hasCompletedAllWords || hasSyncedCompletion);
-  const CompletionIcon = Trophy;
-  const completionIconAccent = 'text-amber-200';
-  const completionBadgeStyles = 'text-amber-200 border-amber-300/40 bg-amber-500/10';
-  const completionBadgeCopy = 'مرحله تکمیل شد';
-  const completionTitleCopy = '🏆 عالی کار! مرحله تموم شد!';
-  const completionDescriptionCopy = 'عالی کار دیگه چیه';
 
   const levelWordsByLength = useMemo(() => {
     if (!Array.isArray(currentLevel?.words) || currentLevel.words.length === 0) {
@@ -334,8 +324,6 @@ const Game = () => {
     setShowMeanings(false);
     setActiveMeaning(null);
     setShuffleUsageCount(0);
-    setShowAutoSolvePrompt(false);
-    setCompletionPromptContext(null);
   }, [currentLevelId]);
 
   useEffect(() => {
@@ -372,33 +360,41 @@ const Game = () => {
   useEffect(() => {
     if (!autoSolveResult) {
       setShowAutoSolveModal(false);
-      if (!hasCompletedAllWords && !hasSyncedCompletion) {
-        setShowAutoSolvePrompt(false);
-        setCompletionPromptContext(null);
-      }
       return;
     }
 
     setShowAutoSolveModal(true);
-    if (autoSolveResult.levelCompleted) {
-      setCompletionPromptContext('auto');
-      setShowAutoSolvePrompt(true);
-    }
-  }, [autoSolveResult, hasCompletedAllWords, hasSyncedCompletion]);
+  }, [autoSolveResult]);
 
   useEffect(() => {
-    if (hasAutoSolveCompletion) {
+    if (!currentLevelId) {
+      autoAdvanceLevelRef.current = null;
       return;
     }
 
-    if (hasCompletedAllWords || hasSyncedCompletion) {
-      setCompletionPromptContext((prev) => prev ?? 'manual');
-      setShowAutoSolvePrompt(true);
-    } else {
-      setShowAutoSolvePrompt(false);
-      setCompletionPromptContext(null);
+    const levelCompleted = hasAutoSolveCompletion || hasCompletedAllWords || hasSyncedCompletion;
+
+    if (!levelCompleted) {
+      autoAdvanceLevelRef.current = null;
+      return;
     }
-  }, [hasCompletedAllWords, hasAutoSolveCompletion, hasSyncedCompletion]);
+
+    if (autoAdvanceLevelRef.current === currentLevelId) {
+      return;
+    }
+
+    autoAdvanceLevelRef.current = currentLevelId;
+
+    handleNextLevel().catch(() => {
+      autoAdvanceLevelRef.current = null;
+    });
+  }, [
+    currentLevelId,
+    handleNextLevel,
+    hasAutoSolveCompletion,
+    hasCompletedAllWords,
+    hasSyncedCompletion,
+  ]);
 
   const handleCloseShuffleModal = useCallback(() => {
     if (isPurchasingShuffle) {
@@ -609,30 +605,19 @@ const Game = () => {
     const levelCompleted = hasAutoSolveCompletion || hasCompletedAllWords || hasSyncedCompletion;
 
     if (!levelCompleted) {
-      setShowAutoSolvePrompt(false);
-      setCompletionPromptContext(null);
       clearAutoSolveResult();
       return;
     }
 
-    const contextToRestore = completionPromptContext;
-
     try {
-      setIsConfirmingNextLevel(true);
-      setShowAutoSolvePrompt(false);
-      setCompletionPromptContext(null);
       await loadNextLevel();
       clearAutoSolveResult();
     } catch (error) {
       toast.error(error.message || 'نتونستیم مرحله بعدی رو بیاریم!');
-      setCompletionPromptContext(contextToRestore);
-      setShowAutoSolvePrompt(true);
-    } finally {
-      setIsConfirmingNextLevel(false);
+      throw error;
     }
   }, [
     clearAutoSolveResult,
-    completionPromptContext,
     hasAutoSolveCompletion,
     hasCompletedAllWords,
     hasSyncedCompletion,
@@ -1166,53 +1151,6 @@ const Game = () => {
           </motion.div>
         </div>
       </div>
-      <AnimatePresence>
-        {shouldShowCompletionPrompt && (
-          <motion.div
-            key="auto-solve-banner"
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -30 }}
-            transition={{ type: 'spring', stiffness: 220, damping: 24 }}
-            className="fixed top-6 left-6 z-[65] max-w-sm"
-          >
-            <div className="bg-gradient-to-br from-emerald-500/20 via-purple-500/30 to-cyan-500/20 border border-white/15 backdrop-blur-md rounded-2xl p-5 shadow-[0_20px_60px_rgba(76,29,149,0.45)] text-right">
-              <div className="flex items-start gap-4">
-                <div className={`p-2 rounded-xl bg-white/10 border border-white/20 ${completionIconAccent}`}>
-                  <CompletionIcon className="w-6 h-6" />
-                </div>
-                <div className="flex-1 space-y-3">
-                  {completionPromptContext && (
-                    <span className={`inline-flex items-center justify-center gap-1 rounded-full border px-3 py-1 text-[11px] font-semibold tracking-tight ${completionBadgeStyles}`}>
-                      <CheckCircle className="w-3.5 h-3.5" />
-                      {completionBadgeCopy}
-                    </span>
-                  )}
-                  <div className="space-y-1">
-                    <p className="text-sm font-semibold text-white/90">{completionTitleCopy}</p>
-                    <p className="text-xs text-white/70 leading-relaxed">{completionDescriptionCopy}</p>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2 pt-1">
-                    <button
-                      type="button"
-                      onClick={handleNextLevel}
-                      disabled={isConfirmingNextLevel}
-                      className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-400 hover:to-secondary-400 text-white text-sm font-semibold transition-all disabled:opacity-70"
-                    >
-                      {isConfirmingNextLevel ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <ArrowRight className="w-4 h-4" />
-                      )}
-                      <span>بریم مرحله بعد →</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
       <AnimatePresence>
         {shuffleModal.type && (
           <motion.div
