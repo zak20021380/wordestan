@@ -425,6 +425,7 @@ export const GameProvider = ({ children }) => {
         // Invalidate queries to refetch and get updated completed words
         queryClient.invalidateQueries(['nextLevel', user?.id]);
         queryClient.invalidateQueries(['leaderboard']);
+        queryClient.invalidateQueries(['gameLevels']);
       },
     }
   );
@@ -510,6 +511,7 @@ export const GameProvider = ({ children }) => {
           queryClient.invalidateQueries(['nextLevel', user?.id]);
         }
         queryClient.invalidateQueries(['leaderboard']);
+        queryClient.invalidateQueries(['gameLevels']);
       },
     }
   );

@@ -279,7 +279,15 @@ const toObjectId = (value) => {
     return value;
   }
 
-  return new mongoose.Types.ObjectId(value);
+  if (typeof value === 'object' && value._id) {
+    return toObjectId(value._id);
+  }
+
+  if (mongoose.Types.ObjectId.isValid(value)) {
+    return new mongoose.Types.ObjectId(value);
+  }
+
+  return null;
 };
 
 userSchema.methods.getLevelProgress = function(levelId, { createIfMissing = false } = {}) {
