@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const User = require('../src/models/User');
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/harfland';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/wordconnect';
 
 const createAdmin = async () => {
   await mongoose.connect(MONGODB_URI, {

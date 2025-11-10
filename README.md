@@ -172,7 +172,7 @@ PORT=5000
 NODE_ENV=development
 
 # Database
-MONGODB_URI=mongodb://localhost:27017/harfland
+MONGODB_URI=mongodb://localhost:27017/wordconnect
 
 # JWT
 JWT_SECRET=your_secure_key
