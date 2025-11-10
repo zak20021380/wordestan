@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# Word Connect Game Deployment Script
-# This script helps set up and deploy the Word Connect game
+# HarfLand Game Deployment Script
+# This script helps set up and deploy the HarfLand game
 
-echo "🎮 Word Connect Game Deployment Script"
+echo "🎮 HarfLand Game Deployment Script"
 echo "======================================"
 
 # Check if Node.js is installed
@@ -68,7 +68,7 @@ seed_database() {
     if npm run seed; then
         echo "✅ Database seeded successfully!"
         echo "📝 Demo accounts created:"
-        echo "   Admin: admin@wordconnect.com / admin123"
+        echo "   Admin: admin@harfland.com / admin123"
         echo "   Users: player1@example.com through player5@example.com / user123"
     else
         echo "❌ Failed to seed database. Please check your MongoDB connection."

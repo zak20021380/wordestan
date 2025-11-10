@@ -1,7 +1,7 @@
 {
-  "name": "wordconnect-fullstack",
+  "name": "harfland-fullstack",
   "version": "1.0.0",
-  "description": "Full-stack Word Connect game with React frontend and Express backend",
+  "description": "Full-stack HarfLand game with React frontend and Express backend",
   "main": "index.js",
   "scripts": {
     "install:all": "npm run install:backend && npm run install:frontend",
@@ -30,7 +30,7 @@
     "fullstack",
     "game"
   ],
-  "author": "WordConnect Team",
+  "author": "HarfLand Team",
   "license": "MIT",
   "devDependencies": {
     "concurrently": "^8.2.1"

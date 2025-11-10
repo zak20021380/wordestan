@@ -1,7 +1,7 @@
 {
-  "name": "wordconnect-backend",
+  "name": "harfland-backend",
   "version": "1.0.0",
-  "description": "Word Connect Game Backend API",
+  "description": "HarfLand Game Backend API",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -33,6 +33,6 @@
     "express",
     "mongodb"
   ],
-  "author": "Word Connect Team",
+  "author": "HarfLand Team",
   "license": "MIT"
 }

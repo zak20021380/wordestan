@@ -42,7 +42,7 @@ const sampleCoinPacks = [
 
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/wordconnect');
+    const conn = await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/harfland');
     console.log(`MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
     console.error('Database connection error:', error);
@@ -65,13 +65,13 @@ const seedDatabase = async () => {
     const adminPassword = await bcrypt.hash('admin123', 10);
     const admin = new User({
       username: 'admin',
-      email: 'admin@wordconnect.com',
+      email: 'admin@harfland.com',
       password: adminPassword,
       isAdmin: true,
       coins: 1000
     });
     await admin.save();
-    console.log('Created admin user: admin@wordconnect.com / admin123');
+    console.log('Created admin user: admin@harfland.com / admin123');
 
     // Create sample users
     const userPassword = await bcrypt.hash('user123', 10);
@@ -127,7 +127,7 @@ const seedDatabase = async () => {
 
     console.log('Database seed completed successfully!');
     console.log('\nSample accounts:');
-    console.log('Admin: admin@wordconnect.com / admin123');
+    console.log('Admin: admin@harfland.com / admin123');
     console.log('Users: player1@example.com through player5@example.com / user123');
 
   } catch (error) {

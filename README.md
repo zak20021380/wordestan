@@ -1,6 +1,6 @@
-# Word Connect Game - Full Stack Application
+# HarfLand Game - Full Stack Application
 
-A professionally structured word-connect game with admin dashboard, featuring drag-to-connect gameplay with live SVG path rendering, coin economy, and comprehensive admin controls.
+A professionally structured Persian word game with admin dashboard, featuring drag-to-connect gameplay with live SVG path rendering, coin economy, and comprehensive admin controls.
 
 ## 🎮 Game Features
 
@@ -55,7 +55,7 @@ A professionally structured word-connect game with admin dashboard, featuring dr
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd wordconnect-game
+   cd harfland-game
    ```
 
 2. **Install backend dependencies**
@@ -108,7 +108,7 @@ A professionally structured word-connect game with admin dashboard, featuring dr
 ### Demo Accounts
 
 **Admin Account:**
-- Email: `admin@wordconnect.com`
+- Email: `admin@harfland.com`
 - Password: `admin123`
 
 **User Accounts:**
@@ -172,7 +172,7 @@ PORT=5000
 NODE_ENV=development
 
 # Database
-MONGODB_URI=mongodb://localhost:27017/wordconnect
+MONGODB_URI=mongodb://localhost:27017/harfland
 
 # JWT
 JWT_SECRET=your_secure_key
@@ -187,7 +187,8 @@ AUTO_SOLVE_COST=50
 ### Frontend Configuration (.env)
 ```env
 VITE_API_URL=http://localhost:5000/api
-VITE_APP_NAME=Word Connect
+VITE_APP_NAME=HarfLand
+VITE_APP_NAME_FA=حرف‌لند
 ```
 
 ## 🎯 Key Features Implementation
@@ -307,4 +308,4 @@ For support, please:
 
 ---
 
-**Built with ❤️ by the WordConnect Team**
+**Built with 💜 by the HarfLand Team**
