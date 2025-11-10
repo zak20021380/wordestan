@@ -1,6 +1,21 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
+const DEFAULT_WORD_POINTS_REWARD = parseInt(process.env.WORD_COMPLETE_POINTS, 10) || 20;
+
+const resolveWordPointsReward = (value) => {
+  if (value === undefined || value === null) {
+    return DEFAULT_WORD_POINTS_REWARD;
+  }
+
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric < 0) {
+    return 0;
+  }
+
+  return numeric;
+};
+
 const levelProgressSchema = new mongoose.Schema({
   levelId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -363,6 +378,8 @@ userSchema.methods.completeWord = function(levelId, wordId, options = {}) {
     progress.completedWords = [];
   }
 
+  const pointsReward = resolveWordPointsReward(options.pointsReward);
+
   if (options.usedShuffle) {
     progress.usedShuffle = true;
   }
@@ -386,7 +403,7 @@ userSchema.methods.completeWord = function(levelId, wordId, options = {}) {
   if (!alreadyCompleted) {
     progress.completedWords.push(normalizedWordId);
     this.wordsFound += 1;
-    this.totalScore += 20; // Word completion bonus
+    this.totalScore += pointsReward;
     this.currentStreak += 1;
     this.bestStreak = Math.max(this.bestStreak, this.currentStreak);
   }
