@@ -381,6 +381,7 @@ const getLevels = async (req, res) => {
         completionRate,
         completionPercentage,
         stars,
+        completed: isCompleted,
         status,
         isCurrent: isCurrentLevel,
         isUnlocked,
@@ -622,7 +623,19 @@ const completeWord = async (req, res) => {
         await user.addCoins(levelReward);
       }
 
-      await user.completeLevel(level._id, { stars: starsEarned });
+      const updatedUser = await user.completeLevel(level._id, { stars: starsEarned });
+      console.log('Level completed and saved:', {
+        userId: user?._id?.toString?.() ?? null,
+        levelId: level._id?.toString?.() ?? null,
+        stars: starsEarned,
+        completedLevels: Array.isArray(updatedUser?.completedLevels)
+          ? updatedUser.completedLevels.map(entry => ({
+              levelId: entry?.levelId?.toString?.() ?? null,
+              stars: entry?.stars ?? 0,
+              completedAt: entry?.completedAt ?? null,
+            }))
+          : [],
+      });
     }
 
     res.json({
@@ -855,7 +868,19 @@ const autoSolve = async (req, res) => {
         levelBonus = levelReward;
       }
 
-      await user.completeLevel(level._id, { stars: starsEarned });
+      const updatedUser = await user.completeLevel(level._id, { stars: starsEarned });
+      console.log('Level completed and saved:', {
+        userId: user?._id?.toString?.() ?? null,
+        levelId: level._id?.toString?.() ?? null,
+        stars: starsEarned,
+        completedLevels: Array.isArray(updatedUser?.completedLevels)
+          ? updatedUser.completedLevels.map(entry => ({
+              levelId: entry?.levelId?.toString?.() ?? null,
+              stars: entry?.stars ?? 0,
+              completedAt: entry?.completedAt ?? null,
+            }))
+          : [],
+      });
     }
 
     res.json({
