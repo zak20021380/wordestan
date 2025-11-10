@@ -23,6 +23,10 @@ const {
   // Dashboard
   getDashboardStats,
 
+  // Game settings
+  getGameRewardSettings,
+  updateGameRewardSettings,
+
   // Users
   getUsersWithStats
 } = require('../controllers/adminController');
@@ -113,6 +117,25 @@ const coinPackValidation = [
     .withMessage('isActive must be a boolean value')
 ];
 
+const rewardSettingsValidation = [
+  body('skipLevelCoinsReward')
+    .isInt({ min: 0, max: 1000000 })
+    .withMessage('Skip level coin reward must be between 0 and 1,000,000')
+    .toInt(),
+  body('skipLevelPointsReward')
+    .isInt({ min: 0, max: 1000000 })
+    .withMessage('Skip level point reward must be between 0 and 1,000,000')
+    .toInt(),
+  body('wordFoundCoinsReward')
+    .isInt({ min: 0, max: 1000000 })
+    .withMessage('Word found coin reward must be between 0 and 1,000,000')
+    .toInt(),
+  body('wordFoundPointsReward')
+    .isInt({ min: 0, max: 1000000 })
+    .withMessage('Word found point reward must be between 0 and 1,000,000')
+    .toInt()
+];
+
 // Word management routes
 router.get('/words', adminAuth, getWords);
 router.post('/words', adminAuth, wordValidation, createWord);
@@ -133,6 +156,10 @@ router.delete('/packs/:id', adminAuth, deleteCoinPack);
 
 // Dashboard
 router.get('/dashboard', adminAuth, getDashboardStats);
+
+// Game settings
+router.get('/settings/rewards', adminAuth, getGameRewardSettings);
+router.put('/settings/rewards', adminAuth, rewardSettingsValidation, updateGameRewardSettings);
 
 // Users
 router.get('/users', adminAuth, getUsersWithStats);

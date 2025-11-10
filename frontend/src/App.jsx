@@ -23,6 +23,7 @@ import AdminRoute from './components/AdminRoute';
 import AdminDashboard from './components/admin/AdminDashboard';
 import LevelManagement from './components/admin/LevelManagement';
 import CoinPackManagement from './components/admin/CoinPackManagement';
+import RewardSettings from './components/admin/RewardSettings';
 import UserManagement from './components/admin/UserManagement';
 
 // Create a client
@@ -93,6 +94,7 @@ function App() {
                           <Route index element={<AdminDashboard />} />
                           <Route path="levels" element={<LevelManagement />} />
                           <Route path="coin-packs" element={<CoinPackManagement />} />
+                          <Route path="settings/rewards" element={<RewardSettings />} />
                           <Route path="users" element={<UserManagement />} />
                           <Route path="*" element={<AdminDashboard />} />
                         </Route>
