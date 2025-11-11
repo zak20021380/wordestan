@@ -264,79 +264,88 @@ const Store = () => {
       </motion.div>
 
       {/* Coin Packs */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-12">
         {coinPacks?.data?.map((pack, index) => (
           <motion.div
             key={pack._id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 + index * 0.1 }}
-            className={`bg-gradient-to-br from-glass via-glass to-glass/50 backdrop-blur-lg rounded-2xl border ${
-              pack.featured ? 'border-primary-500/50 ring-2 ring-primary-400/50 shadow-lg shadow-primary-500/20' :
-              pack.popular ? 'border-secondary-500/50 shadow-lg shadow-secondary-500/20' :
-              'border-glass-border shadow-lg shadow-accent-500/10'
-            } p-6 hover:bg-glass-hover transition-all transform hover:scale-105`}
+            className={`group relative overflow-hidden rounded-3xl border backdrop-blur-xl bg-gradient-to-br from-glass via-glass to-glass/40 transition-all duration-300 ${
+              pack.featured
+                ? 'border-primary-400/60 ring-2 ring-primary-400/40 shadow-xl shadow-primary-500/25'
+                : pack.popular
+                ? 'border-secondary-400/60 shadow-xl shadow-secondary-500/25'
+                : 'border-white/10 shadow-lg shadow-accent-500/15'
+            } p-5 sm:p-6 hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary-500/30`}
           >
+            <span className="pointer-events-none absolute -top-16 -left-16 h-32 w-32 rounded-full bg-primary-500/30 blur-3xl" aria-hidden />
+            <span className="pointer-events-none absolute -bottom-20 -right-12 h-36 w-36 rounded-full bg-secondary-500/20 blur-3xl" aria-hidden />
+
             {/* Pack Header */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-2">
+            <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-5">
+              <div className="flex items-center gap-3">
                 {getPackIcon(pack)}
-                <h3 className="text-xl font-bold text-white">{pack.name}</h3>
+                <div className="flex flex-col">
+                  <h3 className="text-lg sm:text-xl font-bold text-white">{pack.name}</h3>
+                  {pack.description && (
+                    <p className="text-xs sm:text-sm text-white/60 leading-relaxed">{pack.description}</p>
+                  )}
+                </div>
               </div>
-              
+
               {pack.featured && (
-                <span className="bg-gradient-to-r from-primary-500/20 to-secondary-500/20 text-primary-400 text-xs font-medium px-2 py-1 rounded-full border border-primary-400/30">
+                <span className="inline-flex items-center gap-1 rounded-full border border-primary-400/40 bg-gradient-to-r from-primary-500/25 to-secondary-500/25 px-3 py-1 text-[11px] font-medium text-primary-200">
                   ویژه
                 </span>
               )}
 
               {pack.popular && (
-                <span className="bg-gradient-to-r from-secondary-500/20 to-accent-500/20 text-secondary-400 text-xs font-medium px-2 py-1 rounded-full border border-secondary-400/30">
+                <span className="inline-flex items-center gap-1 rounded-full border border-secondary-400/40 bg-gradient-to-r from-secondary-500/25 to-accent-500/25 px-3 py-1 text-[11px] font-medium text-secondary-200">
                   محبوب
                 </span>
               )}
             </div>
 
-            {/* Description */}
-            {pack.description && (
-              <p className="text-white/60 text-sm mb-4">{pack.description}</p>
-            )}
-
             {/* Coin Amount */}
-            <div className="text-center mb-6">
-              <div className="flex items-center justify-center space-x-2 mb-2">
-                <Coins className="w-8 h-8 text-accent-400" />
-                <span className="text-3xl font-bold bg-gradient-to-r from-primary-400 to-secondary-400 bg-clip-text text-transparent">
+            <div className="relative rounded-2xl border border-white/5 bg-white/10 p-5 text-center shadow-inner shadow-black/5 mb-6">
+              <div className="flex items-center justify-center gap-2 mb-3 text-primary-200">
+                <Coins className="h-7 w-7 sm:h-8 sm:w-8 text-accent-300 drop-shadow" />
+                <span className="text-3xl font-black tracking-wide bg-gradient-to-r from-primary-300 via-accent-200 to-secondary-300 bg-clip-text text-transparent">
                   {(pack.coins ?? 0).toLocaleString()}
                 </span>
               </div>
-              
+
               {pack.bonusCoins > 0 && (
-                <div className="flex items-center justify-center space-x-1 text-green-400 text-sm">
-                  <Plus className="w-4 h-4" />
+                <div className="flex items-center justify-center gap-1 text-emerald-300 text-xs sm:text-sm font-medium">
+                  <Plus className="h-4 w-4" />
                   <span>+{pack.bonusCoins} سکه جایزه</span>
                 </div>
               )}
 
-              <div className="text-white/60 text-sm mt-1">
+              <div className="mt-3 text-xs sm:text-sm text-white/60">
                 جمع: {(pack.totalCoins ?? ((pack.coins ?? 0) + (pack.bonusCoins ?? 0))).toLocaleString()} سکه
               </div>
             </div>
 
             {/* Price */}
-            <div className="text-center mb-6">
-              <div className="text-2xl font-bold text-white">
+            <div className="relative mb-6 flex flex-col items-center gap-2 text-center">
+              <span className="rounded-full bg-white/5 px-4 py-1 text-xs font-medium text-white/70">
+                قیمت به تومان
+              </span>
+              <div className="text-3xl font-extrabold text-white drop-shadow-sm">
                 {formatToman(pack.price)}
               </div>
-              <div className="text-white/60 text-sm">قیمت به تومان</div>
+              <div className="h-px w-16 bg-gradient-to-r from-transparent via-white/30 to-transparent" />
             </div>
 
             {/* Purchase Button */}
             <button
               onClick={() => handlePurchase(pack)}
               disabled={paymentMutation.isLoading}
-              className="w-full bg-gradient-to-r from-primary-500 via-secondary-500 to-primary-500 hover:from-primary-600 hover:via-secondary-600 hover:to-primary-600 disabled:bg-glass-hover disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-lg transition-all flex items-center justify-center space-x-2 shadow-lg shadow-primary-500/50 hover:shadow-xl hover:shadow-secondary-500/50"
+              className="relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-primary-500 via-secondary-500 to-primary-500 py-3 px-6 font-semibold text-white shadow-xl shadow-primary-500/40 transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-70 sm:py-3.5"
             >
+              <span className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-20 bg-white" aria-hidden />
               {paymentMutation.isLoading ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
@@ -344,8 +353,8 @@ const Store = () => {
                 </>
               ) : (
                 <>
-                  <ShoppingCart className="w-5 h-5" />
-                  <span>خرید</span>
+                  <ShoppingCart className="h-5 w-5" />
+                  <span className="mr-2">خرید</span>
                 </>
               )}
             </button>
