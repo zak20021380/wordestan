@@ -8,28 +8,61 @@ const User = require('../models/User');
  */
 exports.addWord = async (req, res) => {
   try {
+    console.log('🔵 [Leitner Add] Request received');
+    console.log('📦 Request body:', JSON.stringify(req.body));
+    console.log('👤 User ID:', req.user?.id);
+
     const { wordId, levelId, notes } = req.body;
     const userId = req.user.id;
+
+    // Validate required fields
+    if (!wordId) {
+      console.log('❌ [Leitner Add] Missing wordId');
+      return res.status(400).json({
+        success: false,
+        message: 'شناسه کلمه الزامی است'
+      });
+    }
+
+    // Validate wordId format (MongoDB ObjectId)
+    const mongoose = require('mongoose');
+    if (!mongoose.Types.ObjectId.isValid(wordId)) {
+      console.log('❌ [Leitner Add] Invalid wordId format:', wordId);
+      return res.status(400).json({
+        success: false,
+        message: 'شناسه کلمه نامعتبر است'
+      });
+    }
+
+    console.log('🔍 [Leitner Add] Searching for word:', wordId);
 
     // Validate word exists
     const word = await Word.findById(wordId);
     if (!word) {
+      console.log('❌ [Leitner Add] Word not found:', wordId);
       return res.status(404).json({
         success: false,
         message: 'کلمه مورد نظر یافت نشد'
       });
     }
 
+    console.log('✅ [Leitner Add] Word found:', word.word);
+
     // Check if word already exists in user's Leitner box
+    console.log('🔍 [Leitner Add] Checking for existing card...');
     let leitnerCard = await LeitnerBox.findOne({ userId, wordId });
 
     if (leitnerCard) {
+      console.log('📌 [Leitner Add] Card already exists, isArchived:', leitnerCard.isArchived);
+
       // If archived, unarchive it
       if (leitnerCard.isArchived) {
+        console.log('📤 [Leitner Add] Unarchiving card...');
         await leitnerCard.unarchive();
         leitnerCard.nextReviewDate = leitnerCard.calculateNextReviewDate();
         await leitnerCard.save();
 
+        console.log('✅ [Leitner Add] Card unarchived successfully');
         return res.status(200).json({
           success: true,
           message: 'کلمه از آرشیو خارج شد و به جعبه لایتنر بازگشت',
@@ -37,11 +70,14 @@ exports.addWord = async (req, res) => {
         });
       }
 
+      console.log('⚠️ [Leitner Add] Card already exists and is not archived');
       return res.status(400).json({
         success: false,
         message: 'این کلمه قبلاً به جعبه لایتنر اضافه شده است'
       });
     }
+
+    console.log('➕ [Leitner Add] Creating new Leitner card...');
 
     // Create new Leitner card
     leitnerCard = new LeitnerBox({
@@ -55,22 +91,45 @@ exports.addWord = async (req, res) => {
 
     // Calculate next review date
     leitnerCard.nextReviewDate = leitnerCard.calculateNextReviewDate();
+    console.log('📅 [Leitner Add] Next review date:', leitnerCard.nextReviewDate);
+
     await leitnerCard.save();
+    console.log('💾 [Leitner Add] Card saved successfully');
 
     // Populate word details
     await leitnerCard.populate('wordId');
 
+    console.log('✅ [Leitner Add] Word added successfully to Leitner box');
     res.status(201).json({
       success: true,
       message: 'کلمه با موفقیت به جعبه لایتنر اضافه شد',
       data: leitnerCard
     });
   } catch (error) {
-    console.error('Error adding word to Leitner box:', error);
+    console.error('❌ [Leitner Add] Error:', error);
+    console.error('Stack trace:', error.stack);
+
+    // Handle specific errors
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        success: false,
+        message: 'خطای اعتبارسنجی',
+        error: error.message
+      });
+    }
+
+    if (error.name === 'CastError') {
+      return res.status(400).json({
+        success: false,
+        message: 'شناسه نامعتبر',
+        error: error.message
+      });
+    }
+
     res.status(500).json({
       success: false,
       message: 'خطا در افزودن کلمه به جعبه لایتنر',
-      error: error.message
+      error: process.env.NODE_ENV === 'development' ? error.message : 'خطای سرور'
     });
   }
 };
