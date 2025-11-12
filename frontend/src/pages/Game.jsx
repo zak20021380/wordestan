@@ -351,6 +351,7 @@ const Game = () => {
       }
 
       details.set(text, {
+        _id: typeof entry === 'string' ? undefined : entry._id,
         text,
         meaning: typeof entry === 'string' ? undefined : entry.meaning,
       });
@@ -369,6 +370,7 @@ const Game = () => {
       const detail = levelWordDetails.get(text);
 
       return {
+        _id: detail?._id,
         text,
         meaning: detail?.meaning,
       };
