@@ -30,7 +30,7 @@ import {
   Check
 } from 'lucide-react';
 import GameCanvas from '../components/GameCanvas';
-import { addWordToLeitner } from '../services/leitnerService';
+import { addWordToLeitner, getLeitnerWords } from '../services/leitnerService';
 
 const NO_LEVEL_STATUSES = new Set([
   'no_published_levels',
@@ -74,6 +74,69 @@ const Game = () => {
   const [newLevelsModal, setNewLevelsModal] = useState(null);
   const [leitnerWords, setLeitnerWords] = useState(new Set()); // Track words added to Leitner
   const [addingToLeitner, setAddingToLeitner] = useState(null); // Track loading state per word
+
+  const normalizeWordId = useCallback((value) => {
+    if (!value) {
+      return null;
+    }
+
+    if (typeof value === 'string') {
+      return value;
+    }
+
+    if (typeof value === 'object') {
+      const nestedId = value._id ?? value.id ?? value.wordId ?? null;
+
+      if (typeof nestedId === 'string') {
+        return nestedId;
+      }
+
+      if (nestedId && typeof nestedId.toString === 'function') {
+        return nestedId.toString();
+      }
+    }
+
+    try {
+      return String(value);
+    } catch (error) {
+      console.error('Failed to normalize word identifier:', error);
+      return null;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setLeitnerWords(new Set());
+      return;
+    }
+
+    let isMounted = true;
+
+    const fetchLeitnerWords = async () => {
+      try {
+        const result = await getLeitnerWords({ archived: false });
+        if (!isMounted) {
+          return;
+        }
+
+        const ids = Array.isArray(result?.data)
+          ? result.data
+              .map((card) => normalizeWordId(card?.wordId?._id ?? card?.wordId ?? null))
+              .filter(Boolean)
+          : [];
+
+        setLeitnerWords(new Set(ids));
+      } catch (error) {
+        console.error('Failed to fetch Leitner words:', error);
+      }
+    };
+
+    fetchLeitnerWords();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isAuthenticated, normalizeWordId]);
   const shuffleCost = 15;
   const currentLevelId = currentLevel?._id ?? null;
   const [searchParams, setSearchParams] = useSearchParams();
@@ -344,20 +407,31 @@ const Game = () => {
         return;
       }
 
-      const text = (typeof entry === 'string' ? entry : entry.text || '').toUpperCase();
+      const isObject = typeof entry === 'object' && entry !== null;
+      const baseText = isObject
+        ? typeof entry.text === 'string'
+          ? entry.text
+          : ''
+        : entry;
+      const text = (baseText || '').toUpperCase();
 
       if (!text) {
         return;
       }
 
+      const normalizedId = isObject ? normalizeWordId(entry) : null;
+
       details.set(text, {
         text,
-        meaning: typeof entry === 'string' ? undefined : entry.meaning,
+        meaning: isObject ? entry.meaning : undefined,
+        difficulty: isObject ? entry.difficulty : undefined,
+        points: isObject ? entry.points : undefined,
+        _id: normalizedId,
       });
     });
 
     return details;
-  }, [currentLevel?.words]);
+  }, [currentLevel?.words, normalizeWordId]);
 
   const completedWordDetails = useMemo(() => {
     if (!Array.isArray(gameState.completedWords) || gameState.completedWords.length === 0) {
@@ -371,6 +445,9 @@ const Game = () => {
       return {
         text,
         meaning: detail?.meaning,
+        difficulty: detail?.difficulty,
+        points: detail?.points,
+        _id: detail?._id ?? null,
       };
     });
   }, [gameState.completedWords, levelWordDetails]);
@@ -808,20 +885,31 @@ const Game = () => {
     }
 
     // Check if already added
-    if (leitnerWords.has(wordId)) {
+    const normalizedId = normalizeWordId(wordId);
+
+    if (!normalizedId) {
+      toast.error('شناسه معتبری برای این کلمه پیدا نشد. لطفاً دوباره تلاش کن.');
+      return;
+    }
+
+    if (leitnerWords.has(normalizedId)) {
       toast('این کلمه قبلاً به جعبه لایتنر اضافه شده است', {
         icon: '📚',
       });
       return;
     }
 
-    setAddingToLeitner(wordId);
+    setAddingToLeitner(normalizedId);
 
     try {
-      await addWordToLeitner(wordId, currentLevelId);
+      await addWordToLeitner(normalizedId, currentLevelId);
 
       // Add to local set
-      setLeitnerWords(prev => new Set([...prev, wordId]));
+      setLeitnerWords(prev => {
+        const next = new Set(prev);
+        next.add(normalizedId);
+        return next;
+      });
 
       toast.success(
         <div className="flex items-center gap-2">
@@ -1264,8 +1352,15 @@ const Game = () => {
                   const hasMeaning = Boolean(detail.meaning);
                   const isActiveMeaning = activeMeaning?.text === detail.text;
 
-                  const isInLeitner = leitnerWords.has(detail._id);
-                  const isAdding = addingToLeitner === detail._id;
+                  const hasIdentifier = Boolean(detail._id);
+                  const isInLeitner = hasIdentifier ? leitnerWords.has(detail._id) : false;
+                  const isAdding = hasIdentifier && addingToLeitner === detail._id;
+                  const leitnerButtonDisabled = !hasIdentifier || isAdding || isInLeitner;
+                  const leitnerButtonTitle = !hasIdentifier
+                    ? 'شناسه این کلمه در دسترس نیست'
+                    : isInLeitner
+                    ? 'در جعبه لایتنر'
+                    : 'افزودن به جعبه لایتنر';
 
                   return (
                     <motion.div
@@ -1319,13 +1414,15 @@ const Game = () => {
                           <button
                             type="button"
                             onClick={() => handleAddToLeitner(detail._id, detail.text)}
-                            disabled={isAdding || isInLeitner}
-                            title={isInLeitner ? 'در جعبه لایتنر' : 'افزودن به جعبه لایتنر'}
+                            disabled={leitnerButtonDisabled}
+                            title={leitnerButtonTitle}
                             className={`flex-shrink-0 p-2 rounded-lg border transition-all ${
                               isInLeitner
                                 ? 'bg-purple-500/30 border-purple-400/50 text-purple-200'
                                 : 'bg-purple-500/10 border-purple-500/30 text-purple-300 hover:bg-purple-500/20 hover:border-purple-400/50 active:scale-95'
-                            } disabled:opacity-50 disabled:cursor-not-allowed`}
+                            } disabled:opacity-50 disabled:cursor-not-allowed ${
+                              !hasIdentifier && !isInLeitner ? 'cursor-not-allowed opacity-70' : ''
+                            }`}
                           >
                             {isAdding ? (
                               <Loader2 className="w-4 h-4 animate-spin" />
