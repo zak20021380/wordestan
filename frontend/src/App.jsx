@@ -11,6 +11,7 @@ import LevelMap from './pages/LevelMap';
 import Store from './pages/Store';
 import PaymentVerify from './pages/PaymentVerify';
 import Leaderboard from './pages/Leaderboard';
+import LeitnerBox from './pages/LeitnerBox';
 import Admin from './pages/Admin';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -64,6 +65,7 @@ function App() {
                             </ProtectedRoute>
                           }
                         />
+                        <Route path="/leitner" element={<LeitnerBox />} />
                         <Route
                           path="/store"
                           element={
