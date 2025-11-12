@@ -19,7 +19,7 @@ const app = express();
 
 // CORS configuration (must be registered before other middleware and routes)
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
   credentials: true,
   optionsSuccessStatus: 200
 }));
