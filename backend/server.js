@@ -45,7 +45,14 @@ app.use(helmet({
 
 // Logging middleware
 app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  const timestamp = new Date().toISOString();
+  console.log(`\n${'='.repeat(80)}`);
+  console.log(`📨 [${timestamp}] ${req.method} ${req.path}`);
+  console.log(`🔗 Full URL: ${req.protocol}://${req.get('host')}${req.originalUrl}`);
+  console.log(`📍 Path: ${req.path}`);
+  console.log(`🔑 Authorization: ${req.headers.authorization ? 'Present' : 'Missing'}`);
+  console.log(`📦 Body: ${JSON.stringify(req.body)}`);
+  console.log(`${'='.repeat(80)}\n`);
   next();
 });
 
@@ -89,9 +96,38 @@ app.get('/', (req, res) => {
 
 // 404 handler
 app.use('*', (req, res) => {
+  console.error('❌ 404 Error - Endpoint not found');
+  console.error('📍 Requested path:', req.path);
+  console.error('📍 Original URL:', req.originalUrl);
+  console.error('🔧 Method:', req.method);
+  console.error('🔧 Available routes:');
+  console.error('   - /api/auth/*');
+  console.error('   - /api/game/*');
+  console.error('   - /api/leaderboard/*');
+  console.error('   - /api/admin/*');
+  console.error('   - /api/store/*');
+  console.error('   - /api/payment/*');
+  console.error('   - /api/leitner/*');
+
   res.status(404).json({
     success: false,
-    message: 'API endpoint not found'
+    message: 'API endpoint not found',
+    requestedPath: req.path,
+    method: req.method,
+    availableRoutes: [
+      'POST /api/leitner/add',
+      'POST /api/leitner/batch-add',
+      'GET /api/leitner/words',
+      'GET /api/leitner/review',
+      'POST /api/leitner/review/:id',
+      'GET /api/leitner/stats',
+      'GET /api/leitner/box/:boxNumber',
+      'PUT /api/leitner/:id/notes',
+      'POST /api/leitner/:id/archive',
+      'POST /api/leitner/:id/unarchive',
+      'POST /api/leitner/:id/reset',
+      'DELETE /api/leitner/:id'
+    ]
   });
 });
 

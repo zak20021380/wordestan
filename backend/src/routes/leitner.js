@@ -3,7 +3,38 @@ const router = express.Router();
 const leitnerController = require('../controllers/leitnerController');
 const { auth } = require('../middleware/auth');
 
-// All Leitner routes require authentication
+/**
+ * @route   GET /api/leitner/debug
+ * @desc    Debug endpoint to verify Leitner routes are registered
+ * @access  Public
+ */
+router.get('/debug', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Leitner routes are working! ✅',
+    timestamp: new Date().toISOString(),
+    availableRoutes: {
+      add: 'POST /api/leitner/add - Add a word to Leitner box',
+      batchAdd: 'POST /api/leitner/batch-add - Batch add words',
+      getWords: 'GET /api/leitner/words - Get all words',
+      review: 'GET /api/leitner/review - Get due words',
+      reviewWord: 'POST /api/leitner/review/:id - Review a word',
+      stats: 'GET /api/leitner/stats - Get statistics',
+      getByBox: 'GET /api/leitner/box/:boxNumber - Get words by box',
+      updateNotes: 'PUT /api/leitner/:id/notes - Update card notes',
+      archive: 'POST /api/leitner/:id/archive - Archive a card',
+      unarchive: 'POST /api/leitner/:id/unarchive - Unarchive a card',
+      reset: 'POST /api/leitner/:id/reset - Reset card to box 1',
+      delete: 'DELETE /api/leitner/:id - Delete a card'
+    },
+    authentication: {
+      note: 'All routes except /debug require JWT authentication',
+      header: 'Authorization: Bearer <token>'
+    }
+  });
+});
+
+// All routes below require authentication
 router.use(auth);
 
 /**
