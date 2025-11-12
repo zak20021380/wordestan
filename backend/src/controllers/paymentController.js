@@ -42,7 +42,7 @@ const requestPayment = async (req, res) => {
     const { data } = await axios.post(`${API_URL}/request.json`, {
       merchant_id: MERCHANT_ID,
       amount: amountInRial,
-      callback_url: 'http://localhost:5173/payment/verify',
+      callback_url: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/payment/verify`,
       description: `خرید ${coins} سکه`
     });
 
