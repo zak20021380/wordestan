@@ -25,9 +25,12 @@ import {
   Milestone,
   X,
   PartyPopper,
-  Stars
+  Stars,
+  Plus,
+  Check
 } from 'lucide-react';
 import GameCanvas from '../components/GameCanvas';
+import { addWordToLeitner } from '../services/leitnerService';
 
 const NO_LEVEL_STATUSES = new Set([
   'no_published_levels',
@@ -69,6 +72,8 @@ const Game = () => {
   const [completionPromptContext, setCompletionPromptContext] = useState(null);
   const [powerUpsUsed, setPowerUpsUsed] = useState({ shuffle: false, autoSolve: false });
   const [newLevelsModal, setNewLevelsModal] = useState(null);
+  const [leitnerWords, setLeitnerWords] = useState(new Set()); // Track words added to Leitner
+  const [addingToLeitner, setAddingToLeitner] = useState(null); // Track loading state per word
   const shuffleCost = 15;
   const currentLevelId = currentLevel?._id ?? null;
   const [searchParams, setSearchParams] = useSearchParams();
@@ -796,6 +801,49 @@ const Game = () => {
     }
   };
 
+  const handleAddToLeitner = async (wordId, wordText) => {
+    if (!isAuthenticated) {
+      toast.error('برای استفاده از جعبه لایتنر باید وارد حساب کاربری شوی!');
+      return;
+    }
+
+    // Check if already added
+    if (leitnerWords.has(wordId)) {
+      toast('این کلمه قبلاً به جعبه لایتنر اضافه شده است', {
+        icon: '📚',
+      });
+      return;
+    }
+
+    setAddingToLeitner(wordId);
+
+    try {
+      await addWordToLeitner(wordId, currentLevelId);
+
+      // Add to local set
+      setLeitnerWords(prev => new Set([...prev, wordId]));
+
+      toast.success(
+        <div className="flex items-center gap-2">
+          <BookOpen className="w-4 h-4" />
+          <span>کلمه "{wordText}" به جعبه لایتنر اضافه شد!</span>
+        </div>,
+        {
+          duration: 3000,
+          style: {
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            color: 'white',
+          },
+        }
+      );
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || error.message || 'خطا در افزودن به جعبه لایتنر';
+      toast.error(errorMessage);
+    } finally {
+      setAddingToLeitner(null);
+    }
+  };
+
   const handleCloseAutoSolveModal = () => {
     setShowAutoSolveModal(false);
     if (!autoSolveResult?.levelCompleted) {
@@ -1216,49 +1264,80 @@ const Game = () => {
                   const hasMeaning = Boolean(detail.meaning);
                   const isActiveMeaning = activeMeaning?.text === detail.text;
 
+                  const isInLeitner = leitnerWords.has(detail._id);
+                  const isAdding = addingToLeitner === detail._id;
+
                   return (
-                    <motion.button
+                    <motion.div
                       key={detail.text}
-                      type="button"
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.1 }}
-                      onClick={() => {
-                        if (!hasMeaning) {
-                          return;
-                        }
-                        setActiveMeaning(detail);
-                        setShowMeanings(true);
-                      }}
-                      disabled={!hasMeaning}
-                      title={hasMeaning ? `معنی: ${detail.meaning}` : undefined}
-                      className={`w-full flex items-center justify-between rounded-lg px-3 py-2 border text-success transition-colors ${
-                        isActiveMeaning
-                          ? 'bg-primary-500/20 border-primary-400/60'
-                          : 'bg-success/20 border-success/30'
-                      } ${
-                        hasMeaning
-                          ? 'cursor-pointer hover:bg-primary-500/10 hover:border-primary-400/60 focus:outline-none focus:ring-2 focus:ring-primary-400/40'
-                          : 'cursor-default focus:outline-none opacity-80'
-                      }`}
+                      className="w-full"
                     >
-                      <div className="flex items-center space-x-3 space-x-reverse">
-                        <span className="text-success font-medium">{detail.text}</span>
-                        {hasMeaning && (
-                          <span className="flex items-center space-x-1 space-x-reverse text-primary-200 text-xs bg-primary-500/10 border border-primary-500/20 rounded-md px-2 py-0.5">
-                            <Lightbulb className="w-3 h-3" />
-                            <span>معنی</span>
-                          </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!hasMeaning) {
+                              return;
+                            }
+                            setActiveMeaning(detail);
+                            setShowMeanings(true);
+                          }}
+                          disabled={!hasMeaning}
+                          title={hasMeaning ? `معنی: ${detail.meaning}` : undefined}
+                          className={`flex-1 flex items-center justify-between rounded-lg px-3 py-2 border text-success transition-colors ${
+                            isActiveMeaning
+                              ? 'bg-primary-500/20 border-primary-400/60'
+                              : 'bg-success/20 border-success/30'
+                          } ${
+                            hasMeaning
+                              ? 'cursor-pointer hover:bg-primary-500/10 hover:border-primary-400/60 focus:outline-none focus:ring-2 focus:ring-primary-400/40'
+                              : 'cursor-default focus:outline-none opacity-80'
+                          }`}
+                        >
+                          <div className="flex items-center space-x-3 space-x-reverse">
+                            <span className="text-success font-medium">{detail.text}</span>
+                            {hasMeaning && (
+                              <span className="flex items-center space-x-1 space-x-reverse text-primary-200 text-xs bg-primary-500/10 border border-primary-500/20 rounded-md px-2 py-0.5">
+                                <Lightbulb className="w-3 h-3" />
+                                <span>معنی</span>
+                              </span>
+                            )}
+                          </div>
+                          <CheckCircle
+                            className={`w-4 h-4 ${
+                              isActiveMeaning
+                                ? 'text-primary-200 drop-shadow-[0_0_6px_rgba(168,85,247,0.6)]'
+                                : 'text-success'
+                            }`}
+                          />
+                        </button>
+
+                        {isAuthenticated && (
+                          <button
+                            type="button"
+                            onClick={() => handleAddToLeitner(detail._id, detail.text)}
+                            disabled={isAdding || isInLeitner}
+                            title={isInLeitner ? 'در جعبه لایتنر' : 'افزودن به جعبه لایتنر'}
+                            className={`flex-shrink-0 p-2 rounded-lg border transition-all ${
+                              isInLeitner
+                                ? 'bg-purple-500/30 border-purple-400/50 text-purple-200'
+                                : 'bg-purple-500/10 border-purple-500/30 text-purple-300 hover:bg-purple-500/20 hover:border-purple-400/50 active:scale-95'
+                            } disabled:opacity-50 disabled:cursor-not-allowed`}
+                          >
+                            {isAdding ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : isInLeitner ? (
+                              <Check className="w-4 h-4" />
+                            ) : (
+                              <BookOpen className="w-4 h-4" />
+                            )}
+                          </button>
                         )}
                       </div>
-                      <CheckCircle
-                        className={`w-4 h-4 ${
-                          isActiveMeaning
-                            ? 'text-primary-200 drop-shadow-[0_0_6px_rgba(168,85,247,0.6)]'
-                            : 'text-success'
-                        }`}
-                      />
-                    </motion.button>
+                    </motion.div>
                   );
                 })
               ) : (
