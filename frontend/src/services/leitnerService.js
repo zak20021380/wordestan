@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 // Create axios instance with default config
 const api = axios.create({
@@ -40,7 +40,7 @@ api.interceptors.response.use(
  * Add a word to Leitner box
  */
 export const addWordToLeitner = async (wordId, levelId = null, notes = '') => {
-  const response = await api.post('/api/leitner/add', {
+  const response = await api.post('/leitner/add', {
     wordId,
     levelId,
     notes,
@@ -52,7 +52,7 @@ export const addWordToLeitner = async (wordId, levelId = null, notes = '') => {
  * Batch add words to Leitner box
  */
 export const batchAddWordsToLeitner = async (wordIds, levelId = null) => {
-  const response = await api.post('/api/leitner/batch-add', {
+  const response = await api.post('/leitner/batch-add', {
     wordIds,
     levelId,
   });
@@ -63,7 +63,7 @@ export const batchAddWordsToLeitner = async (wordIds, levelId = null) => {
  * Get all words in Leitner box
  */
 export const getLeitnerWords = async (params = {}) => {
-  const response = await api.get('/api/leitner/words', { params });
+  const response = await api.get('/leitner/words', { params });
   return response.data;
 };
 
@@ -71,7 +71,7 @@ export const getLeitnerWords = async (params = {}) => {
  * Get words due for review
  */
 export const getDueWords = async (limit = 20) => {
-  const response = await api.get('/api/leitner/review', {
+  const response = await api.get('/leitner/review', {
     params: { limit },
   });
   return response.data;
@@ -81,7 +81,7 @@ export const getDueWords = async (limit = 20) => {
  * Review a word (correct/incorrect/skipped)
  */
 export const reviewWord = async (cardId, result) => {
-  const response = await api.post(`/api/leitner/review/${cardId}`, {
+  const response = await api.post(`/leitner/review/${cardId}`, {
     result, // 'correct', 'incorrect', 'skipped'
   });
   return response.data;
@@ -91,7 +91,7 @@ export const reviewWord = async (cardId, result) => {
  * Get Leitner box statistics
  */
 export const getLeitnerStats = async () => {
-  const response = await api.get('/api/leitner/stats');
+  const response = await api.get('/leitner/stats');
   return response.data;
 };
 
@@ -99,7 +99,7 @@ export const getLeitnerStats = async () => {
  * Get words by box number
  */
 export const getWordsByBox = async (boxNumber) => {
-  const response = await api.get(`/api/leitner/box/${boxNumber}`);
+  const response = await api.get(`/leitner/box/${boxNumber}`);
   return response.data;
 };
 
@@ -107,7 +107,7 @@ export const getWordsByBox = async (boxNumber) => {
  * Update card notes
  */
 export const updateCardNotes = async (cardId, notes) => {
-  const response = await api.put(`/api/leitner/${cardId}/notes`, { notes });
+  const response = await api.put(`/leitner/${cardId}/notes`, { notes });
   return response.data;
 };
 
@@ -115,7 +115,7 @@ export const updateCardNotes = async (cardId, notes) => {
  * Archive a card
  */
 export const archiveCard = async (cardId) => {
-  const response = await api.post(`/api/leitner/${cardId}/archive`);
+  const response = await api.post(`/leitner/${cardId}/archive`);
   return response.data;
 };
 
@@ -123,7 +123,7 @@ export const archiveCard = async (cardId) => {
  * Unarchive a card
  */
 export const unarchiveCard = async (cardId) => {
-  const response = await api.post(`/api/leitner/${cardId}/unarchive`);
+  const response = await api.post(`/leitner/${cardId}/unarchive`);
   return response.data;
 };
 
@@ -131,7 +131,7 @@ export const unarchiveCard = async (cardId) => {
  * Reset a card to box 1
  */
 export const resetCard = async (cardId) => {
-  const response = await api.post(`/api/leitner/${cardId}/reset`);
+  const response = await api.post(`/leitner/${cardId}/reset`);
   return response.data;
 };
 
@@ -139,7 +139,7 @@ export const resetCard = async (cardId) => {
  * Delete a card from Leitner box
  */
 export const deleteCard = async (cardId) => {
-  const response = await api.delete(`/api/leitner/${cardId}`);
+  const response = await api.delete(`/leitner/${cardId}`);
   return response.data;
 };
 
