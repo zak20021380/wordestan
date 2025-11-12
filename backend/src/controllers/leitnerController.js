@@ -11,6 +11,22 @@ exports.addWord = async (req, res) => {
     const { wordId, levelId, notes } = req.body;
     const userId = req.user.id;
 
+    // Validate required fields
+    if (!wordId) {
+      return res.status(400).json({
+        success: false,
+        message: 'شناسه کلمه الزامی است'
+      });
+    }
+
+    // Validate wordId format
+    if (!wordId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({
+        success: false,
+        message: 'شناسه کلمه نامعتبر است'
+      });
+    }
+
     // Validate word exists
     const word = await Word.findById(wordId);
     if (!word) {
@@ -29,17 +45,19 @@ exports.addWord = async (req, res) => {
         await leitnerCard.unarchive();
         leitnerCard.nextReviewDate = leitnerCard.calculateNextReviewDate();
         await leitnerCard.save();
+        await leitnerCard.populate('wordId');
 
         return res.status(200).json({
           success: true,
           message: 'کلمه از آرشیو خارج شد و به جعبه لایتنر بازگشت',
-          data: await leitnerCard.populate('wordId')
+          data: leitnerCard
         });
       }
 
       return res.status(400).json({
         success: false,
-        message: 'این کلمه قبلاً به جعبه لایتنر اضافه شده است'
+        message: 'این کلمه قبلاً به جعبه لایتنر اضافه شده است',
+        existing: true
       });
     }
 
@@ -60,6 +78,8 @@ exports.addWord = async (req, res) => {
     // Populate word details
     await leitnerCard.populate('wordId');
 
+    console.log(`✓ Word ${wordId} added to Leitner box for user ${userId}`);
+
     res.status(201).json({
       success: true,
       message: 'کلمه با موفقیت به جعبه لایتنر اضافه شد',
@@ -70,7 +90,7 @@ exports.addWord = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'خطا در افزودن کلمه به جعبه لایتنر',
-      error: error.message
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };

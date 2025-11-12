@@ -45,7 +45,15 @@ app.use(helmet({
 
 // Logging middleware
 app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  const timestamp = new Date().toISOString();
+  console.log(`${timestamp} - ${req.method} ${req.path}`);
+
+  // Log API requests with more details
+  if (req.path.startsWith('/api/')) {
+    console.log(`  → Body:`, req.method !== 'GET' ? JSON.stringify(req.body) : 'N/A');
+    console.log(`  → Auth:`, req.headers.authorization ? 'Present' : 'Missing');
+  }
+
   next();
 });
 
@@ -57,6 +65,15 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/store', storeRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/leitner', leitnerRoutes);
+
+console.log('✓ All routes registered successfully');
+console.log('  - /api/auth (Authentication)');
+console.log('  - /api/game (Game operations)');
+console.log('  - /api/leaderboard (Leaderboard)');
+console.log('  - /api/admin (Admin panel)');
+console.log('  - /api/store (Store)');
+console.log('  - /api/payment (Payments)');
+console.log('  - /api/leitner (Leitner spaced repetition)');
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

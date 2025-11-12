@@ -28,10 +28,30 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Handle authentication errors
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
       window.location.href = '/login';
     }
+
+    // Log detailed error information for debugging
+    if (error.response) {
+      console.error('Leitner API Error:', {
+        status: error.response.status,
+        url: error.config?.url,
+        method: error.config?.method,
+        message: error.response.data?.message || error.message,
+        data: error.response.data
+      });
+    } else if (error.request) {
+      console.error('Leitner API Network Error:', {
+        url: error.config?.url,
+        message: 'No response received from server'
+      });
+    } else {
+      console.error('Leitner API Error:', error.message);
+    }
+
     return Promise.reject(error);
   }
 );
@@ -40,12 +60,25 @@ api.interceptors.response.use(
  * Add a word to Leitner box
  */
 export const addWordToLeitner = async (wordId, levelId = null, notes = '') => {
-  const response = await api.post('/leitner/add', {
-    wordId,
-    levelId,
-    notes,
-  });
-  return response.data;
+  try {
+    if (!wordId) {
+      throw new Error('شناسه کلمه الزامی است');
+    }
+
+    console.log('Adding word to Leitner:', { wordId, levelId, notes });
+
+    const response = await api.post('/leitner/add', {
+      wordId,
+      levelId,
+      notes,
+    });
+
+    console.log('Word added successfully:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Failed to add word to Leitner:', error);
+    throw error;
+  }
 };
 
 /**
