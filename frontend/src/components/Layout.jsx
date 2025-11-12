@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -10,7 +10,8 @@ import {
   Menu,
   X,
   Coins,
-  Milestone
+  Milestone,
+  BookOpen
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import UserProfileMenu from './UserProfileMenu';
@@ -20,13 +21,26 @@ const Layout = ({ children }) => {
   const { user, isAuthenticated } = useAuth();
   const location = useLocation();
 
-  const navigation = [
+  const baseNavigation = useMemo(() => [
     { name: 'خونه', href: '/', icon: Home },
     { name: 'بازی', href: '/game', icon: Gamepad2 },
     { name: 'مراحل', href: '/levels', icon: Milestone },
     { name: 'فروشگاه', href: '/store', icon: ShoppingCart },
     { name: 'امتیازها', href: '/leaderboard', icon: Trophy },
-  ];
+  ], []);
+
+  const navigation = useMemo(() => {
+    if (!isAuthenticated) {
+      return baseNavigation;
+    }
+
+    return [
+      baseNavigation[0],
+      baseNavigation[1],
+      { name: 'جعبه لایتنر', href: '/leitner', icon: BookOpen },
+      ...baseNavigation.slice(2),
+    ];
+  }, [baseNavigation, isAuthenticated]);
 
   const adminNavigation = [
     { name: 'پنل ادمین', href: '/admin', icon: Settings },

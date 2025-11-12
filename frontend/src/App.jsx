@@ -11,6 +11,7 @@ import LevelMap from './pages/LevelMap';
 import Store from './pages/Store';
 import PaymentVerify from './pages/PaymentVerify';
 import Leaderboard from './pages/Leaderboard';
+import Leitner from './pages/Leitner';
 import Admin from './pages/Admin';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -81,6 +82,14 @@ function App() {
                           }
                         />
                         <Route path="/leaderboard" element={<Leaderboard />} />
+                        <Route
+                          path="/leitner"
+                          element={
+                            <ProtectedRoute>
+                              <Leitner />
+                            </ProtectedRoute>
+                          }
+                        />
                         
                         {/* Admin routes */}
                         <Route

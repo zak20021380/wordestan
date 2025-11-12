@@ -1,9 +1,11 @@
 import { useRef, useState, useMemo, useEffect, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { Link, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGame } from '../contexts/GameContext';
 import { useAuth } from '../contexts/AuthContext';
 import { gameService } from '../services/gameService';
+import { leitnerService } from '../services/leitnerService';
 import { toast } from 'react-hot-toast';
 import {
   Sparkles,
@@ -25,7 +27,9 @@ import {
   Milestone,
   X,
   PartyPopper,
-  Stars
+  Stars,
+  BookmarkPlus,
+  BookmarkCheck
 } from 'lucide-react';
 import GameCanvas from '../components/GameCanvas';
 
@@ -69,6 +73,64 @@ const Game = () => {
   const [completionPromptContext, setCompletionPromptContext] = useState(null);
   const [powerUpsUsed, setPowerUpsUsed] = useState({ shuffle: false, autoSolve: false });
   const [newLevelsModal, setNewLevelsModal] = useState(null);
+  const [pendingLeitnerWord, setPendingLeitnerWord] = useState(null);
+  const queryClient = useQueryClient();
+
+  const {
+    data: leitnerData,
+    isFetching: isFetchingLeitner,
+  } = useQuery(
+    ['leitner-cards'],
+    () => leitnerService.getCards(),
+    {
+      enabled: isAuthenticated,
+      staleTime: 2 * 60 * 1000,
+    }
+  );
+
+  const addToLeitnerMutation = useMutation(
+    (payload) => leitnerService.addCard(payload),
+    {
+      onSuccess: (response) => {
+        toast.success(
+          response?.message || 'کلمه به جعبه لایتنر اضافه شد. برای مرور، به بخش لایتنر سر بزن.'
+        );
+        queryClient.invalidateQueries(['leitner-cards']);
+      },
+      onError: (error) => {
+        toast.error(error.message || 'خطا در افزودن کلمه به لایتنر');
+      },
+    }
+  );
+
+  const leitnerWordSet = useMemo(() => {
+    if (!isAuthenticated || !leitnerData?.data?.cards) {
+      return new Set();
+    }
+
+    return new Set(
+      leitnerData.data.cards
+        .map((card) => (card.word || '').toUpperCase())
+        .filter(Boolean)
+    );
+  }, [isAuthenticated, leitnerData]);
+
+  const totalLeitnerCards = useMemo(() => {
+    if (!isAuthenticated || !leitnerData?.data) {
+      return 0;
+    }
+
+    if (typeof leitnerData.data.summary?.total === 'number') {
+      return leitnerData.data.summary.total;
+    }
+
+    if (Array.isArray(leitnerData.data.cards)) {
+      return leitnerData.data.cards.length;
+    }
+
+    return 0;
+  }, [isAuthenticated, leitnerData]);
+
   const shuffleCost = 15;
   const currentLevelId = currentLevel?._id ?? null;
   const [searchParams, setSearchParams] = useSearchParams();
@@ -179,6 +241,46 @@ const Game = () => {
       userProgress: levelTransition.userProgress ?? null,
     };
   }, [levelTransition, formatNumber]);
+
+  const handleAddToLeitner = useCallback(
+    async (detail) => {
+      const normalizedWord = (detail?.text || '').toUpperCase();
+
+      if (!normalizedWord) {
+        toast.error('کلمه‌ای برای ذخیره انتخاب نشده است.');
+        return;
+      }
+
+      if (!isAuthenticated) {
+        toast.error('برای ذخیره کلمات در جعبه لایتنر باید وارد حساب کاربری شوی.');
+        return;
+      }
+
+      const payload = { word: normalizedWord };
+
+      if (detail?.meaning) {
+        payload.meaning = detail.meaning;
+      }
+
+      if (detail?.wordId) {
+        payload.sourceWordId = detail.wordId;
+      }
+
+      if (currentLevelId) {
+        payload.sourceLevelId = currentLevelId;
+      }
+
+      try {
+        setPendingLeitnerWord(normalizedWord);
+        await addToLeitnerMutation.mutateAsync(payload);
+      } catch (error) {
+        // خطا در onError هندل می‌شود
+      } finally {
+        setPendingLeitnerWord(null);
+      }
+    },
+    [isAuthenticated, currentLevelId, addToLeitnerMutation]
+  );
 
   useEffect(() => {
     setPowerUpsUsed(powerUpUsage);
@@ -340,6 +442,7 @@ const Game = () => {
       }
 
       const text = (typeof entry === 'string' ? entry : entry.text || '').toUpperCase();
+      const wordId = typeof entry === 'string' ? null : entry._id ?? entry.id ?? null;
 
       if (!text) {
         return;
@@ -348,6 +451,7 @@ const Game = () => {
       details.set(text, {
         text,
         meaning: typeof entry === 'string' ? undefined : entry.meaning,
+        wordId,
       });
     });
 
@@ -366,6 +470,7 @@ const Game = () => {
       return {
         text,
         meaning: detail?.meaning,
+        wordId: detail?.wordId ?? null,
       };
     });
   }, [gameState.completedWords, levelWordDetails]);
@@ -1210,55 +1315,103 @@ const Game = () => {
           >
             <h3 className="font-semibold mb-4 bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">کلماتی که پیدا کردی</h3>
 
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs text-white/60 mb-3">
+              <p>روی کلمه کلیک کن تا معنی‌اش را ببینی و با دکمه کناری آن را وارد جعبه لایتنر کن.</p>
+              {isAuthenticated && totalLeitnerCards > 0 && (
+                <span className="flex items-center space-x-1 space-x-reverse text-primary-200">
+                  <BookOpen className="w-4 h-4" />
+                  <span>{totalLeitnerCards.toLocaleString('fa-IR')} کارت ذخیره‌شده</span>
+                </span>
+              )}
+            </div>
+
             <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
               {completedWordDetails.length > 0 ? (
                 completedWordDetails.map((detail, index) => {
                   const hasMeaning = Boolean(detail.meaning);
                   const isActiveMeaning = activeMeaning?.text === detail.text;
+                  const normalizedWord = detail.text;
+                  const isAlreadyInLeitner = leitnerWordSet.has(normalizedWord);
+                  const isProcessing =
+                    pendingLeitnerWord === normalizedWord &&
+                    (addToLeitnerMutation.isLoading || isFetchingLeitner);
+                  const addButtonTitle = !isAuthenticated
+                    ? 'برای ذخیره کلمات وارد حساب کاربری شو.'
+                    : isAlreadyInLeitner
+                    ? 'این کلمه در لایتنر ذخیره شده است؛ در صورت نیاز برای به‌روزرسانی دوباره کلیک کن.'
+                    : 'افزودن به جعبه لایتنر';
 
                   return (
-                    <motion.button
+                    <motion.div
                       key={detail.text}
-                      type="button"
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.1 }}
-                      onClick={() => {
-                        if (!hasMeaning) {
-                          return;
-                        }
-                        setActiveMeaning(detail);
-                        setShowMeanings(true);
-                      }}
-                      disabled={!hasMeaning}
-                      title={hasMeaning ? `معنی: ${detail.meaning}` : undefined}
-                      className={`w-full flex items-center justify-between rounded-lg px-3 py-2 border text-success transition-colors ${
-                        isActiveMeaning
-                          ? 'bg-primary-500/20 border-primary-400/60'
-                          : 'bg-success/20 border-success/30'
-                      } ${
-                        hasMeaning
-                          ? 'cursor-pointer hover:bg-primary-500/10 hover:border-primary-400/60 focus:outline-none focus:ring-2 focus:ring-primary-400/40'
-                          : 'cursor-default focus:outline-none opacity-80'
-                      }`}
+                      className="flex items-center gap-3"
                     >
-                      <div className="flex items-center space-x-3 space-x-reverse">
-                        <span className="text-success font-medium">{detail.text}</span>
-                        {hasMeaning && (
-                          <span className="flex items-center space-x-1 space-x-reverse text-primary-200 text-xs bg-primary-500/10 border border-primary-500/20 rounded-md px-2 py-0.5">
-                            <Lightbulb className="w-3 h-3" />
-                            <span>معنی</span>
-                          </span>
-                        )}
-                      </div>
-                      <CheckCircle
-                        className={`w-4 h-4 ${
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!hasMeaning) {
+                            return;
+                          }
+                          setActiveMeaning(detail);
+                          setShowMeanings(true);
+                        }}
+                        disabled={!hasMeaning}
+                        title={hasMeaning ? `معنی: ${detail.meaning}` : undefined}
+                        className={`flex-1 flex items-center justify-between rounded-lg px-3 py-2 border text-success transition-colors ${
                           isActiveMeaning
-                            ? 'text-primary-200 drop-shadow-[0_0_6px_rgba(168,85,247,0.6)]'
-                            : 'text-success'
+                            ? 'bg-primary-500/20 border-primary-400/60'
+                            : 'bg-success/20 border-success/30'
+                        } ${
+                          hasMeaning
+                            ? 'cursor-pointer hover:bg-primary-500/10 hover:border-primary-400/60 focus:outline-none focus:ring-2 focus:ring-primary-400/40'
+                            : 'cursor-default focus:outline-none opacity-80'
                         }`}
-                      />
-                    </motion.button>
+                      >
+                        <div className="flex items-center space-x-3 space-x-reverse" dir="ltr">
+                          <span className="text-success font-medium tracking-wide">{detail.text}</span>
+                          {hasMeaning && (
+                            <span className="flex items-center space-x-1 space-x-reverse text-primary-200 text-xs bg-primary-500/10 border border-primary-500/20 rounded-md px-2 py-0.5">
+                              <Lightbulb className="w-3 h-3" />
+                              <span>معنی</span>
+                            </span>
+                          )}
+                        </div>
+                        <CheckCircle
+                          className={`w-4 h-4 ${
+                            isActiveMeaning
+                              ? 'text-primary-200 drop-shadow-[0_0_6px_rgba(168,85,247,0.6)]'
+                              : 'text-success'
+                          }`}
+                        />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleAddToLeitner(detail)}
+                        disabled={isProcessing}
+                        title={addButtonTitle}
+                        className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all ${
+                          isAlreadyInLeitner
+                            ? 'border-emerald-400/60 bg-emerald-500/15 text-emerald-100 hover:bg-emerald-500/25'
+                            : 'border-primary-400/50 bg-primary-500/10 text-primary-100 hover:bg-primary-500/20 hover:border-primary-400/60'
+                        } ${
+                          !isAuthenticated ? 'opacity-60' : ''
+                        } ${
+                          isProcessing ? 'cursor-wait opacity-70' : 'hover:shadow-[0_0_12px_rgba(168,85,247,0.25)]'
+                        }`}
+                      >
+                        {isProcessing ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : isAlreadyInLeitner ? (
+                          <BookmarkCheck className="h-3.5 w-3.5" />
+                        ) : (
+                          <BookmarkPlus className="h-3.5 w-3.5" />
+                        )}
+                        <span>{isAlreadyInLeitner ? 'در لایتنر' : 'افزودن'}</span>
+                      </button>
+                    </motion.div>
                   );
                 })
               ) : (

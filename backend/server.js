@@ -12,6 +12,7 @@ const leaderboardRoutes = require('./src/routes/leaderboard');
 const adminRoutes = require('./src/routes/admin');
 const storeRoutes = require('./src/routes/store');
 const paymentRoutes = require('./src/routes/payment');
+const leitnerRoutes = require('./src/routes/leitner');
 
 // Initialize Express app
 const app = express();
@@ -55,6 +56,7 @@ app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/store', storeRoutes);
 app.use('/api/payment', paymentRoutes);
+app.use('/api/leitner', leitnerRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
