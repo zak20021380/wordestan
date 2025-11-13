@@ -79,6 +79,13 @@ const userSchema = new mongoose.Schema({
     lowercase: true,
     default: null
   },
+  telegramId: {
+    type: String,
+    unique: true,
+    sparse: true,
+    index: true,
+    default: null
+  },
   password: {
     type: String,
     required: true,
@@ -142,6 +149,8 @@ const userSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
+
+userSchema.index({ telegramId: 1 }, { unique: true, sparse: true });
 
 userSchema.set('toJSON', {
   transform: (doc, ret) => {

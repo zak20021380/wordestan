@@ -6,7 +6,8 @@ const {
   login,
   getMe,
   updateProfile,
-  checkUsernameAvailability
+  checkUsernameAvailability,
+  telegramAuth
 } = require('../controllers/authController');
 
 const router = express.Router();
@@ -32,6 +33,14 @@ const loginValidation = [
     .withMessage('Password is required')
 ];
 
+const telegramValidation = [
+  body('initData')
+    .isString()
+    .withMessage('Telegram initData must be a string')
+    .notEmpty()
+    .withMessage('Telegram initData is required')
+];
+
 const updateValidation = [
   body('username')
     .optional()
@@ -48,6 +57,7 @@ const updateValidation = [
 // Routes
 router.post('/register', registerValidation, register);
 router.post('/login', loginValidation, login);
+router.post('/telegram', telegramValidation, telegramAuth);
 router.get('/me', auth, getMe);
 router.put('/update', auth, updateValidation, updateProfile);
 router.get('/check-username', checkUsernameAvailability);

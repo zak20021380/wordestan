@@ -85,6 +85,16 @@ export const authService = {
     }
   },
 
+  // Login via Telegram Web App
+  async telegramLogin(initData) {
+    try {
+      const response = await api.post('/auth/telegram', { initData });
+      return response.data.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Telegram login failed');
+    }
+  },
+
   // Get current user
   async getMe() {
     try {

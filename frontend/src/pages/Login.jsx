@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../contexts/AuthContext';
@@ -12,20 +12,78 @@ import {
   Gamepad2,
   Loader2
 } from 'lucide-react';
+import { getTelegramUser, initializeTelegramWebApp, isTelegramWebApp } from '../utils/telegram';
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState('');
-  const { login } = useAuth();
+  const { login, telegramLogin } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  
-  const { 
-    register, 
-    handleSubmit, 
-    formState: { errors } 
+  const telegramLoginAttemptedRef = useRef(false);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors }
   } = useForm();
+
+  const fromPath = location.state?.from?.pathname || '/';
+
+  useEffect(() => {
+    if (telegramLoginAttemptedRef.current) {
+      return;
+    }
+
+    if (!isTelegramWebApp()) {
+      telegramLoginAttemptedRef.current = true;
+      return;
+    }
+
+    telegramLoginAttemptedRef.current = true;
+    initializeTelegramWebApp();
+    const telegramData = getTelegramUser();
+
+    if (!telegramData?.initData || !telegramData.user) {
+      return;
+    }
+
+    let isCancelled = false;
+
+    const attemptTelegramLogin = async () => {
+      setIsLoading(true);
+      try {
+        setAuthError('');
+        await telegramLogin(telegramData.initData);
+
+        if (isCancelled) {
+          return;
+        }
+
+        toast.success('ورود با تلگرام انجام شد!');
+        navigate(fromPath, { replace: true });
+      } catch (error) {
+        if (isCancelled) {
+          return;
+        }
+
+        console.error('Telegram login failed:', error);
+        setAuthError('ورود خودکار تلگرام ناموفق بود. لطفاً دوباره تلاش کن یا به صورت دستی وارد شو.');
+        toast.error(error.message || 'ورود با تلگرام ناموفق بود.');
+      } finally {
+        if (!isCancelled) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    attemptTelegramLogin();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [fromPath, navigate, telegramLogin]);
 
   const onSubmit = async (data) => {
     setIsLoading(true);
@@ -34,8 +92,7 @@ const Login = () => {
       await login(data.username, data.password);
 
       // Redirect to original page or home
-      const from = location.state?.from?.pathname || '/';
-      navigate(from, { replace: true });
+      navigate(fromPath, { replace: true });
 
       toast.success('ورود موفقیت‌آمیز بود!');
     } catch (error) {

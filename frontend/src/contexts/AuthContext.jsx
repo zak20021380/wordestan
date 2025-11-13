@@ -55,6 +55,21 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const telegramLogin = async (initData) => {
+    try {
+      setError(null);
+      const response = await authService.telegramLogin(initData);
+
+      localStorage.setItem('token', response.token);
+      setUser(response.user);
+
+      return response;
+    } catch (error) {
+      setError(error.message);
+      throw error;
+    }
+  };
+
   const register = async (userData) => {
     try {
       setError(null);
@@ -88,6 +103,7 @@ export const AuthProvider = ({ children }) => {
     loading,
     error,
     login,
+    telegramLogin,
     register,
     logout,
     updateUser,
