@@ -445,7 +445,7 @@ const Game = () => {
   const hasSyncedCompletion = Boolean(levelCompletionStatus?.completed);
   const hasAutoSolveCompletion = Boolean(autoSolveResult?.levelCompleted);
   const shouldShowCompletionPrompt =
-    showAutoSolvePrompt && (hasAutoSolveCompletion || hasCompletedAllWords || hasSyncedCompletion);
+    isAuthenticated && showAutoSolvePrompt && (hasAutoSolveCompletion || hasCompletedAllWords || hasSyncedCompletion);
   const CompletionIcon = Trophy;
   const completionIconAccent = 'text-amber-200';
   const completionBadgeStyles = 'text-amber-200 border-amber-300/40 bg-amber-500/10';
