@@ -5,6 +5,7 @@ const User = require('../models/User');
 const Purchase = require('../models/Purchase');
 const GameSetting = require('../models/GameSetting');
 const { validationResult } = require('express-validator');
+const { broadcastMessage } = require('../../bot');
 
 const parseBoolean = (value, defaultValue = false) => {
   if (value === undefined || value === null) {
@@ -1057,13 +1058,52 @@ const updateGameRewardSettings = async (req, res) => {
   }
 };
 
+// Telegram Broadcast
+// @desc    Broadcast message to all Telegram bot users
+// @route   POST /api/admin/broadcast
+// @access  Admin
+const broadcastToTelegramUsers = async (req, res) => {
+  try {
+    const { message } = req.body;
+
+    if (!message || typeof message !== 'string' || message.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Message is required and must be a non-empty string'
+      });
+    }
+
+    // Optional: parse_mode for formatting (HTML or Markdown)
+    const options = {};
+    if (req.body.parse_mode) {
+      options.parse_mode = req.body.parse_mode;
+    }
+
+    // Call broadcast function
+    const result = await broadcastMessage(message.trim(), options);
+
+    res.json({
+      success: true,
+      message: 'Broadcast completed',
+      data: result
+    });
+  } catch (error) {
+    console.error('Broadcast error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error during broadcast',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   // Word management
   getWords,
   createWord,
   updateWord,
   deleteWord,
-  
+
   // Level management
   getLevels,
   createLevel,
@@ -1084,5 +1124,8 @@ module.exports = {
 
   // Game settings
   getGameRewardSettings,
-  updateGameRewardSettings
+  updateGameRewardSettings,
+
+  // Telegram broadcast
+  broadcastToTelegramUsers
 };
