@@ -84,6 +84,11 @@ const userSchema = new mongoose.Schema({
     required: true,
     minlength: 6
   },
+  telegramId: {
+    type: String,
+    sparse: true,
+    unique: true
+  },
   coins: {
     type: Number,
     default: 100,
