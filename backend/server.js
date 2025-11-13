@@ -5,6 +5,9 @@ const helmet = require('helmet');
 const User = require('./src/models/User');
 require('dotenv').config();
 
+// Initialize Telegram bot
+require('./bot');
+
 // Import routes
 const authRoutes = require('./src/routes/auth');
 const gameRoutes = require('./src/routes/game');

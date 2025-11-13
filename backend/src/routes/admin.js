@@ -7,13 +7,13 @@ const {
   createWord,
   updateWord,
   deleteWord,
-  
+
   // Level management
   getLevels,
   createLevel,
   updateLevel,
   deleteLevel,
-  
+
   // Coin pack management
   getCoinPacks,
   createCoinPack,
@@ -28,7 +28,10 @@ const {
   updateGameRewardSettings,
 
   // Users
-  getUsersWithStats
+  getUsersWithStats,
+
+  // Telegram broadcast
+  broadcastToTelegramUsers
 } = require('../controllers/adminController');
 
 const router = express.Router();
@@ -163,5 +166,18 @@ router.put('/settings/rewards', adminAuth, rewardSettingsValidation, updateGameR
 
 // Users
 router.get('/users', adminAuth, getUsersWithStats);
+
+// Telegram broadcast
+router.post('/broadcast', adminAuth, [
+  body('message')
+    .isString()
+    .trim()
+    .isLength({ min: 1, max: 4096 })
+    .withMessage('Message must be between 1 and 4096 characters'),
+  body('parse_mode')
+    .optional()
+    .isIn(['HTML', 'Markdown', 'MarkdownV2'])
+    .withMessage('Parse mode must be HTML, Markdown, or MarkdownV2')
+], broadcastToTelegramUsers);
 
 module.exports = router;
