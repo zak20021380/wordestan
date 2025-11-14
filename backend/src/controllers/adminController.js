@@ -802,7 +802,10 @@ const getUsersWithStats = async (req, res) => {
       search = '',
       sort = 'recent',
       page = 1,
-      limit = 20
+      limit = 20,
+      levelFilter = '',
+      sortBy = '',
+      order = 'desc'
     } = req.query;
 
     const pageNum = Math.max(parseInt(page, 10) || 1, 1);
@@ -819,9 +822,37 @@ const getUsersWithStats = async (req, res) => {
       ];
     }
 
+    // Add level filter
+    if (levelFilter) {
+      switch (levelFilter) {
+        case 'highest':
+          // We'll need to find the max level first
+          const maxLevelUser = await User.findOne().sort({ currentLevel: -1 }).select('currentLevel');
+          const maxLevel = maxLevelUser?.currentLevel || 1;
+          filters.currentLevel = maxLevel;
+          break;
+        case '1-3':
+          filters.currentLevel = { $gte: 1, $lte: 3 };
+          break;
+        case '4-6':
+          filters.currentLevel = { $gte: 4, $lte: 6 };
+          break;
+        case '7+':
+          filters.currentLevel = { $gte: 7 };
+          break;
+      }
+    }
+
     const matchStage = Object.keys(filters).length ? filters : {};
 
+    // Handle sorting
     const sortStage = (() => {
+      // Check if using new sortBy parameter
+      if (sortBy === 'level') {
+        return { currentLevel: order === 'asc' ? 1 : -1, createdAt: -1 };
+      }
+
+      // Legacy sort parameter
       switch (sort) {
         case 'oldest':
           return { createdAt: 1 };
@@ -831,6 +862,8 @@ const getUsersWithStats = async (req, res) => {
           return { totalSpent: 1, createdAt: -1 };
         case 'name':
           return { username: 1 };
+        case 'level':
+          return { currentLevel: -1, createdAt: -1 };
         default:
           return { createdAt: -1 };
       }
@@ -890,6 +923,7 @@ const getUsersWithStats = async (req, res) => {
           coins: 1,
           totalScore: 1,
           levelsCleared: 1,
+          currentLevel: 1,
           isAdmin: 1,
           createdAt: 1,
           updatedAt: 1,

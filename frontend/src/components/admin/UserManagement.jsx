@@ -8,7 +8,8 @@ import {
   Sparkles,
   CalendarClock,
   ArrowUpRight,
-  Coins
+  Coins,
+  TrendingDown
 } from 'lucide-react';
 import { adminService } from '../../services/adminService';
 import { formatToman } from '../../utils/currency';
@@ -16,9 +17,18 @@ import { formatToman } from '../../utils/currency';
 const SORT_OPTIONS = [
   { value: 'recent', label: 'Newest first' },
   { value: 'oldest', label: 'Oldest first' },
+  { value: 'level', label: 'Highest level' },
   { value: 'highestSpend', label: 'Highest spenders' },
   { value: 'lowestSpend', label: 'Lowest spenders' },
   { value: 'name', label: 'Name A → Z' }
+];
+
+const LEVEL_FILTER_OPTIONS = [
+  { value: '', label: 'همه کاربران (All users)' },
+  { value: 'highest', label: 'بالاترین سطح (Highest level)' },
+  { value: '1-3', label: 'سطح ۱-۳ (Level 1-3)' },
+  { value: '4-6', label: 'سطح ۴-۶ (Level 4-6)' },
+  { value: '7+', label: 'سطح ۷+ (Level 7+)' }
 ];
 
 const PAGE_SIZE = 10;
@@ -66,10 +76,22 @@ const formatDateTime = (value) => {
   }
 };
 
+const getLevelColor = (level) => {
+  const levelNum = Number(level || 1);
+  if (levelNum >= 7) {
+    return 'text-emerald-400 bg-emerald-500/20 border-emerald-500/30'; // Green for high levels
+  } else if (levelNum >= 4) {
+    return 'text-amber-400 bg-amber-500/20 border-amber-500/30'; // Yellow for mid levels
+  } else {
+    return 'text-rose-400 bg-rose-500/20 border-rose-500/30'; // Red for low levels
+  }
+};
+
 const UserManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [sort, setSort] = useState('recent');
+  const [levelFilter, setLevelFilter] = useState('');
   const [page, setPage] = useState(1);
   const [users, setUsers] = useState([]);
   const [summary, setSummary] = useState({
@@ -109,7 +131,8 @@ const UserManagement = () => {
           page,
           limit: PAGE_SIZE,
           sort,
-          ...(debouncedSearchTerm ? { search: debouncedSearchTerm } : {})
+          ...(debouncedSearchTerm ? { search: debouncedSearchTerm } : {}),
+          ...(levelFilter ? { levelFilter } : {})
         });
 
         if (!isMounted) {
@@ -149,7 +172,7 @@ const UserManagement = () => {
     return () => {
       isMounted = false;
     };
-  }, [page, sort, debouncedSearchTerm]);
+  }, [page, sort, debouncedSearchTerm, levelFilter]);
 
   const summaryCards = useMemo(() => ([
     {
@@ -196,9 +219,10 @@ const UserManagement = () => {
       return Array.from({ length: PAGE_SIZE }).map((_, index) => (
         <div
           key={`skeleton-${index}`}
-          className="grid grid-cols-1 md:grid-cols-[2fr,1fr,1fr,1fr] gap-4 items-center px-4 py-4 border-b border-white/5 last:border-none"
+          className="grid grid-cols-1 md:grid-cols-[2fr,1fr,1fr,1fr,1fr] gap-4 items-center px-4 py-4 border-b border-white/5 last:border-none"
         >
           <div className="h-10 bg-white/5 rounded-lg animate-pulse" />
+          <div className="h-4 bg-white/5 rounded animate-pulse hidden md:block" />
           <div className="h-4 bg-white/5 rounded animate-pulse hidden md:block" />
           <div className="h-4 bg-white/5 rounded animate-pulse hidden md:block" />
           <div className="h-4 bg-white/5 rounded animate-pulse hidden md:block" />
@@ -209,7 +233,7 @@ const UserManagement = () => {
     if (!users.length) {
       return (
         <div className="text-center text-white/60 py-12">
-          {debouncedSearchTerm
+          {debouncedSearchTerm || levelFilter
             ? 'No players match your search just yet.'
             : 'No players have registered yet.'}
         </div>
@@ -218,11 +242,12 @@ const UserManagement = () => {
 
     return users.map((user) => {
       const InitialIcon = user.username?.[0]?.toUpperCase() || '?';
+      const levelColorClass = getLevelColor(user.currentLevel);
 
       return (
         <div
           key={user._id || user.username}
-          className="grid grid-cols-1 md:grid-cols-[2fr,1fr,1fr,1fr] gap-4 items-center px-4 py-4 border-b border-white/5 last:border-none bg-glass-hover/40 hover:bg-glass-hover transition-colors rounded-xl md:rounded-none md:bg-transparent md:hover:bg-white/5"
+          className="grid grid-cols-1 md:grid-cols-[2fr,1fr,1fr,1fr,1fr] gap-4 items-center px-4 py-4 border-b border-white/5 last:border-none bg-glass-hover/40 hover:bg-glass-hover transition-colors rounded-xl md:rounded-none md:bg-transparent md:hover:bg-white/5"
         >
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-500/80 to-primary-400/60 text-white font-semibold flex items-center justify-center">
@@ -267,6 +292,14 @@ const UserManagement = () => {
             <div className="text-xs text-white/40 md:mt-1">Coins purchased</div>
           </div>
 
+          <div className="flex md:block items-center justify-between md:justify-start">
+            <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border font-semibold ${levelColorClass}`}>
+              <TrendingUp className="w-4 h-4" />
+              <span>مرحله {user.currentLevel || 1}</span>
+            </div>
+            <div className="text-xs text-white/40 md:mt-1">Current level</div>
+          </div>
+
           <div className="space-y-1 text-sm">
             <div className="flex items-center gap-2 text-white/80">
               <CalendarClock className="w-4 h-4 text-primary-300" />
@@ -279,7 +312,7 @@ const UserManagement = () => {
         </div>
       );
     });
-  }, [users, loading, debouncedSearchTerm]);
+  }, [users, loading, debouncedSearchTerm, levelFilter]);
 
   return (
     <div className="space-y-6">
@@ -321,31 +354,51 @@ const UserManagement = () => {
       </motion.div>
 
       <div className="bg-glass backdrop-blur-xl rounded-2xl border border-glass-border p-6 space-y-6">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/40" />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Search players by username or email..."
-                className="w-full pl-12 pr-4 py-3 bg-black/30 border border-white/10 rounded-xl text-white placeholder-white/40 focus:outline-none focus:border-primary-400 transition-colors"
-              />
+        <div className="space-y-4">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/40" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  placeholder="Search players by username or email..."
+                  className="w-full pl-12 pr-4 py-3 bg-black/30 border border-white/10 rounded-xl text-white placeholder-white/40 focus:outline-none focus:border-primary-400 transition-colors"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <label className="text-sm text-white/50">Sort by</label>
+              <select
+                value={sort}
+                onChange={(event) => {
+                  setSort(event.target.value);
+                  setPage(1);
+                }}
+                className="bg-black/40 border border-white/10 rounded-xl text-white px-4 py-2 focus:outline-none focus:border-primary-400"
+              >
+                {SORT_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value} className="bg-slate-900">
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <label className="text-sm text-white/50">Sort by</label>
+            <label className="text-sm text-white/50 whitespace-nowrap">Filter by level</label>
             <select
-              value={sort}
+              value={levelFilter}
               onChange={(event) => {
-                setSort(event.target.value);
+                setLevelFilter(event.target.value);
                 setPage(1);
               }}
-              className="bg-black/40 border border-white/10 rounded-xl text-white px-4 py-2 focus:outline-none focus:border-primary-400"
+              className="bg-black/40 border border-white/10 rounded-xl text-white px-4 py-2 focus:outline-none focus:border-primary-400 flex-1 lg:flex-initial"
             >
-              {SORT_OPTIONS.map((option) => (
+              {LEVEL_FILTER_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value} className="bg-slate-900">
                   {option.label}
                 </option>
@@ -361,10 +414,11 @@ const UserManagement = () => {
         )}
 
         <div className="rounded-2xl border border-white/5 overflow-hidden">
-          <div className="hidden md:grid grid-cols-[2fr,1fr,1fr,1fr] gap-4 px-4 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-white/40 bg-white/5">
+          <div className="hidden md:grid grid-cols-[2fr,1fr,1fr,1fr,1fr] gap-4 px-4 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-white/40 bg-white/5">
             <span>Player</span>
             <span>Spend</span>
             <span>Coins purchased</span>
+            <span>سطح فعلی</span>
             <span>Registration</span>
           </div>
           <div className="divide-y divide-white/5">
