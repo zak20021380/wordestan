@@ -6,8 +6,14 @@ require('dotenv').config();
 const token = process.env.TELEGRAM_BOT_TOKEN;
 const webAppUrl = process.env.WEB_APP_URL;
 
+// Admin user ID
+const ADMIN_ID = 1350508522;
+
 // Create bot instance
 const bot = new TelegramBot(token, { polling: true });
+
+// Store admin's broadcast state in memory
+const broadcastState = new Map();
 
 console.log('🤖 Telegram bot started...');
 
@@ -49,13 +55,44 @@ const saveUser = async (msg) => {
 // Handle /start command
 bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
+  const userId = msg.from.id;
 
   try {
     // Save user to database
     await saveUser(msg);
 
-    // Welcome message in Persian
-    const welcomeMessage = `
+    // Check if user is admin
+    if (userId === ADMIN_ID) {
+      // Admin panel
+      const adminMessage = `
+🔐 پنل مدیریت
+
+سلام مدیر عزیز! به پنل مدیریت ربات خوش آمدید.
+      `;
+
+      const adminKeyboard = {
+        inline_keyboard: [
+          [
+            { text: '📊 آمار ربات', callback_data: 'admin_stats' }
+          ],
+          [
+            { text: '📢 ارسال پیام همگانی', callback_data: 'admin_broadcast' }
+          ],
+          [
+            { text: '🎮 بازی', web_app: { url: webAppUrl } }
+          ]
+        ]
+      };
+
+      await bot.sendMessage(chatId, adminMessage, {
+        reply_markup: adminKeyboard,
+        parse_mode: 'HTML'
+      });
+
+      console.log(`📨 Sent admin panel to: ${chatId}`);
+    } else {
+      // Regular user welcome message
+      const welcomeMessage = `
 🎮 سلام! به بازی کلمات خوش آمدید
 
 این بازی چالش برانگیز کلمه‌سازی است که در آن باید از حروف موجود، کلمات مختلف بسازید!
@@ -67,30 +104,103 @@ bot.onText(/\/start/, async (msg) => {
 • سیستم یادگیری لایتنر
 
 برای شروع بازی روی دکمه زیر کلیک کنید 👇
-    `;
+      `;
 
-    // Create inline keyboard with web app button
-    const keyboard = {
-      inline_keyboard: [
-        [
-          {
-            text: '🎮 شروع بازی',
-            web_app: { url: webAppUrl }
-          }
+      // Create inline keyboard with web app button
+      const keyboard = {
+        inline_keyboard: [
+          [
+            {
+              text: '🎮 شروع بازی',
+              web_app: { url: webAppUrl }
+            }
+          ]
         ]
-      ]
-    };
+      };
 
-    // Send message with button
-    await bot.sendMessage(chatId, welcomeMessage, {
-      reply_markup: keyboard,
-      parse_mode: 'HTML'
-    });
+      // Send message with button
+      await bot.sendMessage(chatId, welcomeMessage, {
+        reply_markup: keyboard,
+        parse_mode: 'HTML'
+      });
 
-    console.log(`📨 Sent welcome message to: ${chatId}`);
+      console.log(`📨 Sent welcome message to: ${chatId}`);
+    }
   } catch (error) {
     console.error('❌ Error handling /start command:', error);
     await bot.sendMessage(chatId, '❌ خطایی رخ داد. لطفاً دوباره تلاش کنید.');
+  }
+});
+
+// Handle callback queries (button clicks)
+bot.on('callback_query', async (query) => {
+  const chatId = query.message.chat.id;
+  const userId = query.from.id;
+  const data = query.data;
+
+  // Only admin can use these callbacks
+  if (userId !== ADMIN_ID) {
+    await bot.answerCallbackQuery(query.id, {
+      text: '⛔ شما مجاز به استفاده از این بخش نیستید',
+      show_alert: true
+    });
+    return;
+  }
+
+  try {
+    // Handle admin stats
+    if (data === 'admin_stats') {
+      await bot.answerCallbackQuery(query.id);
+
+      // Get statistics
+      const totalUsers = await BotUser.countDocuments();
+      const activeUsers = await BotUser.countDocuments({ isActive: true });
+
+      // Get today's new users
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+      const todayUsers = await BotUser.countDocuments({
+        createdAt: { $gte: startOfToday }
+      });
+
+      const statsMessage = `
+📊 آمار ربات
+
+👥 تعداد کل کاربران: ${totalUsers}
+✅ کاربران فعال: ${activeUsers}
+🆕 کاربران امروز: ${todayUsers}
+
+📅 تاریخ: ${new Date().toLocaleDateString('fa-IR')}
+      `;
+
+      await bot.sendMessage(chatId, statsMessage);
+      console.log(`📊 Sent stats to admin: ${chatId}`);
+    }
+
+    // Handle broadcast request
+    else if (data === 'admin_broadcast') {
+      await bot.answerCallbackQuery(query.id);
+
+      // Set broadcast state
+      broadcastState.set(chatId, { waitingForMessage: true });
+
+      const broadcastPrompt = `
+📢 ارسال پیام همگانی
+
+پیام خود را ارسال کنید:
+
+⚠️ این پیام به همه کاربران فعال ارسال خواهد شد.
+      `;
+
+      await bot.sendMessage(chatId, broadcastPrompt);
+      console.log(`📢 Admin requested broadcast: ${chatId}`);
+    }
+  } catch (error) {
+    console.error('❌ Error handling callback query:', error);
+    await bot.answerCallbackQuery(query.id, {
+      text: '❌ خطایی رخ داد',
+      show_alert: true
+    });
   }
 });
 
@@ -102,8 +212,40 @@ bot.on('message', async (msg) => {
   }
 
   const chatId = msg.chat.id;
+  const userId = msg.from.id;
 
   try {
+    // Check if admin is in broadcast mode
+    if (userId === ADMIN_ID && broadcastState.has(chatId)) {
+      const state = broadcastState.get(chatId);
+
+      if (state.waitingForMessage) {
+        // Clear broadcast state
+        broadcastState.delete(chatId);
+
+        // Send confirmation message
+        await bot.sendMessage(chatId, '⏳ در حال ارسال پیام به کاربران...');
+
+        // Broadcast the message
+        const result = await broadcastMessage(msg.text);
+
+        // Send result
+        const resultMessage = `
+✅ پیام به ${result.success} کاربر ارسال شد
+
+📊 نتیجه ارسال:
+• موفق: ${result.success}
+• ناموفق: ${result.failed}
+• مجموع: ${result.total}
+        `;
+
+        await bot.sendMessage(chatId, resultMessage);
+        console.log(`✅ Broadcast completed by admin: ${chatId}`);
+        return;
+      }
+    }
+
+    // Regular user handling
     // Update user's last interaction
     await saveUser(msg);
 
