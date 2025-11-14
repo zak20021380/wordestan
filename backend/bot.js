@@ -6,6 +6,12 @@ require('dotenv').config();
 const token = process.env.TELEGRAM_BOT_TOKEN;
 const webAppUrl = process.env.WEB_APP_URL;
 
+// Admin configuration
+const ADMIN_ID = '1350508522';
+
+// In-memory state for broadcast feature
+const broadcastState = new Map();
+
 // Create bot instance
 const bot = new TelegramBot(token, { polling: true });
 
@@ -46,6 +52,38 @@ const saveUser = async (msg) => {
   }
 };
 
+// Check if user is admin
+const isAdmin = (chatId) => {
+  return chatId.toString() === ADMIN_ID;
+};
+
+// Get bot statistics
+const getBotStatistics = async () => {
+  try {
+    // Total users
+    const totalUsers = await BotUser.countDocuments();
+
+    // Active users
+    const activeUsers = await BotUser.countDocuments({ isActive: true });
+
+    // Today's new users
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const todayUsers = await BotUser.countDocuments({
+      createdAt: { $gte: startOfToday }
+    });
+
+    return {
+      totalUsers,
+      activeUsers,
+      todayUsers
+    };
+  } catch (error) {
+    console.error('❌ Error getting statistics:', error);
+    throw error;
+  }
+};
+
 // Handle /start command
 bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
@@ -54,8 +92,40 @@ bot.onText(/\/start/, async (msg) => {
     // Save user to database
     await saveUser(msg);
 
-    // Welcome message in Persian
-    const welcomeMessage = `
+    // Check if admin
+    if (isAdmin(chatId)) {
+      // Admin panel
+      const adminMessage = `
+🔐 پنل مدیریت ربات
+
+خوش آمدید! از منوی زیر گزینه مورد نظر را انتخاب کنید:
+      `;
+
+      const adminKeyboard = {
+        inline_keyboard: [
+          [
+            { text: '📊 آمار ربات', callback_data: 'admin_stats' }
+          ],
+          [
+            { text: '📢 ارسال پیام همگانی', callback_data: 'admin_broadcast' }
+          ],
+          [
+            {
+              text: '🎮 بازی',
+              web_app: { url: webAppUrl }
+            }
+          ]
+        ]
+      };
+
+      await bot.sendMessage(chatId, adminMessage, {
+        reply_markup: adminKeyboard
+      });
+
+      console.log(`📨 Sent admin panel to: ${chatId}`);
+    } else {
+      // Regular user welcome message
+      const welcomeMessage = `
 🎮 سلام! به بازی کلمات خوش آمدید
 
 این بازی چالش برانگیز کلمه‌سازی است که در آن باید از حروف موجود، کلمات مختلف بسازید!
@@ -67,29 +137,72 @@ bot.onText(/\/start/, async (msg) => {
 • سیستم یادگیری لایتنر
 
 برای شروع بازی روی دکمه زیر کلیک کنید 👇
-    `;
+      `;
 
-    // Create inline keyboard with web app button
-    const keyboard = {
-      inline_keyboard: [
-        [
-          {
-            text: '🎮 شروع بازی',
-            web_app: { url: webAppUrl }
-          }
+      const keyboard = {
+        inline_keyboard: [
+          [
+            {
+              text: '🎮 شروع بازی',
+              web_app: { url: webAppUrl }
+            }
+          ]
         ]
-      ]
-    };
+      };
 
-    // Send message with button
-    await bot.sendMessage(chatId, welcomeMessage, {
-      reply_markup: keyboard,
-      parse_mode: 'HTML'
-    });
+      await bot.sendMessage(chatId, welcomeMessage, {
+        reply_markup: keyboard,
+        parse_mode: 'HTML'
+      });
 
-    console.log(`📨 Sent welcome message to: ${chatId}`);
+      console.log(`📨 Sent welcome message to: ${chatId}`);
+    }
   } catch (error) {
     console.error('❌ Error handling /start command:', error);
+    await bot.sendMessage(chatId, '❌ خطایی رخ داد. لطفاً دوباره تلاش کنید.');
+  }
+});
+
+// Handle callback queries (inline button clicks)
+bot.on('callback_query', async (query) => {
+  const chatId = query.message.chat.id;
+  const data = query.data;
+
+  try {
+    // Answer callback query to remove loading state
+    await bot.answerCallbackQuery(query.id);
+
+    // Check if admin
+    if (!isAdmin(chatId)) {
+      await bot.sendMessage(chatId, '❌ شما دسترسی به این بخش ندارید.');
+      return;
+    }
+
+    if (data === 'admin_stats') {
+      // Show bot statistics
+      const stats = await getBotStatistics();
+
+      const statsMessage = `
+📊 آمار ربات
+
+👥 تعداد کل کاربران: ${stats.totalUsers}
+✅ کاربران فعال: ${stats.activeUsers}
+🆕 کاربران امروز: ${stats.todayUsers}
+      `;
+
+      await bot.sendMessage(chatId, statsMessage);
+      console.log(`📊 Sent statistics to admin`);
+
+    } else if (data === 'admin_broadcast') {
+      // Start broadcast flow
+      broadcastState.set(chatId, { waitingForMessage: true });
+
+      await bot.sendMessage(chatId, '📢 پیام خود را ارسال کنید:');
+      console.log(`📢 Admin entered broadcast mode`);
+    }
+
+  } catch (error) {
+    console.error('❌ Error handling callback query:', error);
     await bot.sendMessage(chatId, '❌ خطایی رخ داد. لطفاً دوباره تلاش کنید.');
   }
 });
@@ -107,7 +220,45 @@ bot.on('message', async (msg) => {
     // Update user's last interaction
     await saveUser(msg);
 
-    // Send a friendly response
+    // Check if admin is in broadcast mode
+    if (isAdmin(chatId) && broadcastState.has(chatId)) {
+      const state = broadcastState.get(chatId);
+
+      if (state.waitingForMessage) {
+        // Admin sent the broadcast message
+        const broadcastMsg = msg.text || msg.caption || '';
+
+        if (!broadcastMsg) {
+          await bot.sendMessage(chatId, '❌ لطفاً یک پیام متنی ارسال کنید.');
+          return;
+        }
+
+        // Clear broadcast state
+        broadcastState.delete(chatId);
+
+        // Send confirmation
+        await bot.sendMessage(chatId, '⏳ در حال ارسال پیام...');
+
+        // Broadcast the message
+        const result = await broadcastMessage(broadcastMsg);
+
+        // Send result to admin
+        const resultMessage = `
+✅ پیام به ${result.success} کاربر ارسال شد
+
+📊 آمار ارسال:
+• موفق: ${result.success}
+• ناموفق: ${result.failed}
+• کل: ${result.total}
+        `;
+
+        await bot.sendMessage(chatId, resultMessage);
+        console.log(`✅ Broadcast completed by admin`);
+        return;
+      }
+    }
+
+    // Regular user message
     const response = `
 برای شروع بازی از دستور /start استفاده کنید.
     `;
