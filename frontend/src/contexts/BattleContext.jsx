@@ -22,6 +22,9 @@ const initialState = {
   challengeCode: null,
   challengeError: null,
   incomingChallenge: null,
+  lastOpponentWord: null,
+  lastOpponentPowerup: null,
+  lastOpponentShuffle: null,
 };
 
 const reducer = (state, action) => {
@@ -46,6 +49,9 @@ const reducer = (state, action) => {
         timer: { remaining: 120, isRunning: false },
         results: null,
         incomingChallenge: null,
+        lastOpponentWord: null,
+        lastOpponentPowerup: null,
+        lastOpponentShuffle: null,
       };
     case 'COUNTDOWN':
       return { ...state, countdown: action.payload };
@@ -59,13 +65,25 @@ const reducer = (state, action) => {
         opponentWords: action.payload.opponentWords,
         timer: { remaining: action.payload.remainingTime, isRunning: true },
         queueStatus: 'matched',
+        lastOpponentWord: null,
+        lastOpponentPowerup: null,
+        lastOpponentShuffle: null,
       };
     case 'TIMER_TICK':
       return { ...state, timer: { ...state.timer, remaining: Math.max(0, action.payload) } };
     case 'WORD_ACCEPTED':
       return { ...state, myWords: [...state.myWords, action.payload] };
-    case 'OPPONENT_WORD':
-      return { ...state, opponentWords: [...state.opponentWords, action.payload], opponentTyping: false };
+    case 'OPPONENT_WORD': {
+      const normalizedWord = action.payload?.word || action.payload;
+      return {
+        ...state,
+        opponentWords: [...state.opponentWords, action.payload],
+        opponentTyping: false,
+        lastOpponentWord: normalizedWord
+          ? { word: normalizedWord, timestamp: Date.now() }
+          : state.lastOpponentWord,
+      };
+    }
     case 'OPPONENT_TYPING':
       return { ...state, opponentTyping: action.payload };
     case 'QUICK_CHAT':
@@ -82,6 +100,18 @@ const reducer = (state, action) => {
       return { ...state, incomingChallenge: action.payload };
     case 'CLEAR_CHALLENGE':
       return { ...state, incomingChallenge: null };
+    case 'OPPONENT_POWERUP':
+      return {
+        ...state,
+        lastOpponentPowerup: action.payload
+          ? { ...action.payload, timestamp: Date.now() }
+          : state.lastOpponentPowerup,
+      };
+    case 'OPPONENT_SHUFFLED':
+      return {
+        ...state,
+        lastOpponentShuffle: { ...(action.payload || {}), timestamp: Date.now() },
+      };
     case 'RESET_BATTLE':
       return { ...initialState, onlineCount: state.onlineCount };
     default:
@@ -156,6 +186,9 @@ export const BattleProvider = ({ children }) => {
       battle_start: (payload) => dispatch({ type: 'BATTLE_START', payload: payload.duration }),
       word_accepted: (payload) => dispatch({ type: 'WORD_ACCEPTED', payload }),
       opponent_word: (payload) => dispatch({ type: 'OPPONENT_WORD', payload }),
+      opponent_found_word: (payload) => dispatch({ type: 'OPPONENT_WORD', payload }),
+      opponent_used_powerup: (payload) => dispatch({ type: 'OPPONENT_POWERUP', payload }),
+      opponent_shuffled: (payload) => dispatch({ type: 'OPPONENT_SHUFFLED', payload }),
       opponent_typing: (payload) => dispatch({ type: 'OPPONENT_TYPING', payload: payload.typing }),
       quick_chat: (payload) => dispatch({ type: 'QUICK_CHAT', payload }),
       opponent_disconnected: () => toast('حریف قطع شد. ۱۰ ثانیه فرصت داره برگرده.'),
