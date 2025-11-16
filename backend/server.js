@@ -2,6 +2,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
+const http = require('http');
+const { Server } = require('socket.io');
 const User = require('./src/models/User');
 require('dotenv').config();
 
@@ -16,9 +18,19 @@ const adminRoutes = require('./src/routes/admin');
 const storeRoutes = require('./src/routes/store');
 const paymentRoutes = require('./src/routes/payment');
 const leitnerRoutes = require('./src/routes/leitner');
+const battleRoutes = require('./src/routes/battle');
+const initBattleSocket = require('./src/socket/battleSocket');
 
 // Initialize Express app
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+    credentials: true
+  }
+});
+initBattleSocket(io);
 
 // CORS configuration (must be registered before other middleware and routes)
 app.use(cors({
@@ -67,6 +79,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/store', storeRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/leitner', leitnerRoutes);
+app.use('/api/battle', battleRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -213,7 +226,7 @@ const startServer = async () => {
   try {
     await connectDB();
     
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
       console.log(`Environment: ${process.env.NODE_ENV}`);
       console.log(`MongoDB URI: ${process.env.MONGODB_URI}`);

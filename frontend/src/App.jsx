@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from 'react-query';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './contexts/AuthContext';
 import { GameProvider } from './contexts/GameContext';
+import { BattleProvider } from './contexts/BattleContext';
 
 // Pages
 import Home from './pages/Home';
@@ -12,6 +13,10 @@ import Store from './pages/Store';
 import PaymentVerify from './pages/PaymentVerify';
 import Leaderboard from './pages/Leaderboard';
 import LeitnerBox from './pages/LeitnerBox';
+import BattleLobby from './pages/BattleLobby';
+import BattleGame from './pages/BattleGame';
+import BattleResults from './pages/BattleResults';
+import BattleHistory from './pages/BattleHistory';
 import Admin from './pages/Admin';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -43,10 +48,11 @@ function App() {
       <AuthProvider>
         <GameProvider>
           <Router>
-            <div className="min-h-screen bg-wood bg-cover bg-center bg-fixed">
-              {/* Wooden background overlay */}
-              <div className="min-h-screen bg-gradient-to-br from-wood-900/80 via-wood-800/60 to-wood-900/80">
-                <Routes>
+            <BattleProvider>
+              <div className="min-h-screen bg-wood bg-cover bg-center bg-fixed">
+                {/* Wooden background overlay */}
+                <div className="min-h-screen bg-gradient-to-br from-wood-900/80 via-wood-800/60 to-wood-900/80">
+                  <Routes>
                   {/* Public routes */}
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
@@ -83,6 +89,38 @@ function App() {
                           }
                         />
                         <Route path="/leaderboard" element={<Leaderboard />} />
+                        <Route
+                          path="/battle"
+                          element={
+                            <ProtectedRoute>
+                              <BattleLobby />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/battle/live"
+                          element={
+                            <ProtectedRoute>
+                              <BattleGame />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/battle/results"
+                          element={
+                            <ProtectedRoute>
+                              <BattleResults />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/battle/history"
+                          element={
+                            <ProtectedRoute>
+                              <BattleHistory />
+                            </ProtectedRoute>
+                          }
+                        />
                         
                         {/* Admin routes */}
                         <Route
@@ -106,10 +144,10 @@ function App() {
                       </Routes>
                     </Layout>
                   } />
-                </Routes>
-                
-                {/* Toast notifications */}
-                <Toaster 
+                  </Routes>
+
+                  {/* Toast notifications */}
+                  <Toaster
                   position="top-right"
                   toastOptions={{
                     duration: 4000,
@@ -132,9 +170,10 @@ function App() {
                       },
                     },
                   }}
-                />
+                  />
+                </div>
               </div>
-            </div>
+            </BattleProvider>
           </Router>
         </GameProvider>
       </AuthProvider>
