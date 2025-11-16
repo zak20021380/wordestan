@@ -143,6 +143,61 @@ const userSchema = new mongoose.Schema({
   lastActive: {
     type: Date,
     default: Date.now
+  },
+  battleStats: {
+    totalBattles: {
+      type: Number,
+      default: 0,
+      min: 0
+    },
+    wins: {
+      type: Number,
+      default: 0,
+      min: 0
+    },
+    losses: {
+      type: Number,
+      default: 0,
+      min: 0
+    },
+    draws: {
+      type: Number,
+      default: 0,
+      min: 0
+    },
+    winRate: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 100
+    },
+    totalWordsFoundInBattles: {
+      type: Number,
+      default: 0,
+      min: 0
+    },
+    fastestWin: {
+      type: Number, // seconds
+      default: null
+    },
+    longestStreak: {
+      type: Number,
+      default: 0,
+      min: 0
+    },
+    currentStreak: {
+      type: Number,
+      default: 0,
+      min: 0
+    }
+  },
+  avatar: {
+    type: String,
+    default: null
+  },
+  isOnline: {
+    type: Boolean,
+    default: false
   }
 }, {
   timestamps: true
@@ -420,6 +475,73 @@ userSchema.methods.completeWord = function(levelId, wordId, options = {}) {
 userSchema.methods.resetStreak = function() {
   this.currentStreak = 0;
   return this.save();
+};
+
+// Battle stats methods
+userSchema.methods.updateBattleStats = function(result) {
+  if (!this.battleStats) {
+    this.battleStats = {
+      totalBattles: 0,
+      wins: 0,
+      losses: 0,
+      draws: 0,
+      winRate: 0,
+      totalWordsFoundInBattles: 0,
+      fastestWin: null,
+      longestStreak: 0,
+      currentStreak: 0
+    };
+  }
+
+  this.battleStats.totalBattles += 1;
+
+  if (result.won) {
+    this.battleStats.wins += 1;
+    this.battleStats.currentStreak += 1;
+    this.battleStats.longestStreak = Math.max(
+      this.battleStats.longestStreak,
+      this.battleStats.currentStreak
+    );
+
+    // Update fastest win
+    if (result.duration) {
+      if (!this.battleStats.fastestWin || result.duration < this.battleStats.fastestWin) {
+        this.battleStats.fastestWin = result.duration;
+      }
+    }
+  } else if (result.lost) {
+    this.battleStats.losses += 1;
+    this.battleStats.currentStreak = 0;
+  } else if (result.draw) {
+    this.battleStats.draws += 1;
+  }
+
+  if (result.wordsFound) {
+    this.battleStats.totalWordsFoundInBattles += result.wordsFound;
+  }
+
+  // Calculate win rate
+  if (this.battleStats.totalBattles > 0) {
+    this.battleStats.winRate = Math.round(
+      (this.battleStats.wins / this.battleStats.totalBattles) * 100
+    );
+  }
+
+  return this.save();
+};
+
+userSchema.methods.getBattleStats = function() {
+  return this.battleStats || {
+    totalBattles: 0,
+    wins: 0,
+    losses: 0,
+    draws: 0,
+    winRate: 0,
+    totalWordsFoundInBattles: 0,
+    fastestWin: null,
+    longestStreak: 0,
+    currentStreak: 0
+  };
 };
 
 module.exports = mongoose.model('User', userSchema);

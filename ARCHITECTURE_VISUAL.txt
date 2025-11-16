@@ -1,0 +1,352 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║         HARFLAND - ARCHITECTURE OVERVIEW FOR 1V1 BATTLE SYSTEM            ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 1. FRONTEND ARCHITECTURE (React + Vite)                                    │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+                            ┌─────────────────────┐
+                            │    App.jsx Router   │
+                            └──────────┬──────────┘
+                                       │
+                    ┌──────────────────┼──────────────────┐
+                    │                  │                  │
+            ┌───────▼────────┐  ┌──────▼───────┐  ┌──────▼────────┐
+            │ Public Routes  │  │Protected     │  │Admin Routes   │
+            │ /login         │  │Routes        │  │/admin/*       │
+            │ /register      │  │/game         │  │AdminRoute     │
+            │ /              │  │/levels       │  │Guard           │
+            └────────────────┘  │/store        │  └────────────────┘
+                                │/leaderboard  │
+                                │/leitner      │
+                                └──────┬───────┘
+                                       │
+                    ┌──────────────────┴──────────────────┐
+                    │                                     │
+            ┌───────▼────────────┐            ┌──────────▼─────────┐
+            │  AuthContext       │            │  GameContext       │
+            │  ─────────────────│            │  ──────────────────│
+            │ • user            │            │ • currentLevel     │
+            │ • isAuthenticated  │            │ • gameState        │
+            │ • login()          │            │ • submitWord()     │
+            │ • logout()         │            │ • autoSolve()      │
+            └───────┬────────────┘            └──────────┬─────────┘
+                    │                                   │
+                    └───────────┬──────────┬────────────┘
+                                │          │
+                            ┌───▼──────────▼───┐
+                            │ React Query      │
+                            │ (Data Fetching)  │
+                            └────────┬─────────┘
+                                     │
+                            ┌────────▼──────────┐
+                            │ Axios + Interceptor│
+                            │ (Auth Headers)    │
+                            └────────┬──────────┘
+                                     │
+                            ┌────────▼──────────────────┐
+                            │  API Services             │
+                            │  ─────────────────────── │
+                            │  • authService.js         │
+                            │  • gameService.js         │
+                            │  • leaderboardService.js  │
+                            │  • storeService.js        │
+                            │  • leitnerService.js      │
+                            └────────┬──────────────────┘
+                                     │
+                            ┌────────▼──────────┐
+                            │  REST API (Port 5000) │
+                            └───────────────────┘
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 2. BACKEND ARCHITECTURE (Express + Node.js)                                │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+                         ┌──────────────────────┐
+                         │   server.js          │
+                         │ • Express Setup      │
+                         │ • CORS/Helmet        │
+                         │ • Mongoose Connect   │
+                         └──────────┬───────────┘
+                                    │
+                    ┌───────────────┼───────────────┐
+                    │               │               │
+            ┌───────▼────────┐   ┌──▼─────────┐  ┌─▼─────────────┐
+            │ Middleware     │   │Routes      │  │Error Handler  │
+            │────────────────│   │────────────│  │───────────────│
+            │ • CORS         │   │• auth.js   │  │• Validation   │
+            │ • Helmet       │   │• game.js   │  │• JWT Errors   │
+            │ • Body Parser  │   │• admin.js  │  │• DB Errors    │
+            │ • Logging      │   │• leitner.js│  │• 404 Handler  │
+            └────────────────┘   │• store.js  │  └───────────────┘
+                                 │• payment.js│
+                                 └─────┬──────┘
+                                       │
+                    ┌──────────────────┼──────────────────┐
+                    │                  │                  │
+        ┌───────────▼──────────┐  ┌───▼─────────────┐ ┌─▼─────────────────┐
+        │ Controllers          │  │  Middleware     │ │  Models (Mongoose)│
+        │ ─────────────────── │  │  ────────────── │ │  ──────────────── │
+        │ • authController.js │  │ • auth.js       │ │ • User.js        │
+        │ • gameController.js │  │   - auth()      │ │ • Level.js       │
+        │ • leaderboard...    │  │   - adminAuth() │ │ • Word.js        │
+        │ • leitnerControl... │  │   - optional... │ │ • GameSetting.js │
+        │ • storeController   │  │                 │ │ • CoinPack.js    │
+        │ • adminController   │  │ • express-      │ │ • Purchase.js    │
+        │                     │  │   validator     │ │ • LeitnerBox.js  │
+        └─────────────────────┘  │   validation    │ │ • BotUser.js     │
+                                 └─────────────────┘ └──────────────────┘
+                                                           │
+                                       ┌───────────────────┘
+                                       │
+                            ┌──────────▼─────────────┐
+                            │  MongoDB (Atlas)      │
+                            │  wordconnect database │
+                            │ ────────────────────  │
+                            │ Collections:          │
+                            │ • users               │
+                            │ • levels              │
+                            │ • words               │
+                            │ • gamesettings        │
+                            │ • coinpacks           │
+                            │ • purchases           │
+                            │ • leitnerboxes        │
+                            │ • botusers            │
+                            └──────────────────────┘
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 3. DATA FLOW - WORD COMPLETION EXAMPLE                                     │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Frontend (React)              Backend (Express)         Database (MongoDB)
+─────────────────────────────────────────────────────────────────────────────
+
+User selects letters
+      │
+      ▼
+Game.jsx detects match
+      │
+      ▼
+submitWord() called
+      │
+      ▼
+gameService.completeWord()
+      │
+      ├─ POST /api/game/complete-word ────────────────────┐
+      │                                                   │
+      │                              ┌──────────────────────┐
+      │                              │ gameController       │
+      │                              │ completeWord()       │
+      │                              └──────────┬───────────┘
+      │                                         │
+      │                          ┌──────────────┼──────────────┐
+      │                          │              │              │
+      │                    ┌─────▼────┐  ┌─────▼────┐  ┌──────▼──┐
+      │                    │Validation │  │Find Word │  │Get User │
+      │                    │& Auth     │  │in DB     │  │(by JWT) │
+      │                    └───────────┘  └──────────┘  └─────────┘
+      │                          │              │              │
+      │                          └──────────────┼──────────────┘
+      │                                        │
+      │                          ┌─────────────▼──────────┐
+      │                          │User.completeWord()    │
+      │                          │ • Update coins         │
+      │                          │ • Add to completed     │
+      │                          │ • Update score/streak  │
+      │                          │ • Check level complete │
+      │                          └──────────┬────────────┘
+      │                                     │
+      │                          ┌──────────▼──────────────┐
+      │                          │ user.save()            │
+      │                          │ Save to MongoDB        │
+      │                          └──────────┬─────────────┘
+      │                                     │
+      │                         ┌───────────▼──────────┐
+      │                         │ Return Response:     │
+      │                         │ • success: true      │
+      │                         │ • data: {word, ...}  │
+      │                         │ • user stats         │
+      │                         └───────────┬──────────┘
+      │                                     │
+      ◀─────────────────────────────────────┘
+      │
+      ▼
+Response received
+      │
+      ▼
+GameContext updates
+      │
+      ├─ Update completedWords
+      ├─ Update user coins
+      ├─ Check if level complete
+      └─ Invalidate React Query
+      │
+      ▼
+Component re-renders
+      │
+      ▼
+UI updates (animations, feedback)
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 4. AUTHENTICATION FLOW                                                      │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+LOGIN PROCESS:
+──────────────
+User enters credentials
+    │
+    ▼
+authService.login()
+    │
+    ├─ POST /api/auth/login
+    │     ├─ Find user by username (case-insensitive)
+    │     ├─ Compare password with bcrypt
+    │     └─ Generate JWT token (365 days)
+    │
+    ▼
+Response: { token, user }
+    │
+    ├─ Store token in localStorage
+    ├─ Set user in AuthContext
+    └─ Redirect to /game
+    │
+    ▼
+All subsequent requests include:
+    Authorization: Bearer <token>
+    │
+    └─ Axios interceptor adds this automatically
+
+
+TOKEN VERIFICATION:
+────────────────────
+Request arrives at protected route
+    │
+    ▼
+auth middleware
+    │
+    ├─ Extract token from Authorization header
+    ├─ Verify signature using JWT_SECRET
+    ├─ Decode to get userId
+    └─ Fetch user from database
+    │
+    ▼
+Set req.user = user object
+    │
+    ▼
+Continue to controller
+    │
+    ▼
+401 Unauthorized if:
+    ├─ No token provided
+    ├─ Invalid signature
+    ├─ User not found in DB
+    └─ Token expired
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 5. STATE MANAGEMENT PATTERNS                                               │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+CONTEXT API (React)          REACT QUERY                  LOCALSTORAGE
+─────────────────────────────────────────────────────────────────────────
+AuthContext                  nextLevel query              token
+├─ user                      guestLevel query             (persisted)
+├─ isAuthenticated           leaderboard query
+├─ login()                   gameLevels query
+├─ logout()                  
+└─ updateUser()              Caching: 5 min
+                             Refetch on mount
+GameContext
+├─ currentLevel
+├─ gameState
+├─ submitWord()
+├─ autoSolve()
+├─ loadLevelById()
+└─ levelTransition
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 6. WHAT'S MISSING FOR 1V1 BATTLES                                          │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+✗ Socket.io not installed
+  └─ Needed for: real-time synchronization, live gameplay
+
+✗ No Battle model
+  └─ Needed for: storing battle records, matchmaking
+
+✗ No battle matching/pairing system
+  └─ Needed for: queue management, opponent assignment
+
+✗ No real-time game state sync
+  └─ Needed for: both players seeing same game state
+
+✗ No turn-based or split-screen logic
+  └─ Needed for: multiplayer gameplay mechanics
+
+✗ No battle statistics tracking
+  └─ Needed for: win/loss records, rating system
+
+✗ No BattleContext
+  └─ Needed for: managing battle state on frontend
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 7. KEY TECHNOLOGIES & VERSIONS                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+BACKEND:
+  Runtime:       Node.js 16+
+  Framework:     Express 4.18.2
+  Database:      MongoDB 7.5.0 (Mongoose ODM)
+  Auth:          JWT, bcryptjs
+  Validation:    express-validator
+  Security:      Helmet, CORS
+
+FRONTEND:
+  Framework:     React 18.2.0
+  Build Tool:    Vite 4.4.5
+  Routing:       React Router 6.15.0
+  Styling:       Tailwind CSS 3.3.3
+  Animations:    Framer Motion 10.16.1
+  HTTP Client:   Axios 1.5.0
+  Data Fetch:    React Query 3.39.3
+  Forms:         React Hook Form 7.45.4
+  UI/Icons:      Lucide React 0.279.0
+  Toast:         React Hot Toast 2.4.1
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 8. CRITICAL FILE RELATIONSHIPS                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+For Game Mechanics:
+  Game.jsx (page)
+    └─ GameContext (manages game state)
+    └─ GameCanvas.jsx (SVG rendering)
+    └─ gameService (API calls)
+    └─ gameController.js (backend logic)
+    └─ User model (persistence)
+
+For Authentication:
+  Login.jsx (page)
+    └─ authService (API client)
+    └─ authController.js (backend)
+    └─ auth middleware (verification)
+    └─ User model (query & store)
+    └─ AuthContext (caching)
+
+For Admin:
+  AdminRoute (guard)
+    └─ AdminDashboard.jsx (page)
+    └─ adminController.js (backend)
+    └─ All models (CRUD operations)
+
+
+═════════════════════════════════════════════════════════════════════════════════
+                    END OF ARCHITECTURE OVERVIEW
+═════════════════════════════════════════════════════════════════════════════════
