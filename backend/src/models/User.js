@@ -94,6 +94,11 @@ const userSchema = new mongoose.Schema({
     default: 100,
     min: 0
   },
+  experience: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
   levelsCleared: {
     type: Number,
     default: 0,
@@ -143,6 +148,17 @@ const userSchema = new mongoose.Schema({
   lastActive: {
     type: Date,
     default: Date.now
+  },
+  battleStats: {
+    totalBattles: { type: Number, default: 0 },
+    wins: { type: Number, default: 0 },
+    losses: { type: Number, default: 0 },
+    draws: { type: Number, default: 0 },
+    winRate: { type: Number, default: 0 },
+    totalWordsFound: { type: Number, default: 0 },
+    fastestWin: { type: Number, default: null },
+    longestStreak: { type: Number, default: 0 },
+    currentStreak: { type: Number, default: 0 }
   }
 }, {
   timestamps: true

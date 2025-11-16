@@ -58,6 +58,13 @@ const Home = () => {
       bgGradient: 'from-accent-500/20 to-accent-600/10'
     },
     {
+      icon: Users,
+      title: 'نبرد آنلاین ۱v۱',
+      description: 'در نبردهای زنده با بازیکنان واقعی رقابت کن',
+      color: 'text-rose-400',
+      bgGradient: 'from-rose-500/20 to-rose-600/10'
+    },
+    {
       icon: Award,
       title: 'دستاوردها',
       description: 'دستاوردها رو آنلاک کن و جایزه بگیر!',
@@ -97,6 +104,14 @@ const Home = () => {
           >
             <Trophy className="w-6 h-6" />
             <span>جدول امتیازات 🏆</span>
+          </Link>
+
+          <Link
+            to="/battle"
+            className="bg-gradient-to-r from-rose-500 to-orange-500 text-white font-bold py-4 px-10 rounded-xl transition-all transform hover:scale-105 hover:-translate-y-1 flex items-center justify-center space-x-2 space-x-reverse shadow-[0_0_25px_rgba(244,114,182,0.5)]"
+          >
+            <Users className="w-6 h-6" />
+            <span>ورود به نبرد ⚔️</span>
           </Link>
         </div>
       </motion.div>
