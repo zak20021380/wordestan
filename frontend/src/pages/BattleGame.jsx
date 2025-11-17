@@ -33,7 +33,7 @@ const BattleGame = () => {
     confirmReady,
     forfeitBattle,
   } = useBattle();
-  const { currentLevel, gameState, loadLevelById, levelLoading } = useGame();
+  const { currentLevel, gameState, loadBattleBoard, levelLoading } = useGame();
   const navigate = useNavigate();
   const loadedLevelRef = useRef(null);
   const syncedWordsRef = useRef(new Set());
@@ -46,9 +46,13 @@ const BattleGame = () => {
   const [powerupBanner, setPowerupBanner] = useState(null);
   const [shuffleBanner, setShuffleBanner] = useState(null);
 
-  const battleLevelId = state.battle?.level?._id?.toString() || null;
+  const battleLevelId = state.battle?.level?._id?.toString() || state.battle?.level?.id || null;
   const currentLevelId = currentLevel?._id?.toString() || null;
-  const boardReady = Boolean(battleLevelId && currentLevelId === battleLevelId);
+  const boardReady = Boolean(
+    battleLevelId
+      && currentLevelId === battleLevelId
+      && currentLevel?.isBattleLevel
+  );
 
   const battleWordGroups = useMemo(() => {
     if (!Array.isArray(currentLevel?.words)) {
@@ -142,27 +146,37 @@ const BattleGame = () => {
   }, [state.battle?.battleId]);
 
   useEffect(() => {
-    const battleLevelIdValue = state.battle?.level?._id;
-    if (!state.battle || !battleLevelIdValue) {
+    const levelPayload = state.battle?.level;
+    if (!state.battle || !levelPayload?.letters) {
       return;
     }
 
-    if (loadedLevelRef.current === battleLevelIdValue) {
+    const levelId = levelPayload._id?.toString() || levelPayload.id || state.battle.battleId;
+    if (!levelId || loadedLevelRef.current === levelId) {
       return;
     }
 
-    loadLevelById(battleLevelIdValue, {
-      completionSource: 'battle',
-      transitionType: 'changed',
-    })
-      .then(() => {
-        loadedLevelRef.current = battleLevelIdValue;
-      })
-      .catch((error) => {
-        console.error('Failed to load battle level', error);
-        toast.error(error.message || 'بارگذاری مرحله نبرد ممکن نشد');
+    try {
+      const completedWords = Array.isArray(state.myWords)
+        ? state.myWords
+            .map((entry) => (entry?.word || entry?.text || '').toUpperCase())
+            .filter(Boolean)
+        : [];
+
+      loadBattleBoard({
+        ...levelPayload,
+        _id: levelId,
+        battleId: state.battle.battleId,
+        completedWords,
       });
-  }, [state.battle?.level?._id, loadLevelById]);
+      loadedLevelRef.current = levelId;
+      syncedWordsRef.current = new Set(completedWords);
+      seededInitialWordsRef.current = Boolean(completedWords.length);
+    } catch (error) {
+      console.error('Failed to prepare battle board', error);
+      toast.error(error.message || 'بارگذاری شبکه نبرد ممکن نشد');
+    }
+  }, [loadBattleBoard, state.battle, state.myWords]);
 
   useEffect(() => {
     if (!state.battle?.battleId || !boardReady || seededInitialWordsRef.current) {
