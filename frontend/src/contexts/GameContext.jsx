@@ -793,7 +793,7 @@ export const GameProvider = ({ children }) => {
     setLevelMeta({
       status: 'battle_level',
       battleId: payload.battleId || null,
-      wordSetId: levelId,
+      battleLevelId: levelId,
       totalWords: normalizedWords.length,
     });
     setGameState({

@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const BattleWordSet = require('../models/BattleWordSet');
+const BattleLevel = require('../models/BattleLevel');
 
 const ENGLISH_WORD_REGEX = /^[A-Z]{3,15}$/;
 const LETTER_REGEX = /^[A-Z]$/;
@@ -29,11 +29,11 @@ const parseLetterPool = (input) => {
   const letters = [];
   source.forEach((item) => {
     const letter = (item || '').toString().toUpperCase().trim();
-    if (LETTER_REGEX.test(letter) && !letters.includes(letter)) {
+    if (LETTER_REGEX.test(letter)) {
       letters.push(letter);
     }
   });
-  return letters;
+  return letters.slice(0, MAX_LETTER_POOL);
 };
 
 const ensureLetterPoolRules = (letters = []) => {
@@ -107,7 +107,7 @@ const prepareWordList = (words = [], letterPool = new Set()) => {
 
 const ensureActivationRules = (words, isActive) => {
   if (isActive && words.length < MIN_ACTIVE_WORDS) {
-    throw new Error(`برای فعال شدن مجموعه حداقل ${MIN_ACTIVE_WORDS} کلمه لازم است`);
+    throw new Error(`برای فعال شدن مرحله حداقل ${MIN_ACTIVE_WORDS} کلمه لازم است`);
   }
 };
 
@@ -119,7 +119,7 @@ const buildPaginationMeta = (total, page, limit) => ({
 });
 
 const buildWordStats = async () => {
-  const [stats] = await BattleWordSet.aggregate([
+  const [stats] = await BattleLevel.aggregate([
     {
       $facet: {
         totals: [
@@ -143,14 +143,14 @@ const buildWordStats = async () => {
 
   const totals = stats?.totals?.[0] ?? { totalSets: 0, totalWords: 0, activeSets: 0 };
   return {
-    totalSets: totals.totalSets || 0,
+    totalLevels: totals.totalSets || 0,
     totalWords: totals.totalWords || 0,
-    activeSets: totals.activeSets || 0,
-    mostUsedSet: stats?.usage?.[0] || null,
+    activeLevels: totals.activeSets || 0,
+    mostUsedLevel: stats?.usage?.[0] || null,
   };
 };
 
-exports.getAllWordSets = async (req, res) => {
+exports.getAllLevels = async (req, res) => {
   try {
     const { page = 1, limit = 12, search = '', status = '', word = '' } = req.query;
     const numericPage = Math.max(1, Number(page));
@@ -167,12 +167,12 @@ exports.getAllWordSets = async (req, res) => {
     }
 
     const [items, total, stats] = await Promise.all([
-      BattleWordSet.find(filters)
+      BattleLevel.find(filters)
         .sort({ updatedAt: -1 })
         .skip((numericPage - 1) * numericLimit)
         .limit(numericLimit)
         .lean(),
-      BattleWordSet.countDocuments(filters),
+      BattleLevel.countDocuments(filters),
       buildWordStats(),
     ]);
 
@@ -183,28 +183,28 @@ exports.getAllWordSets = async (req, res) => {
       stats,
     });
   } catch (error) {
-    console.error('getAllWordSets error:', error);
-    res.status(500).json({ success: false, message: 'خطا در دریافت مجموعه‌ها' });
+    console.error('getBattleLevels error:', error);
+    res.status(500).json({ success: false, message: 'خطا در دریافت مرحله‌ها' });
   }
 };
 
-exports.getWordSet = async (req, res) => {
+exports.getLevel = async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ success: false, message: 'شناسه نامعتبر است' });
     }
-    const set = await BattleWordSet.findById(req.params.id).lean();
+    const set = await BattleLevel.findById(req.params.id).lean();
     if (!set) {
-      return res.status(404).json({ success: false, message: 'مجموعه یافت نشد' });
+      return res.status(404).json({ success: false, message: 'مرحله یافت نشد' });
     }
     res.json({ success: true, data: set });
   } catch (error) {
-    console.error('getWordSet error:', error);
-    res.status(500).json({ success: false, message: 'خطا در دریافت مجموعه' });
+    console.error('getBattleLevel error:', error);
+    res.status(500).json({ success: false, message: 'خطا در دریافت مرحله' });
   }
 };
 
-exports.createWordSet = async (req, res) => {
+exports.createLevel = async (req, res) => {
   try {
     const {
       name,
@@ -217,37 +217,38 @@ exports.createWordSet = async (req, res) => {
     ensureLetterPoolRules(letters);
     const words = prepareWordList(rawWords, new Set(letters));
     if (!words.length) {
-      throw new Error('حداقل یک کلمه برای ایجاد مجموعه لازم است');
+      throw new Error('حداقل یک کلمه برای ایجاد مرحله لازم است');
     }
     ensureActivationRules(words, isActive);
 
-    const created = await BattleWordSet.create({
+    const created = await BattleLevel.create({
       name,
       letters,
       words,
+      gridSize: letters.length,
       isActive,
       createdBy: req.user?._id || null,
     });
 
     res.status(201).json({ success: true, data: created });
   } catch (error) {
-    console.error('createWordSet error:', error);
+    console.error('createBattleLevel error:', error);
     const message = error.message?.includes('duplicate key')
-      ? 'نام مجموعه تکراری است'
-      : error.message || 'خطا در ایجاد مجموعه';
+      ? 'نام مرحله تکراری است'
+      : error.message || 'خطا در ایجاد مرحله';
     res.status(400).json({ success: false, message });
   }
 };
 
-exports.updateWordSet = async (req, res) => {
+exports.updateLevel = async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ success: false, message: 'شناسه نامعتبر است' });
     }
 
-    const set = await BattleWordSet.findById(req.params.id);
+    const set = await BattleLevel.findById(req.params.id);
     if (!set) {
-      return res.status(404).json({ success: false, message: 'مجموعه یافت نشد' });
+      return res.status(404).json({ success: false, message: 'مرحله یافت نشد' });
     }
 
     const payload = { ...req.body };
@@ -256,6 +257,7 @@ exports.updateWordSet = async (req, res) => {
       const letters = parseLetterPool(payload.letters);
       ensureLetterPoolRules(letters);
       set.letters = letters;
+      set.gridSize = letters.length;
     }
     if (typeof payload.isActive === 'boolean') set.isActive = payload.isActive;
 
@@ -268,63 +270,63 @@ exports.updateWordSet = async (req, res) => {
     await set.save();
     res.json({ success: true, data: set });
   } catch (error) {
-    console.error('updateWordSet error:', error);
-    res.status(400).json({ success: false, message: error.message || 'خطا در بروزرسانی مجموعه' });
+    console.error('updateBattleLevel error:', error);
+    res.status(400).json({ success: false, message: error.message || 'خطا در بروزرسانی مرحله' });
   }
 };
 
-exports.deleteWordSet = async (req, res) => {
+exports.deleteLevel = async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ success: false, message: 'شناسه نامعتبر است' });
     }
-    const set = await BattleWordSet.findById(req.params.id);
+    const set = await BattleLevel.findById(req.params.id);
     if (!set) {
-      return res.status(404).json({ success: false, message: 'مجموعه یافت نشد' });
+      return res.status(404).json({ success: false, message: 'مرحله یافت نشد' });
     }
     if (set.usageCount > 0) {
-      return res.status(400).json({ success: false, message: 'این مجموعه در نبردها استفاده شده و قابل حذف نیست' });
+      return res.status(400).json({ success: false, message: 'این مرحله در نبردها استفاده شده و قابل حذف نیست' });
     }
     await set.deleteOne();
-    res.json({ success: true, message: 'مجموعه حذف شد' });
+    res.json({ success: true, message: 'مرحله حذف شد' });
   } catch (error) {
-    console.error('deleteWordSet error:', error);
-    res.status(500).json({ success: false, message: 'خطا در حذف مجموعه' });
+    console.error('deleteBattleLevel error:', error);
+    res.status(500).json({ success: false, message: 'خطا در حذف مرحله' });
   }
 };
 
-exports.addWordToSet = async (req, res) => {
+exports.addWordToLevel = async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ success: false, message: 'شناسه نامعتبر است' });
     }
-    const set = await BattleWordSet.findById(req.params.id);
+    const set = await BattleLevel.findById(req.params.id);
     if (!set) {
-      return res.status(404).json({ success: false, message: 'مجموعه یافت نشد' });
+      return res.status(404).json({ success: false, message: 'مرحله یافت نشد' });
     }
     const wordPayload = transformWordPayload(req.body || {}, new Set(set.letters));
     if (set.words.some((item) => item.word === wordPayload.word)) {
-      return res.status(400).json({ success: false, message: 'این کلمه قبلاً به مجموعه اضافه شده است' });
+      return res.status(400).json({ success: false, message: 'این کلمه قبلاً به مرحله اضافه شده است' });
     }
     set.words.push(wordPayload);
     ensureActivationRules(set.words, set.isActive);
     await set.save();
     res.status(201).json({ success: true, data: set });
   } catch (error) {
-    console.error('addWordToSet error:', error);
+    console.error('addWordToLevel error:', error);
     res.status(400).json({ success: false, message: error.message || 'افزودن کلمه ناموفق بود' });
   }
 };
 
-exports.removeWordFromSet = async (req, res) => {
+exports.removeWordFromLevel = async (req, res) => {
   try {
     const { id, wordId } = req.params;
     if (!mongoose.Types.ObjectId.isValid(id) || !mongoose.Types.ObjectId.isValid(wordId)) {
       return res.status(400).json({ success: false, message: 'شناسه نامعتبر است' });
     }
-    const set = await BattleWordSet.findById(id);
+    const set = await BattleLevel.findById(id);
     if (!set) {
-      return res.status(404).json({ success: false, message: 'مجموعه یافت نشد' });
+      return res.status(404).json({ success: false, message: 'مرحله یافت نشد' });
     }
     const initialLength = set.words.length;
     set.words = set.words.filter((word) => word._id.toString() !== wordId);
@@ -335,7 +337,7 @@ exports.removeWordFromSet = async (req, res) => {
     await set.save();
     res.json({ success: true, data: set });
   } catch (error) {
-    console.error('removeWordFromSet error:', error);
+    console.error('removeWordFromLevel error:', error);
     res.status(400).json({ success: false, message: error.message || 'حذف کلمه ناموفق بود' });
   }
 };
@@ -344,11 +346,11 @@ exports.bulkImport = async (req, res) => {
   try {
     const { setId, words: rawWords } = req.body || {};
     if (!mongoose.Types.ObjectId.isValid(setId)) {
-      return res.status(400).json({ success: false, message: 'شناسه مجموعه نامعتبر است' });
+      return res.status(400).json({ success: false, message: 'شناسه مرحله نامعتبر است' });
     }
-    const set = await BattleWordSet.findById(setId);
+    const set = await BattleLevel.findById(setId);
     if (!set) {
-      return res.status(404).json({ success: false, message: 'مجموعه یافت نشد' });
+      return res.status(404).json({ success: false, message: 'مرحله یافت نشد' });
     }
     const words = prepareWordList(rawWords, new Set(set.letters));
     const existingWords = new Set(set.words.map((word) => word.word));
@@ -366,20 +368,20 @@ exports.bulkImport = async (req, res) => {
   }
 };
 
-exports.getRandomBattleWords = async (req, res) => {
+exports.getRandomBattleLevel = async (req, res) => {
   try {
-    const [set] = await BattleWordSet.aggregate([
+    const [set] = await BattleLevel.aggregate([
       { $match: { isActive: true, 'words.9': { $exists: true } } },
       { $sample: { size: 1 } },
     ]);
 
     if (!set) {
-      return res.status(404).json({ success: false, message: 'مجموعه فعال برای نبرد وجود ندارد' });
+      return res.status(404).json({ success: false, message: 'مرحله فعال برای نبرد وجود ندارد' });
     }
 
     res.json({ success: true, data: set });
   } catch (error) {
-    console.error('getRandomBattleWords error:', error);
-    res.status(500).json({ success: false, message: 'خطا در انتخاب مجموعه' });
+    console.error('getRandomBattleLevel error:', error);
+    res.status(500).json({ success: false, message: 'خطا در انتخاب مرحله' });
   }
 };

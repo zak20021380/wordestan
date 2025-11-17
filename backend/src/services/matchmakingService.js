@@ -1,13 +1,12 @@
 const crypto = require('crypto');
 const BattleQueue = require('../models/BattleQueue');
 const Battle = require('../models/Battle');
-const BattleWordSet = require('../models/BattleWordSet');
+const BattleLevel = require('../models/BattleLevel');
 const User = require('../models/User');
 
 const BATTLE_DURATION_MS = 120000;
 const DISCONNECT_GRACE_MS = 10000;
 const MIN_WORD_INTERVAL_MS = 100;
-const DEFAULT_WORD_COUNT = 12;
 const DEFAULT_GRID_SIZE = 12;
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
@@ -18,14 +17,6 @@ const shuffleArray = (items = []) => {
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
   return arr;
-};
-
-const selectRandomWords = (words, count = DEFAULT_WORD_COUNT) => {
-  if (!Array.isArray(words) || words.length === 0) {
-    return [];
-  }
-  const pool = shuffleArray(words);
-  return pool.slice(0, Math.min(pool.length, count));
 };
 
 const generateGridFromWords = (words = [], gridSize = 12) => {
@@ -45,10 +36,12 @@ const generateGridFromWords = (words = [], gridSize = 12) => {
 
 const toBattleLevelWords = (words = []) => (
   words.map(word => ({
+    _id: word._id || undefined,
     text: word.word,
     length: word.word.length,
     points: 10 + Math.max(word.word.length - 3, 0) * 2,
     definition: word.meaning || word.definition || '',
+    meaning: word.meaning || word.definition || '',
   }))
 );
 
@@ -120,27 +113,37 @@ class MatchmakingService {
   }
 
   async createBattle(type, players) {
-    const wordSet = await this.pickBattleWordSet();
-    if (!wordSet) {
-      throw new Error('No battle word sets available');
+    const battleLevel = await this.pickBattleLevel();
+    if (!battleLevel) {
+      throw new Error('No battle levels available');
     }
 
-    const selectedWords = selectRandomWords(wordSet.words, DEFAULT_WORD_COUNT);
-    const levelWords = toBattleLevelWords(selectedWords);
-    const letterPool = Array.isArray(wordSet.letters) && wordSet.letters.length
-      ? [...wordSet.letters]
-      : generateGridFromWords(selectedWords, DEFAULT_GRID_SIZE);
+    const levelWords = toBattleLevelWords(battleLevel.words);
+    const desiredGridSize = battleLevel.gridSize || DEFAULT_GRID_SIZE;
+    const presetLetters = Array.isArray(battleLevel.letters) && battleLevel.letters.length
+      ? [...battleLevel.letters]
+      : typeof battleLevel.letterString === 'string' && battleLevel.letterString.length
+        ? battleLevel.letterString.split('')
+        : [];
+
+    let letterPool = presetLetters.slice(0, desiredGridSize);
+    if (letterPool.length < desiredGridSize) {
+      const fallbackLetters = generateGridFromWords(battleLevel.words, desiredGridSize);
+      letterPool = fallbackLetters.slice(0, desiredGridSize);
+    }
+
+    if (letterPool.length < desiredGridSize) {
+      while (letterPool.length < desiredGridSize) {
+        letterPool.push(ALPHABET[Math.floor(Math.random() * ALPHABET.length)]);
+      }
+    }
+
     const levelPayload = {
-      _id: wordSet._id,
-      title: wordSet.name,
+      _id: battleLevel._id,
+      title: battleLevel.name,
       letters: letterPool.join(''),
       letterPool,
-      words: selectedWords.map(word => ({
-        _id: word._id,
-        text: word.word,
-        length: word.word.length,
-        meaning: word.meaning || '',
-      })),
+      words: levelWords,
     };
 
     const battleId = crypto.randomBytes(6).toString('hex');
@@ -168,7 +171,7 @@ class MatchmakingService {
       levelWords,
       levelWordSet: new Set(levelWords.map(word => word.text)),
       players: playerState,
-      wordSetId: wordSet._id,
+      battleLevelId: battleLevel._id,
       createdAt: Date.now(),
       startTime: null,
       endTime: null,
@@ -183,8 +186,8 @@ class MatchmakingService {
     await Battle.create({
       battleId,
       type,
-      level: wordSet._id,
-      wordSet: wordSet._id,
+      level: null,
+      battleLevel: battleLevel._id,
       letters: levelPayload.letters,
       words: levelWords,
       status: 'waiting',
@@ -199,7 +202,7 @@ class MatchmakingService {
       }))
     });
 
-    await BattleWordSet.findByIdAndUpdate(wordSet._id, { $inc: { usageCount: 1 } });
+    await BattleLevel.findByIdAndUpdate(battleLevel._id, { $inc: { usageCount: 1 } });
 
     return state;
   }
@@ -495,8 +498,8 @@ class MatchmakingService {
     return battle;
   }
 
-  async pickBattleWordSet() {
-    return BattleWordSet.findOne({ isActive: true, 'words.9': { $exists: true } })
+  async pickBattleLevel() {
+    return BattleLevel.findOne({ isActive: true, 'words.9': { $exists: true } })
       .sort({ usageCount: 1, updatedAt: -1 })
       .lean(false);
   }
