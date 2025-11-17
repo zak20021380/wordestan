@@ -24,12 +24,12 @@ const withData = (response) => response.data?.data || response.data;
 
 export const battleWordsService = {
   async list(params = {}) {
-    const response = await api.get('/admin/battle-words', { params });
-    return {
-      items: withData(response) || [],
-      meta: response.data?.meta || { page: 1, limit: 12, total: 0, pages: 1 },
-      stats: response.data?.stats || {},
-    };
+      const response = await api.get('/admin/battle-words', { params });
+      return {
+        items: withData(response) || [],
+        meta: response.data?.meta || { page: 1, limit: 12, total: 0, pages: 1 },
+        stats: response.data?.stats || {},
+      };
   },
 
   async get(id) {
@@ -60,10 +60,5 @@ export const battleWordsService = {
   async removeWord(id, wordId) {
     const response = await api.delete(`/admin/battle-words/${id}/words/${wordId}`);
     return withData(response);
-  },
-
-  async bulkImport(setId, words) {
-    const response = await api.post('/admin/battle-words/import', { setId, words });
-    return response.data;
   },
 };

@@ -1,17 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-hot-toast';
-import { Plus, RefreshCcw, Search, Upload } from 'lucide-react';
+import { Plus, RefreshCcw, Search } from 'lucide-react';
 import { battleWordsService } from '../../services/battleWordsService';
 import WordSetCard from '../../components/Admin/WordSetCard';
 import WordSetForm from '../../components/Admin/WordSetForm';
-import BulkImport from '../../components/Admin/BulkImport';
-
-const difficultyOptions = [
-  { value: '', label: 'همه سختی‌ها' },
-  { value: 'آسان', label: 'آسان' },
-  { value: 'متوسط', label: 'متوسط' },
-  { value: 'سخت', label: 'سخت' },
-];
 
 const statusOptions = [
   { value: '', label: 'همه وضعیت‌ها' },
@@ -23,11 +15,10 @@ const BattleWords = () => {
   const [wordSets, setWordSets] = useState([]);
   const [stats, setStats] = useState(null);
   const [meta, setMeta] = useState({ page: 1, pages: 1, total: 0, limit: 12 });
-  const [filters, setFilters] = useState({ search: '', difficulty: '', status: '' });
+  const [filters, setFilters] = useState({ search: '', status: '' });
   const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
   const [selectedSet, setSelectedSet] = useState(null);
-  const [importTarget, setImportTarget] = useState(null);
 
   const loadWordSets = async (page = meta.page) => {
     setLoading(true);
@@ -35,7 +26,6 @@ const BattleWords = () => {
       const response = await battleWordsService.list({
         page,
         search: filters.search || undefined,
-        difficulty: filters.difficulty || undefined,
         status: filters.status || undefined,
       });
       setWordSets(response.items || []);
@@ -49,9 +39,12 @@ const BattleWords = () => {
   };
 
   useEffect(() => {
-    loadWordSets(1);
+    const timer = setTimeout(() => {
+      loadWordSets(1);
+    }, 250);
+    return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters.difficulty, filters.status]);
+  }, [filters.status, filters.search]);
 
   const handleSearch = (event) => {
     setFilters((prev) => ({ ...prev, search: event.target.value }));
@@ -97,21 +90,10 @@ const BattleWords = () => {
     }
   };
 
-  const handleBulkImport = async (rows) => {
-    if (!importTarget?._id) return;
-    try {
-      await battleWordsService.bulkImport(importTarget._id, rows);
-      toast.success('کلمات با موفقیت افزوده شدند');
-      setImportTarget(null);
-      loadWordSets(meta.page);
-    } catch (error) {
-      toast.error(error.message || 'ورود گروهی ناموفق بود');
-    }
-  };
-
   const statCards = useMemo(() => (
     [
       { label: 'کل مجموعه‌ها', value: stats?.totalSets || 0 },
+      { label: 'مجموعه‌های فعال', value: stats?.activeSets || 0 },
       { label: 'کل کلمات', value: stats?.totalWords || 0 },
       {
         label: 'پرمصرف‌ترین مجموعه',
@@ -172,20 +154,9 @@ const BattleWords = () => {
           </div>
           <div className="flex items-center gap-3">
             <select
-              value={filters.difficulty}
-              onChange={(e) => setFilters((prev) => ({ ...prev, difficulty: e.target.value }))}
-              className="flex-1 rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-sm"
-            >
-              {difficultyOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            <select
               value={filters.status}
               onChange={(e) => setFilters((prev) => ({ ...prev, status: e.target.value }))}
-              className="flex-1 rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-sm"
+              className="w-full rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-sm"
             >
               {statusOptions.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -218,13 +189,6 @@ const BattleWords = () => {
                 onDelete={handleDelete}
                 onToggleActive={handleToggleActive}
               />
-              <button
-                type="button"
-                onClick={() => setImportTarget(wordSet)}
-                className="flex items-center gap-2 text-xs text-white/60 hover:text-white"
-              >
-                <Upload className="w-4 h-4" /> ورود گروهی کلمات
-              </button>
             </div>
           ))}
         </div>
@@ -240,11 +204,6 @@ const BattleWords = () => {
         onSubmit={handleSubmitForm}
       />
 
-      <BulkImport
-        open={Boolean(importTarget)}
-        onClose={() => setImportTarget(null)}
-        onImport={handleBulkImport}
-      />
     </div>
   );
 };

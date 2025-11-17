@@ -9,43 +9,25 @@ const battleWordSchema = new mongoose.Schema({
     uppercase: true,
     trim: true,
   },
-  definition: {
+  meaning: {
     type: String,
     trim: true,
     maxlength: 280,
     default: '',
   },
-  category: {
-    type: String,
-    trim: true,
-    maxlength: 64,
-    default: 'عمومی',
-  },
-  difficulty: {
-    type: Number,
-    min: 1,
-    max: 5,
-    default: 3,
-  },
-  letters: {
-    type: [String],
-    default: [],
-  },
-  minLetters: {
-    type: Number,
-    min: 3,
-    default: 3,
-  },
 }, { _id: true });
 
 battleWordSchema.pre('validate', function(next) {
   if (this.word) {
-    this.word = this.word.toUpperCase().trim();
-    this.letters = this.word.split('');
-    this.minLetters = this.minLetters || this.word.length;
+    this.word = this.word.toUpperCase().replace(/[^A-Z]/g, '').trim();
+  }
+  if (this.meaning) {
+    this.meaning = this.meaning.trim();
   }
   next();
 });
+
+const LETTER_REGEX = /^[A-Z]$/;
 
 const battleWordSetSchema = new mongoose.Schema({
   name: {
@@ -55,20 +37,36 @@ const battleWordSetSchema = new mongoose.Schema({
     minlength: 3,
     maxlength: 120,
   },
-  difficulty: {
-    type: String,
-    enum: ['آسان', 'متوسط', 'سخت'],
-    default: 'متوسط',
+  letters: {
+    type: [String],
+    required: true,
+    default: [],
+    validate: {
+      validator(value) {
+        if (!Array.isArray(value) || value.length < 8 || value.length > 20) {
+          return false;
+        }
+        return value.every(letter => LETTER_REGEX.test(letter));
+      },
+      message: 'حروف شبکه باید شامل ۸ تا ۲۰ حرف انگلیسی باشد',
+    },
+    set(value) {
+      if (!Array.isArray(value)) {
+        return [];
+      }
+      const unique = [];
+      value.forEach(letter => {
+        const normalized = (letter || '').toString().toUpperCase().trim();
+        if (LETTER_REGEX.test(normalized) && !unique.includes(normalized)) {
+          unique.push(normalized);
+        }
+      });
+      return unique;
+    },
   },
   words: {
     type: [battleWordSchema],
     default: [],
-  },
-  gridSize: {
-    type: Number,
-    min: 6,
-    max: 24,
-    default: 12,
   },
   isActive: {
     type: Boolean,
@@ -86,7 +84,7 @@ const battleWordSetSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 battleWordSetSchema.index({ name: 1 }, { unique: true });
-battleWordSetSchema.index({ difficulty: 1, isActive: 1 });
+battleWordSetSchema.index({ isActive: 1 });
 battleWordSetSchema.index({ 'words.word': 1 });
 
 module.exports = mongoose.model('BattleWordSet', battleWordSetSchema);

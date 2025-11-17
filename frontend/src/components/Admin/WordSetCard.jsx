@@ -1,18 +1,16 @@
 import { PenSquare, Trash2, ShieldCheck, Sword } from 'lucide-react';
 
-const difficultyClasses = {
-  'آسان': 'text-emerald-400 bg-emerald-500/10',
-  'متوسط': 'text-amber-400 bg-amber-500/10',
-  'سخت': 'text-rose-400 bg-rose-500/10',
-};
-
 const WordSetCard = ({ wordSet, onEdit, onDelete, onToggleActive }) => {
   if (!wordSet) {
     return null;
   }
 
-  const difficultyChip = difficultyClasses[wordSet.difficulty] || difficultyClasses['متوسط'];
   const wordCount = wordSet.words?.length || 0;
+  const letters = Array.isArray(wordSet.letters)
+    ? wordSet.letters
+    : typeof wordSet.letters === 'string'
+      ? wordSet.letters.split('')
+      : [];
 
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 p-5 text-white flex flex-col gap-4">
@@ -23,11 +21,8 @@ const WordSetCard = ({ wordSet, onEdit, onDelete, onToggleActive }) => {
             <span>{wordSet.name}</span>
           </div>
           <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-white/60">
-            <span className={`px-3 py-1 rounded-full ${difficultyChip}`}>
-              سختی: {wordSet.difficulty}
-            </span>
             <span className="px-3 py-1 rounded-full bg-white/10">{wordCount} کلمه</span>
-            <span className="px-3 py-1 rounded-full bg-white/10">شبکه {wordSet.gridSize} حرفی</span>
+            <span className="px-3 py-1 rounded-full bg-white/10">{letters.length} حرف شبکه</span>
             {wordSet.isActive ? (
               <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-300 flex items-center gap-1">
                 <ShieldCheck className="w-4 h-4" /> فعال
@@ -64,12 +59,13 @@ const WordSetCard = ({ wordSet, onEdit, onDelete, onToggleActive }) => {
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-2 text-xs text-white/60">
-          {(wordSet.words || []).slice(0, 4).map(word => (
-            <span key={word._id || word.word} className="px-2 py-1 rounded-full bg-white/10">
-              {word.word || word.text}
+          {letters.length === 0 && <span>حروف ثبت نشده</span>}
+          {letters.slice(0, 12).map((letter) => (
+            <span key={`${wordSet._id}-${letter}`} className="px-2 py-1 rounded-full bg-white/10 font-semibold">
+              {letter}
             </span>
           ))}
-          {wordCount > 4 && <span>+{wordCount - 4} کلمه دیگر</span>}
+          {letters.length > 12 && <span>+{letters.length - 12}</span>}
         </div>
         <button
           type="button"
