@@ -39,8 +39,8 @@ const Admin = () => {
       icon: Trophy
     },
     {
-      name: 'مدیریت کلمات نبرد',
-      href: '/admin/battle-words',
+      name: 'مرحله‌های نبرد',
+      href: '/admin/battle-levels',
       icon: Sword
     },
     {

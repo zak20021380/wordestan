@@ -19,7 +19,7 @@ const storeRoutes = require('./src/routes/store');
 const paymentRoutes = require('./src/routes/payment');
 const leitnerRoutes = require('./src/routes/leitner');
 const battleRoutes = require('./src/routes/battle');
-const battleWordsRoutes = require('./src/routes/battleWords');
+const battleLevelsRoutes = require('./src/routes/battleLevels');
 const initBattleSocket = require('./src/socket/battleSocket');
 
 // Initialize Express app
@@ -81,7 +81,7 @@ app.use('/api/store', storeRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/leitner', leitnerRoutes);
 app.use('/api/battle', battleRoutes);
-app.use('/api', battleWordsRoutes);
+app.use('/api', battleLevelsRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

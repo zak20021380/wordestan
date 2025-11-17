@@ -5,7 +5,7 @@ const sanitizeBattleResponse = (battle) => ({
   battleId: battle.battleId,
   type: battle.type,
   status: battle.status,
-  level: battle.level,
+  level: battle.battleLevel || battle.level,
   startTime: battle.startTime,
   endTime: battle.endTime,
   duration: battle.duration,

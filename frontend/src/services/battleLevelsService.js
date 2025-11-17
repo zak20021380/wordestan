@@ -22,43 +22,43 @@ api.interceptors.request.use(
 
 const withData = (response) => response.data?.data || response.data;
 
-export const battleWordsService = {
+export const battleLevelsService = {
   async list(params = {}) {
-      const response = await api.get('/admin/battle-words', { params });
-      return {
-        items: withData(response) || [],
-        meta: response.data?.meta || { page: 1, limit: 12, total: 0, pages: 1 },
-        stats: response.data?.stats || {},
-      };
+    const response = await api.get('/admin/battle-levels', { params });
+    return {
+      items: withData(response) || [],
+      meta: response.data?.meta || { page: 1, limit: 12, total: 0, pages: 1 },
+      stats: response.data?.stats || {},
+    };
   },
 
   async get(id) {
-    const response = await api.get(`/admin/battle-words/${id}`);
+    const response = await api.get(`/admin/battle-levels/${id}`);
     return withData(response);
   },
 
   async create(payload) {
-    const response = await api.post('/admin/battle-words', payload);
+    const response = await api.post('/admin/battle-levels', payload);
     return withData(response);
   },
 
   async update(id, payload) {
-    const response = await api.put(`/admin/battle-words/${id}`, payload);
+    const response = await api.put(`/admin/battle-levels/${id}`, payload);
     return withData(response);
   },
 
   async remove(id) {
-    const response = await api.delete(`/admin/battle-words/${id}`);
+    const response = await api.delete(`/admin/battle-levels/${id}`);
     return response.data;
   },
 
   async addWord(id, payload) {
-    const response = await api.post(`/admin/battle-words/${id}/words`, payload);
+    const response = await api.post(`/admin/battle-levels/${id}/words`, payload);
     return withData(response);
   },
 
   async removeWord(id, wordId) {
-    const response = await api.delete(`/admin/battle-words/${id}/words/${wordId}`);
+    const response = await api.delete(`/admin/battle-levels/${id}/words/${wordId}`);
     return withData(response);
   },
 };

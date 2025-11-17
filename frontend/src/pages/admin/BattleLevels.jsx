@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { Plus, RefreshCcw, Search } from 'lucide-react';
-import { battleWordsService } from '../../services/battleWordsService';
-import WordSetCard from '../../components/Admin/WordSetCard';
-import WordSetForm from '../../components/Admin/WordSetForm';
+import { battleLevelsService } from '../../services/battleLevelsService';
+import BattleLevelCard from '../../components/Admin/BattleLevelCard';
+import BattleLevelForm from '../../components/Admin/BattleLevelForm';
 
 const statusOptions = [
   { value: '', label: 'همه وضعیت‌ها' },
@@ -11,8 +11,8 @@ const statusOptions = [
   { value: 'inactive', label: 'غیرفعال' },
 ];
 
-const BattleWords = () => {
-  const [wordSets, setWordSets] = useState([]);
+const BattleLevels = () => {
+  const [levels, setLevels] = useState([]);
   const [stats, setStats] = useState(null);
   const [meta, setMeta] = useState({ page: 1, pages: 1, total: 0, limit: 12 });
   const [filters, setFilters] = useState({ search: '', status: '' });
@@ -20,19 +20,19 @@ const BattleWords = () => {
   const [formOpen, setFormOpen] = useState(false);
   const [selectedSet, setSelectedSet] = useState(null);
 
-  const loadWordSets = async (page = meta.page) => {
+  const loadLevels = async (page = meta.page) => {
     setLoading(true);
     try {
-      const response = await battleWordsService.list({
+      const response = await battleLevelsService.list({
         page,
         search: filters.search || undefined,
         status: filters.status || undefined,
       });
-      setWordSets(response.items || []);
+      setLevels(response.items || []);
       setStats(response.stats || {});
       setMeta(response.meta || { page: 1, pages: 1, total: 0, limit: 12 });
     } catch (error) {
-      toast.error(error.message || 'بارگذاری مجموعه‌ها ناموفق بود');
+      toast.error(error.message || 'بارگذاری مرحله‌ها ناموفق بود');
     } finally {
       setLoading(false);
     }
@@ -40,7 +40,7 @@ const BattleWords = () => {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      loadWordSets(1);
+      loadLevels(1);
     }, 250);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -53,38 +53,38 @@ const BattleWords = () => {
   const handleSubmitForm = async (payload) => {
     try {
       if (selectedSet) {
-        await battleWordsService.update(selectedSet._id, payload);
-        toast.success('مجموعه بروزرسانی شد');
+        await battleLevelsService.update(selectedSet._id, payload);
+        toast.success('مرحله بروزرسانی شد');
       } else {
-        await battleWordsService.create(payload);
-        toast.success('مجموعه جدید ساخته شد');
+        await battleLevelsService.create(payload);
+        toast.success('مرحله جدید ساخته شد');
       }
       setFormOpen(false);
       setSelectedSet(null);
-      loadWordSets();
+      loadLevels();
     } catch (error) {
-      toast.error(error.message || 'ذخیره مجموعه ناموفق بود');
+      toast.error(error.message || 'ذخیره مرحله ناموفق بود');
     }
   };
 
-  const handleDelete = async (wordSet) => {
-    if (!window.confirm(`حذف ${wordSet.name}؟`)) {
+  const handleDelete = async (level) => {
+    if (!window.confirm(`حذف ${level.name}؟`)) {
       return;
     }
     try {
-      await battleWordsService.remove(wordSet._id);
-      toast.success('مجموعه حذف شد');
-      loadWordSets();
+      await battleLevelsService.remove(level._id);
+      toast.success('مرحله حذف شد');
+      loadLevels();
     } catch (error) {
-      toast.error(error.message || 'حذف مجموعه ممکن نشد');
+      toast.error(error.message || 'حذف مرحله ممکن نشد');
     }
   };
 
-  const handleToggleActive = async (wordSet) => {
+  const handleToggleActive = async (level) => {
     try {
-      await battleWordsService.update(wordSet._id, { isActive: !wordSet.isActive });
-      toast.success('وضعیت مجموعه بروزرسانی شد');
-      loadWordSets(meta.page);
+      await battleLevelsService.update(level._id, { isActive: !level.isActive });
+      toast.success('وضعیت مرحله بروزرسانی شد');
+      loadLevels(meta.page);
     } catch (error) {
       toast.error(error.message || 'تغییر وضعیت ناموفق بود');
     }
@@ -92,13 +92,13 @@ const BattleWords = () => {
 
   const statCards = useMemo(() => (
     [
-      { label: 'کل مجموعه‌ها', value: stats?.totalSets || 0 },
-      { label: 'مجموعه‌های فعال', value: stats?.activeSets || 0 },
+      { label: 'کل مرحله‌های نبرد', value: stats?.totalLevels || 0 },
+      { label: 'مرحله‌های فعال', value: stats?.activeLevels || 0 },
       { label: 'کل کلمات', value: stats?.totalWords || 0 },
       {
-        label: 'پرمصرف‌ترین مجموعه',
-        value: stats?.mostUsedSet?.name || '---',
-        description: stats?.mostUsedSet ? `${stats.mostUsedSet.usageCount} بار استفاده` : '',
+        label: 'پرمصرف‌ترین مرحله',
+        value: stats?.mostUsedLevel?.name || '---',
+        description: stats?.mostUsedLevel ? `${stats.mostUsedLevel.usageCount} بار استفاده` : '',
       },
     ]
   ), [stats]);
@@ -107,8 +107,8 @@ const BattleWords = () => {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-sm text-white/60">کلمات اختصاصی نبرد ۱ به ۱</p>
-          <h2 className="text-3xl font-black text-white">مدیریت کلمات نبرد ⚔️</h2>
+          <p className="text-sm text-white/60">مرحله‌های اختصاصی حالت نبرد</p>
+          <h2 className="text-3xl font-black text-white">مدیریت مرحله‌های نبرد ⚔️</h2>
         </div>
         <div className="flex flex-wrap gap-3">
           <button
@@ -119,11 +119,11 @@ const BattleWords = () => {
             }}
             className="flex items-center gap-2 rounded-2xl bg-primary-500/80 px-4 py-2 text-white"
           >
-            <Plus className="w-4 h-4" /> مجموعه جدید
+            <Plus className="w-4 h-4" /> مرحله نبرد جدید
           </button>
           <button
             type="button"
-            onClick={() => loadWordSets(meta.page)}
+            onClick={() => loadLevels(meta.page)}
             className="flex items-center gap-2 rounded-2xl border border-white/10 px-4 py-2 text-white/80"
           >
             <RefreshCcw className="w-4 h-4" /> بروزرسانی
@@ -148,7 +148,7 @@ const BattleWords = () => {
             <input
               value={filters.search}
               onChange={handleSearch}
-              placeholder="جستجو در نام مجموعه یا کلمات"
+              placeholder="جستجو در نام مرحله یا کلمات"
               className="flex-1 bg-transparent py-2 text-sm text-white focus:outline-none"
             />
           </div>
@@ -172,16 +172,16 @@ const BattleWords = () => {
         <div className="rounded-3xl border border-white/10 bg-white/5 p-6 text-center text-white/70">
           در حال بارگذاری...
         </div>
-      ) : wordSets.length === 0 ? (
+      ) : levels.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-white/20 p-6 text-center text-white/60">
-          مجموعه‌ای برای نمایش وجود ندارد.
+          مرحله‌ای برای نمایش وجود ندارد.
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
-          {wordSets.map((wordSet) => (
-            <div key={wordSet._id} className="space-y-2">
-              <WordSetCard
-                wordSet={wordSet}
+          {levels.map((level) => (
+            <div key={level._id} className="space-y-2">
+              <BattleLevelCard
+                level={level}
                 onEdit={(set) => {
                   setSelectedSet(set);
                   setFormOpen(true);
@@ -194,7 +194,7 @@ const BattleWords = () => {
         </div>
       )}
 
-      <WordSetForm
+      <BattleLevelForm
         open={formOpen}
         initialValue={selectedSet}
         onClose={() => {
@@ -208,4 +208,4 @@ const BattleWords = () => {
   );
 };
 
-export default BattleWords;
+export default BattleLevels;

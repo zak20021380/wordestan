@@ -154,7 +154,7 @@ const PreviewModal = ({ open, rows = [], warnings = [], errors = [], onClose }) 
   );
 };
 
-const WordSetForm = ({ open, initialValue, onClose, onSubmit }) => {
+const BattleLevelForm = ({ open, initialValue, onClose, onSubmit }) => {
   const [name, setName] = useState('');
   const [lettersInput, setLettersInput] = useState('');
   const [wordsInput, setWordsInput] = useState('');
@@ -224,9 +224,9 @@ const WordSetForm = ({ open, initialValue, onClose, onSubmit }) => {
       <div className="w-full max-w-2xl max-h-[95vh] overflow-y-auto rounded-2xl sm:rounded-[32px] border border-white/10 bg-slate-900/95 p-4 sm:p-5 text-white shadow-2xl">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs sm:text-sm text-white/60">مجموعه اختصاصی نبرد</p>
+            <p className="text-xs sm:text-sm text-white/60">افزودن مرحله نبرد</p>
             <h3 className="text-lg sm:text-xl font-bold">
-              {initialValue ? 'ویرایش مجموعه' : 'ایجاد مجموعه کلمات'}
+              {initialValue ? 'ویرایش مرحله نبرد' : 'مرحله نبرد جدید'}
             </h3>
           </div>
           <button onClick={onClose} className="text-2xl text-white/60 hover:text-white" type="button">
@@ -236,17 +236,17 @@ const WordSetForm = ({ open, initialValue, onClose, onSubmit }) => {
         <form className="mt-4 space-y-4" onSubmit={handleSubmit}>
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <label className="text-xs sm:text-sm text-white/70">نام مجموعه</label>
+              <label className="text-xs sm:text-sm text-white/70">نام مرحله</label>
               <input
                 className="mt-1 w-full rounded-xl sm:rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-sm"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="کلمات ویژه"
+                placeholder="مرحله نبرد #1"
                 required
               />
             </div>
             <div>
-              <label className="text-xs sm:text-sm text-white/70">فعال بودن مجموعه</label>
+              <label className="text-xs sm:text-sm text-white/70">فعال بودن مرحله</label>
               <div className="mt-2 flex items-center gap-2 rounded-xl sm:rounded-2xl border border-white/10 bg-white/5 px-3 py-2">
                 <input
                   type="checkbox"
@@ -264,7 +264,7 @@ const WordSetForm = ({ open, initialValue, onClose, onSubmit }) => {
 
           <div className="rounded-xl sm:rounded-2xl border border-white/10 bg-white/5 p-3">
             <label className="text-xs sm:text-sm text-white/70 flex items-center justify-between">
-              <span>حروف شبکه</span>
+              <span>حروف این مرحله</span>
               <span className="text-xs text-white/50">
                 {letters.length}/{MIN_LETTERS} (حداکثر {MAX_LETTERS})
               </span>
@@ -290,7 +290,7 @@ const WordSetForm = ({ open, initialValue, onClose, onSubmit }) => {
 
           <div className="rounded-xl sm:rounded-2xl border border-white/10 bg-white/5 p-3">
             <div className="flex items-center justify-between">
-              <label className="text-xs sm:text-sm text-white/70">افزودن کلمات</label>
+              <label className="text-xs sm:text-sm text-white/70">کلمات (کپی/پیست)</label>
               <span className="text-xs text-white/50">{parsed.words.length} کلمه</span>
             </div>
             <textarea
@@ -361,7 +361,7 @@ const WordSetForm = ({ open, initialValue, onClose, onSubmit }) => {
                 className="rounded-xl bg-primary-500/80 px-4 py-1.5 text-sm font-bold disabled:opacity-40"
                 disabled={!canSave}
               >
-                ذخیره
+                ذخیره مرحله
               </button>
             </div>
           </div>
@@ -378,4 +378,4 @@ const WordSetForm = ({ open, initialValue, onClose, onSubmit }) => {
   );
 };
 
-export default WordSetForm;
+export default BattleLevelForm;
