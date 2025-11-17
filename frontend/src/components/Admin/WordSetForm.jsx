@@ -90,35 +90,35 @@ const PreviewModal = ({ open, rows = [], warnings = [], errors = [], onClose }) 
   const warningLookup = new Set(warnings.map((item) => item.word));
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 text-white">
-      <div className="w-full max-w-3xl rounded-[32px] border border-white/10 bg-slate-900/95 p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-2 sm:p-4 text-white">
+      <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl sm:rounded-2xl border border-white/10 bg-slate-900/95 p-4 sm:p-5">
         <div className="flex items-center justify-between">
-          <h3 className="text-xl font-bold">پیش‌نمایش {rows.length} کلمه</h3>
-          <button type="button" onClick={onClose} className="text-white/60 hover:text-white">
+          <h3 className="text-base sm:text-lg font-bold">پیش‌نمایش {rows.length} کلمه</h3>
+          <button type="button" onClick={onClose} className="text-2xl text-white/60 hover:text-white">
             ×
           </button>
         </div>
-        <div className="mt-4 max-h-[420px] overflow-auto rounded-2xl border border-white/10">
-          <table className="w-full text-sm">
+        <div className="mt-3 max-h-[50vh] overflow-auto rounded-xl border border-white/10">
+          <table className="w-full text-xs sm:text-sm">
             <thead className="bg-white/5 text-white/60">
               <tr>
-                <th className="px-4 py-2 text-right">#</th>
-                <th className="px-4 py-2 text-right">کلمه</th>
-                <th className="px-4 py-2 text-right">معنی</th>
-                <th className="px-4 py-2 text-right">وضعیت</th>
+                <th className="px-2 sm:px-3 py-1.5 text-right">#</th>
+                <th className="px-2 sm:px-3 py-1.5 text-right">کلمه</th>
+                <th className="px-2 sm:px-3 py-1.5 text-right hidden sm:table-cell">معنی</th>
+                <th className="px-2 sm:px-3 py-1.5 text-right">وضعیت</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((row, index) => (
                 <tr key={`${row.word}-${index}`} className="odd:bg-white/5">
-                  <td className="px-4 py-2">{index + 1}</td>
-                  <td className="px-4 py-2 font-semibold">{row.word}</td>
-                  <td className="px-4 py-2 text-white/80">{row.meaning || '—'}</td>
-                  <td className="px-4 py-2">
+                  <td className="px-2 sm:px-3 py-1.5">{index + 1}</td>
+                  <td className="px-2 sm:px-3 py-1.5 font-semibold">{row.word}</td>
+                  <td className="px-2 sm:px-3 py-1.5 text-white/80 hidden sm:table-cell">{row.meaning || '—'}</td>
+                  <td className="px-2 sm:px-3 py-1.5">
                     {warningLookup.has(row.word) ? (
-                      <span className="text-amber-400">⚠️ بدون معنی</span>
+                      <span className="text-amber-400 text-xs">⚠️</span>
                     ) : (
-                      <span className="text-emerald-400">✅ آماده</span>
+                      <span className="text-emerald-400 text-xs">✅</span>
                     )}
                   </td>
                 </tr>
@@ -127,23 +127,24 @@ const PreviewModal = ({ open, rows = [], warnings = [], errors = [], onClose }) 
           </table>
         </div>
         {errors.length > 0 && (
-          <div className="mt-4 rounded-2xl border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-200">
-            <p className="font-bold mb-2">{errors.length} خطا</p>
-            <ul className="space-y-1 max-h-32 overflow-auto pr-1">
-              {errors.slice(0, 5).map((error) => (
+          <div className="mt-3 rounded-xl border border-rose-500/30 bg-rose-500/10 p-2 text-xs text-rose-200">
+            <p className="font-bold mb-1">{errors.length} خطا</p>
+            <ul className="space-y-0.5 max-h-24 overflow-auto">
+              {errors.slice(0, 3).map((error) => (
                 <li key={`${error.line}-${error.word || error.message}`}>
                   خط {error.line}: {error.word ? `${error.word} - ` : ''}
                   {error.message}
                 </li>
               ))}
+              {errors.length > 3 && <li>و {errors.length - 3} خطای دیگر...</li>}
             </ul>
           </div>
         )}
-        <div className="mt-6 flex justify-end">
+        <div className="mt-4 flex justify-end">
           <button
             type="button"
             onClick={onClose}
-            className="rounded-2xl bg-primary-500/80 px-6 py-2 font-bold"
+            className="rounded-xl bg-primary-500/80 px-4 sm:px-5 py-1.5 sm:py-2 text-sm font-bold"
           >
             بستن
           </button>
@@ -219,25 +220,25 @@ const WordSetForm = ({ open, initialValue, onClose, onSubmit }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-      <div className="w-full max-w-4xl rounded-[32px] border border-white/10 bg-slate-900/95 p-6 text-white shadow-2xl">
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 backdrop-blur-sm p-2 sm:p-4">
+      <div className="w-full max-w-2xl max-h-[95vh] overflow-y-auto rounded-2xl sm:rounded-[32px] border border-white/10 bg-slate-900/95 p-4 sm:p-5 text-white shadow-2xl">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-white/60">مجموعه اختصاصی نبرد</p>
-            <h3 className="text-2xl font-bold">
+            <p className="text-xs sm:text-sm text-white/60">مجموعه اختصاصی نبرد</p>
+            <h3 className="text-lg sm:text-xl font-bold">
               {initialValue ? 'ویرایش مجموعه' : 'ایجاد مجموعه کلمات'}
             </h3>
           </div>
-          <button onClick={onClose} className="text-white/60 hover:text-white" type="button">
+          <button onClick={onClose} className="text-2xl text-white/60 hover:text-white" type="button">
             ×
           </button>
         </div>
-        <form className="mt-6 space-y-6" onSubmit={handleSubmit}>
-          <div className="grid gap-4 md:grid-cols-2">
+        <form className="mt-4 space-y-4" onSubmit={handleSubmit}>
+          <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <label className="text-sm text-white/70">نام مجموعه</label>
+              <label className="text-xs sm:text-sm text-white/70">نام مجموعه</label>
               <input
-                className="mt-1 w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-2"
+                className="mt-1 w-full rounded-xl sm:rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-sm"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="کلمات ویژه"
@@ -245,8 +246,8 @@ const WordSetForm = ({ open, initialValue, onClose, onSubmit }) => {
               />
             </div>
             <div>
-              <label className="text-sm text-white/70">فعال بودن مجموعه</label>
-              <div className="mt-2 flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-2">
+              <label className="text-xs sm:text-sm text-white/70">فعال بودن مجموعه</label>
+              <div className="mt-2 flex items-center gap-2 rounded-xl sm:rounded-2xl border border-white/10 bg-white/5 px-3 py-2">
                 <input
                   type="checkbox"
                   className="h-4 w-4 rounded border-white/30 bg-transparent"
@@ -254,32 +255,32 @@ const WordSetForm = ({ open, initialValue, onClose, onSubmit }) => {
                   disabled={!canActivate}
                   onChange={(e) => setIsActive(e.target.checked)}
                 />
-                <span className="text-sm text-white/80">
-                  {canActivate ? 'فعال شود' : `نیاز به حداقل ${MIN_WORDS} کلمه برای فعال‌سازی`}
+                <span className="text-xs sm:text-sm text-white/80">
+                  {canActivate ? 'فعال شود' : `نیاز به حداقل ${MIN_WORDS} کلمه`}
                 </span>
               </div>
             </div>
           </div>
 
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
-            <label className="text-sm text-white/70 flex items-center justify-between">
+          <div className="rounded-xl sm:rounded-2xl border border-white/10 bg-white/5 p-3">
+            <label className="text-xs sm:text-sm text-white/70 flex items-center justify-between">
               <span>حروف شبکه</span>
               <span className="text-xs text-white/50">
-                {letters.length}/{MIN_LETTERS} حداقل حروف (حداکثر {MAX_LETTERS})
+                {letters.length}/{MIN_LETTERS} (حداکثر {MAX_LETTERS})
               </span>
             </label>
             <input
-              className="mt-2 w-full rounded-2xl border border-white/10 bg-slate-900/60 px-4 py-2 text-white"
+              className="mt-2 w-full rounded-xl border border-white/10 bg-slate-900/60 px-3 py-2 text-sm text-white"
               value={lettersInput}
               onChange={(e) => setLettersInput(e.target.value)}
               placeholder="A,B,C,D,E,F,G,H,I,J,K,L"
             />
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-2 flex flex-wrap gap-1.5">
               {letters.length === 0 ? (
-                <span className="text-sm text-white/60">حروف را با ویرگول یا فاصله جدا کنید.</span>
+                <span className="text-xs text-white/60">حروف را با ویرگول یا فاصله جدا کنید.</span>
               ) : (
                 letters.map((letter) => (
-                  <span key={letter} className="rounded-full bg-white/10 px-3 py-1 text-sm font-semibold">
+                  <span key={letter} className="rounded-full bg-white/10 px-2.5 py-0.5 text-xs font-semibold">
                     {letter}
                   </span>
                 ))
@@ -287,21 +288,20 @@ const WordSetForm = ({ open, initialValue, onClose, onSubmit }) => {
             </div>
           </div>
 
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
+          <div className="rounded-xl sm:rounded-2xl border border-white/10 bg-white/5 p-3">
             <div className="flex items-center justify-between">
-              <label className="text-sm text-white/70">افزودن کلمات (کپی/پیست)</label>
-              <span className="text-xs text-white/50">{parsed.words.length} کلمه شناسایی شد</span>
+              <label className="text-xs sm:text-sm text-white/70">افزودن کلمات</label>
+              <span className="text-xs text-white/50">{parsed.words.length} کلمه</span>
             </div>
             <textarea
               value={wordsInput}
               onChange={(e) => setWordsInput(e.target.value)}
               placeholder={'EXAMPLE : مثال\nHOUSE,خانه\nAPPLE\tسیب'}
-              className="mt-2 h-48 w-full rounded-3xl border border-white/10 bg-slate-900/60 px-4 py-3 text-sm"
+              className="mt-2 h-32 sm:h-36 w-full rounded-xl border border-white/10 bg-slate-900/60 px-3 py-2 text-sm"
             />
-            <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-              <div className="text-xs text-white/60 space-y-1">
-                <p>فرمت‌های قابل قبول: WORD : معنی | WORD,معنی | WORD\tمعنی</p>
-                <p>حروف و فاصله‌ها به‌صورت خودکار پاکسازی می‌شوند.</p>
+            <div className="mt-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+              <div className="text-xs text-white/60">
+                <p>فرمت: WORD : معنی | WORD,معنی</p>
               </div>
               <div className="flex items-center gap-2">
                 <input
@@ -314,51 +314,51 @@ const WordSetForm = ({ open, initialValue, onClose, onSubmit }) => {
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center gap-2 rounded-2xl border border-white/10 px-4 py-2 text-sm text-white/80"
+                  className="flex items-center gap-1.5 rounded-xl border border-white/10 px-3 py-1.5 text-xs text-white/80"
                 >
-                  <Upload className="w-4 h-4" /> آپلود CSV/TXT
+                  <Upload className="w-3.5 h-3.5" /> آپلود
                 </button>
               </div>
             </div>
             {parsed.errors.length > 0 && (
-              <div className="mt-3 rounded-2xl border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-200">
+              <div className="mt-2 rounded-xl border border-rose-500/30 bg-rose-500/10 p-2 text-xs text-rose-200">
                 <p className="font-bold">{parsed.errors.length} خطا</p>
-                <ul className="mt-1 space-y-1">
-                  {parsed.errors.slice(0, 3).map((error) => (
+                <ul className="mt-1 space-y-0.5">
+                  {parsed.errors.slice(0, 2).map((error) => (
                     <li key={`${error.line}-${error.word || error.message}`}>
                       خط {error.line}: {error.word ? `${error.word} - ` : ''}
                       {error.message}
                     </li>
                   ))}
-                  {parsed.errors.length > 3 && <li>...</li>}
+                  {parsed.errors.length > 2 && <li>و {parsed.errors.length - 2} خطای دیگر...</li>}
                 </ul>
               </div>
             )}
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-white/10 bg-white/5 px-4 py-3 text-sm">
-            <div className="flex flex-wrap gap-3">
-              <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-emerald-300">
-                ✅ {parsed.counts.valid} صحیح
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs sm:text-sm">
+            <div className="flex flex-wrap gap-2">
+              <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-emerald-300 text-xs">
+                ✅ {parsed.counts.valid}
               </span>
-              <span className="rounded-full bg-amber-500/10 px-3 py-1 text-amber-300">
-                ⚠️ {parsed.counts.warning} هشدار
+              <span className="rounded-full bg-amber-500/10 px-2.5 py-0.5 text-amber-300 text-xs">
+                ⚠️ {parsed.counts.warning}
               </span>
-              <span className="rounded-full bg-rose-500/10 px-3 py-1 text-rose-300">
-                ❌ {parsed.counts.error} خطا
+              <span className="rounded-full bg-rose-500/10 px-2.5 py-0.5 text-rose-300 text-xs">
+                ❌ {parsed.counts.error}
               </span>
             </div>
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => setPreviewOpen(true)}
-                className="rounded-2xl border border-white/20 px-4 py-2 text-white/80"
+                className="rounded-xl border border-white/20 px-3 py-1.5 text-xs sm:text-sm text-white/80"
               >
                 پیش‌نمایش
               </button>
               <button
                 type="submit"
-                className="rounded-2xl bg-primary-500/80 px-6 py-2 font-bold disabled:opacity-40"
+                className="rounded-xl bg-primary-500/80 px-4 py-1.5 text-sm font-bold disabled:opacity-40"
                 disabled={!canSave}
               >
                 ذخیره
