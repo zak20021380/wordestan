@@ -29,14 +29,11 @@ module.exports = (io) => {
           level: {
             _id: battle.level._id,
             letters: battle.level.letters,
-            gridSize: battle.level.gridSize,
             wordCount: battle.levelWordSet.size,
             words: Array.isArray(battle.level.words)
               ? battle.level.words.map(word => ({
                   text: word.text,
                   meaning: word.meaning,
-                  category: word.category,
-                  difficulty: word.difficulty
                 }))
               : battle.levelWords.map(w => ({ text: w.text }))
           },
@@ -313,16 +310,12 @@ module.exports = (io) => {
           id: battle.level._id,
           title: battle.level.title,
           letters: battle.level.letters,
-          gridSize: battle.level.gridSize,
-          difficulty: battle.level.difficulty,
           wordCount: battle.levelWordSet.size,
           words: Array.isArray(battle.level.words)
             ? battle.level.words.map(word => ({
                 _id: word._id,
                 text: word.text,
                 meaning: word.meaning,
-                category: word.category,
-                difficulty: word.difficulty
               }))
             : battle.levelWords.map(w => ({ text: w.text }))
         },
@@ -347,7 +340,6 @@ module.exports = (io) => {
     namespace.to(battleId).emit('battle_start', {
       duration: BATTLE_DURATION,
       letters: battle.level.letters,
-      gridSize: battle.level.gridSize,
     });
     matchmakingService.scheduleTimeout(battleId, async () => {
       await finalizeBattle(battleId);

@@ -8,6 +8,7 @@ const BATTLE_DURATION_MS = 120000;
 const DISCONNECT_GRACE_MS = 10000;
 const MIN_WORD_INTERVAL_MS = 100;
 const DEFAULT_WORD_COUNT = 12;
+const DEFAULT_GRID_SIZE = 12;
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
 const shuffleArray = (items = []) => {
@@ -47,9 +48,7 @@ const toBattleLevelWords = (words = []) => (
     text: word.word,
     length: word.word.length,
     points: 10 + Math.max(word.word.length - 3, 0) * 2,
-    difficulty: word.difficulty || 3,
-    definition: word.definition,
-    category: word.category,
+    definition: word.meaning || word.definition || '',
   }))
 );
 
@@ -128,21 +127,19 @@ class MatchmakingService {
 
     const selectedWords = selectRandomWords(wordSet.words, DEFAULT_WORD_COUNT);
     const levelWords = toBattleLevelWords(selectedWords);
-    const gridLetters = generateGridFromWords(selectedWords, wordSet.gridSize || 12);
+    const letterPool = Array.isArray(wordSet.letters) && wordSet.letters.length
+      ? [...wordSet.letters]
+      : generateGridFromWords(selectedWords, DEFAULT_GRID_SIZE);
     const levelPayload = {
       _id: wordSet._id,
       title: wordSet.name,
-      letters: gridLetters.join(''),
-      gridLetters,
-      gridSize: wordSet.gridSize,
-      difficulty: wordSet.difficulty,
+      letters: letterPool.join(''),
+      letterPool,
       words: selectedWords.map(word => ({
         _id: word._id,
         text: word.word,
         length: word.word.length,
-        meaning: word.definition,
-        category: word.category,
-        difficulty: word.difficulty,
+        meaning: word.meaning || '',
       })),
     };
 
