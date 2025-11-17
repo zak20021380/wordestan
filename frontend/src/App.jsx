@@ -31,6 +31,7 @@ import LevelManagement from './components/admin/LevelManagement';
 import CoinPackManagement from './components/admin/CoinPackManagement';
 import RewardSettings from './components/admin/RewardSettings';
 import UserManagement from './components/admin/UserManagement';
+import BattleWords from './pages/admin/BattleWords';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -135,6 +136,7 @@ function App() {
                           <Route path="levels" element={<LevelManagement />} />
                           <Route path="coin-packs" element={<CoinPackManagement />} />
                           <Route path="settings/rewards" element={<RewardSettings />} />
+                          <Route path="battle-words" element={<BattleWords />} />
                           <Route path="users" element={<UserManagement />} />
                           <Route path="*" element={<AdminDashboard />} />
                         </Route>

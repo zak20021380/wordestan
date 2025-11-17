@@ -50,7 +50,26 @@ const battleSchema = new mongoose.Schema({
   level: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Level',
-    required: true
+    required: false
+  },
+  wordSet: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'BattleWordSet'
+  },
+  letters: {
+    type: String,
+    default: ''
+  },
+  words: {
+    type: [{
+      text: String,
+      length: Number,
+      points: Number,
+      definition: String,
+      category: String,
+      difficulty: Number
+    }],
+    default: []
   },
   status: {
     type: String,
@@ -83,5 +102,6 @@ const battleSchema = new mongoose.Schema({
 battleSchema.index({ battleId: 1 }, { unique: true });
 battleSchema.index({ 'players.userId': 1, createdAt: -1 });
 battleSchema.index({ status: 1, createdAt: -1 });
+battleSchema.index({ wordSet: 1, createdAt: -1 });
 
 module.exports = mongoose.model('Battle', battleSchema);

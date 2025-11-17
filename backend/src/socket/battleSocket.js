@@ -27,9 +27,18 @@ module.exports = (io) => {
         socket.emit('battle_resume', {
           battleId: existingBattleId,
           level: {
+            _id: battle.level._id,
             letters: battle.level.letters,
+            gridSize: battle.level.gridSize,
             wordCount: battle.levelWordSet.size,
-            words: battle.levelWords.map(w => w.text)
+            words: Array.isArray(battle.level.words)
+              ? battle.level.words.map(word => ({
+                  text: word.text,
+                  meaning: word.meaning,
+                  category: word.category,
+                  difficulty: word.difficulty
+                }))
+              : battle.levelWords.map(w => ({ text: w.text }))
           },
           players: Object.values(battle.players).map(player => ({
             userId: player.userId.toString(),
@@ -300,10 +309,22 @@ module.exports = (io) => {
             }
           : null,
         level: {
+          _id: battle.level._id,
           id: battle.level._id,
+          title: battle.level.title,
           letters: battle.level.letters,
+          gridSize: battle.level.gridSize,
+          difficulty: battle.level.difficulty,
           wordCount: battle.levelWordSet.size,
-          words: battle.levelWords.map(w => w.text)
+          words: Array.isArray(battle.level.words)
+            ? battle.level.words.map(word => ({
+                _id: word._id,
+                text: word.text,
+                meaning: word.meaning,
+                category: word.category,
+                difficulty: word.difficulty
+              }))
+            : battle.levelWords.map(w => ({ text: w.text }))
         },
         type
       });
@@ -323,7 +344,11 @@ module.exports = (io) => {
   const beginBattle = (battleId) => {
     const battle = matchmakingService.markStart(battleId);
     if (!battle) return;
-    namespace.to(battleId).emit('battle_start', { duration: BATTLE_DURATION, letters: battle.level.letters });
+    namespace.to(battleId).emit('battle_start', {
+      duration: BATTLE_DURATION,
+      letters: battle.level.letters,
+      gridSize: battle.level.gridSize,
+    });
     matchmakingService.scheduleTimeout(battleId, async () => {
       await finalizeBattle(battleId);
     });

@@ -582,6 +582,58 @@ export const GameProvider = ({ children }) => {
 
     const normalizedWord = wordToSubmit.toUpperCase();
 
+    if (currentLevel?.isBattleLevel) {
+      const availableWords = (currentLevel.words || []).map(item =>
+        (typeof item === 'string' ? item : item?.text || '').toUpperCase()
+      );
+
+      if (!availableWords.includes(normalizedWord)) {
+        clearSelection();
+        throw new Error('این کلمه در شبکه نبرد نیست');
+      }
+
+      let meaning;
+      if (Array.isArray(currentLevel.words)) {
+        const match = currentLevel.words.find(entry => {
+          if (typeof entry === 'string') {
+            return entry.toUpperCase() === normalizedWord;
+          }
+          return (entry?.text || '').toUpperCase() === normalizedWord;
+        });
+
+        if (match && typeof match !== 'string') {
+          meaning = match.meaning;
+        }
+      }
+
+      let updatedCompletedWords = [];
+
+      setGameState(prev => {
+        const updated = Array.from(new Set([...prev.completedWords, normalizedWord]));
+        updatedCompletedWords = updated;
+
+        return {
+          ...prev,
+          selectedNodes: [],
+          selectionPreview: '',
+          currentWord: '',
+          completedWords: updated,
+        };
+      });
+
+      const totalWords = currentLevel.words?.length ?? 0;
+      const completedAll = totalWords > 0 && updatedCompletedWords.length >= totalWords;
+
+      return {
+        success: true,
+        data: {
+          word: { text: normalizedWord, meaning },
+          levelCompleted: completedAll,
+        },
+        meta: { battle: true },
+      };
+    }
+
     if (!isAuthenticated) {
       const availableWords = (currentLevel.words || []).map(item =>
         (typeof item === 'string' ? item : item?.text || '').toUpperCase()
@@ -702,6 +754,66 @@ export const GameProvider = ({ children }) => {
     resetPowerUpUsage();
   }, [resetPowerUpUsage]);
 
+  const loadBattleBoard = useCallback((payload = {}) => {
+    if (!payload?.letters) {
+      return null;
+    }
+
+    const normalizedWords = (payload.words || []).map(entry => {
+      if (!entry) return null;
+      if (typeof entry === 'string') {
+        return { text: entry.toUpperCase() };
+      }
+      const text = (entry.text || entry.word || '').toUpperCase();
+      if (!text) {
+        return null;
+      }
+      return {
+        _id: entry._id || entry.id || text,
+        text,
+        meaning: entry.meaning || entry.definition || '',
+        category: entry.category || 'عمومی',
+        difficulty: entry.difficulty || 3,
+      };
+    }).filter(Boolean);
+
+    const levelId = payload._id || payload.id || `battle-${Date.now()}`;
+
+    const level = {
+      _id: levelId,
+      letters: payload.letters,
+      words: normalizedWords,
+      title: payload.title || 'نبرد لغات',
+      order: 0,
+      isBattleLevel: true,
+      difficulty: payload.difficulty || 'متوسط',
+    };
+
+    setCurrentLevel(level);
+    setLevelMeta({
+      status: 'battle_level',
+      battleId: payload.battleId || null,
+      wordSetId: levelId,
+      totalWords: normalizedWords.length,
+    });
+    setGameState({
+      selectedNodes: [],
+      selectionPreview: '',
+      currentWord: '',
+      completedWords: Array.isArray(payload.completedWords)
+        ? payload.completedWords.map(word => (word || '').toUpperCase())
+        : [],
+      isConnecting: false,
+    });
+    setLevelCompletionStatus(createCompletionStatus());
+    resetPowerUpUsage();
+    previousLevelOrderRef.current = null;
+    pendingTransitionRef.current = null;
+    hasInitializedLevelRef.current = false;
+
+    return level;
+  }, [resetPowerUpUsage]);
+
   const loadNextLevel = useCallback(async () => {
     resetGameState();
 
@@ -731,6 +843,7 @@ export const GameProvider = ({ children }) => {
     submitWord,
     autoSolve,
     loadLevelById,
+    loadBattleBoard,
     powerUpUsage,
     markPowerUpUsed,
     resetPowerUpUsage,
