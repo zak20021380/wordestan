@@ -36,8 +36,8 @@ const WordForm = ({ open, initialValue, onClose, onSubmit, categories = defaultC
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-md rounded-3xl bg-wood-900/80 border border-white/10 p-6 text-white shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="w-full max-w-md rounded-3xl bg-slate-900/95 border border-slate-700 p-6 text-white shadow-2xl">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-bold">افزودن کلمه</h3>
           <button type="button" onClick={onClose} className="text-white/60 hover:text-white">×</button>

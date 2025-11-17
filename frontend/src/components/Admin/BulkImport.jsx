@@ -57,8 +57,8 @@ const BulkImport = ({ open, onClose, onImport }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-4 text-white">
-      <div className="w-full max-w-2xl rounded-[32px] border border-white/10 bg-wood-900/90 p-6">
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 text-white">
+      <div className="w-full max-w-2xl rounded-[32px] border border-slate-700 bg-slate-900/95 p-6">
         <div className="flex items-center justify-between">
           <h3 className="text-xl font-bold">ورود گروهی کلمات</h3>
           <button onClick={onClose} className="text-white/60 hover:text-white" type="button">

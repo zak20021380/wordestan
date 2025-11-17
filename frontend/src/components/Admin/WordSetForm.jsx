@@ -68,8 +68,8 @@ const WordSetForm = ({ open, initialValue, onClose, onSubmit }) => {
   const canActivate = words.length >= 10;
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-3xl rounded-[32px] border border-white/10 bg-wood-900/90 p-6 text-white shadow-2xl">
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="w-full max-w-3xl rounded-[32px] border border-slate-700 bg-slate-900/95 p-6 text-white shadow-2xl">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm text-white/60">مجموعه جدید نبرد</p>

@@ -50,9 +50,9 @@ function App() {
         <GameProvider>
           <Router>
             <BattleProvider>
-              <div className="min-h-screen bg-wood bg-cover bg-center bg-fixed">
-                {/* Wooden background overlay */}
-                <div className="min-h-screen bg-gradient-to-br from-wood-900/80 via-wood-800/60 to-wood-900/80">
+              <div className="min-h-screen">
+                {/* Dark gradient overlay */}
+                <div className="min-h-screen bg-gradient-to-br from-slate-950/80 via-slate-900/60 to-slate-950/80">
                   <Routes>
                   {/* Public routes */}
                   <Route path="/login" element={<Login />} />
